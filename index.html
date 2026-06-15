@@ -365,8 +365,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div id="usuarios-list"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
       <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
         <div class="section-title">Herramientas de admin</div>
-        <button class="btn-primary" onclick="migrarDesdeSheet()" style="background:var(--naranja)">📥 Migrar datos del Sheet a Supabase</button>
-        <div class="field-note" style="margin-top:6px">Importa todos los productos del Google Sheet a la base de datos SQL. Solo necesitás hacerlo una vez.</div>
+        <button class="btn-primary" onclick="migrarDesdeSheet()" style="background:var(--naranja);margin-bottom:8px">📥 Migrar datos del Sheet a Supabase</button>
+        <button class="btn-primary" onclick="verificarConSheet()" style="background:var(--verde);margin-bottom:8px">🔍 Verificar datos vs Sheet</button>
+        <div class="field-note" style="margin-bottom:12px">La migración preserva los IDs originales. Solo necesitás hacerlo una vez.</div>
+        <div id="migration-log" style="display:none;background:#111;color:#0f0;font-family:monospace;font-size:11px;padding:12px;border-radius:8px;max-height:300px;overflow-y:auto;line-height:1.8"></div>
       </div>
     </div>
   </div>
@@ -828,32 +830,144 @@ function mostrarToast(msg){const t=document.getElementById('toast');t.textConten
 // ── MIGRACIÓN SHEET → SUPABASE (solo admin) ──────────────
 async function migrarDesdeSheet(){
   if(sesion?.rol!=='admin'){mostrarToast('Solo admin puede migrar');return}
-  if(!confirm('¿Migrar todos los productos del Sheet a Supabase? Esto puede tardar unos minutos.'))return;
-  mostrarToast('Descargando datos del Sheet...');
+  if(!confirm('¿Migrar todos los productos del Sheet a Supabase?\nEsto preserva los IDs originales y puede tardar unos minutos.'))return;
+  const logEl=document.getElementById('migration-log');
+  if(logEl)logEl.style.display='block';
+  function log(msg){if(logEl)logEl.innerHTML+=msg+'<br>';mostrarToast(msg)}
+  
   try{
+    log('📥 Descargando datos del Sheet...');
     const res=await fetch(SHEETS_SYNC+'?accion=obtener');
     const data=await res.json();
     const filas=data.slice(1).filter(f=>f[0]!==''&&f[0]!==null&&f[0]!==undefined);
-    mostrarToast('Procesando '+filas.length+' productos...');
+    log('📊 Sheet tiene '+filas.length+' filas con datos');
+    
+    // Procesar productos PRESERVANDO IDs originales
     const products=[];
     const skuSet=new Set();
+    let maxId=0;
+    let duplicados=0;
+    let sinSku=0;
+    
     for(const f of filas){
+      const id=Number(f[0])||0;
       const sku=String(f[1]||'').trim();
-      if(!sku||skuSet.has(sku))continue;
+      if(!sku){sinSku++;continue}
+      if(skuSet.has(sku)){duplicados++;continue}
       skuSet.add(sku);
-      products.push({sku,cod_barra:f[2]?String(f[2]):null,marca:f[3]?String(f[3]):null,modelo:f[4]?String(f[4]):null,cantidades:Number(f[5])||0,articulo:String(f[6]||''),fecha:f[7]?String(f[7]):null,caja:f[8]?String(f[8]):null,estanteria:f[9]?String(f[9]):null,estado:f[10]?String(f[10]):'SIN STOCK',cuenta:f[11]?String(f[11]):null,link:f[12]?String(f[12]):null,link_empretienda:f[13]?String(f[13]):null,precio_al_costo:Number(f[14])||0,margen_ganancia:Number(f[15])||0,precio_venta:Number(f[16])||0,precio_mayorista:Number(f[17])||0,stock_minimo:Number(f[18])||0,ultimo_movimiento:f[19]?String(f[19]):null,alerta_stock:f[20]?String(f[20]):null,imagen:f[21]?String(f[21]):null,observaciones:f[22]?String(f[22]):null,ml_id_1:f[23]?String(f[23]):null,ml_id_2:f[24]?String(f[24]):null});
+      if(id>maxId)maxId=id;
+      
+      products.push({
+        id: id>0?id:undefined,
+        sku,
+        cod_barra:f[2]?String(f[2]):null,
+        marca:f[3]?String(f[3]):null,
+        modelo:f[4]?String(f[4]):null,
+        cantidades:Number(f[5])||0,
+        articulo:String(f[6]||'(sin nombre)'),
+        fecha:f[7]?String(f[7]):null,
+        caja:f[8]?String(f[8]):null,
+        estanteria:f[9]?String(f[9]):null,
+        estado:f[10]?String(f[10]):'SIN STOCK',
+        cuenta:f[11]?String(f[11]):null,
+        link:f[12]?String(f[12]):null,
+        link_empretienda:f[13]?String(f[13]):null,
+        precio_al_costo:Number(f[14])||0,
+        margen_ganancia:Number(f[15])||0,
+        precio_venta:Number(f[16])||0,
+        precio_mayorista:Number(f[17])||0,
+        stock_minimo:Number(f[18])||0,
+        ultimo_movimiento:f[19]?String(f[19]):null,
+        alerta_stock:f[20]?String(f[20]):null,
+        imagen:f[21]?String(f[21]):null,
+        observaciones:f[22]?String(f[22]):null,
+        ml_id_1:f[23]?String(f[23]):null,
+        ml_id_2:f[24]?String(f[24]):null
+      });
     }
-    // Insert in batches using upsert (on conflict sku)
-    const BATCH=200;
-    let ok=0;
+    
+    log('✅ Productos válidos: '+products.length);
+    log('⚠️ SKUs duplicados descartados: '+duplicados);
+    if(sinSku>0)log('⚠️ Filas sin SKU: '+sinSku);
+    log('🔢 ID máximo del Sheet: '+maxId);
+    
+    // Limpiar tabla antes de migrar (para evitar conflictos)
+    log('🗑️ Limpiando tabla stock en Supabase...');
+    await db.from('stock').delete().neq('id',0);
+    
+    // Insertar en lotes
+    const BATCH=100;
+    let ok=0,errores=0;
     for(let i=0;i<products.length;i+=BATCH){
       const batch=products.slice(i,i+BATCH);
-      const{error}=await db.from('stock').upsert(batch,{onConflict:'sku'});
-      if(error){console.error('Batch error:',error);mostrarToast('Error en lote '+(Math.floor(i/BATCH)+1)+': '+error.message)}
-      else{ok+=batch.length;mostrarToast('Migrados '+ok+'/'+products.length+'...')}
+      const{error}=await db.from('stock').insert(batch);
+      if(error){
+        console.error('Batch error:',error);
+        log('❌ Error lote '+(Math.floor(i/BATCH)+1)+': '+error.message);
+        errores++;
+        // Intentar uno por uno
+        for(const p of batch){
+          const{error:e2}=await db.from('stock').insert(p);
+          if(!e2)ok++;
+          else console.warn('Skip:',p.sku,e2.message);
+        }
+      } else {
+        ok+=batch.length;
+        log('📦 Migrados '+ok+'/'+products.length+'...');
+      }
     }
-    mostrarToast('Migración completa: '+ok+' productos');
+    
+    // Resetear la secuencia del auto-increment
+    log('🔧 Ajustando secuencia de IDs...');
+    try{
+      await db.rpc('reset_stock_sequence');
+      log('✅ Secuencia ajustada');
+    }catch(e){
+      log('⚠️ No se pudo ajustar secuencia automáticamente. Ejecutá este SQL en Supabase:');
+      log('<code>SELECT setval(\'stock_id_seq\', (SELECT COALESCE(MAX(id),0) FROM stock));</code>');
+    }
+    
+    // Verificación final
+    log('🔍 Verificando migración...');
+    const{data:check,error:checkErr}=await db.from('stock').select('id',{count:'exact',head:true});
+    const{count}=await db.from('stock').select('*',{count:'exact',head:true});
+    const{data:maxRow}=await db.from('stock').select('id').order('id',{ascending:false}).limit(1);
+    
+    log('═══════════════════════════════');
+    log('📋 REPORTE DE MIGRACIÓN');
+    log('═══════════════════════════════');
+    log('Filas en Sheet: '+filas.length);
+    log('Productos migrados: '+ok);
+    log('Errores: '+(products.length-ok));
+    log('ID máximo en Supabase: '+(maxRow&&maxRow[0]?maxRow[0].id:'?'));
+    log('Total en base de datos: '+(count||'?'));
+    log('═══════════════════════════════');
+    
+    if(ok===products.length){
+      log('🎉 ¡Migración exitosa! Todo correcto.');
+    }else{
+      log('⚠️ Migración parcial. Revisá los errores arriba.');
+    }
+    
     cargarDatos();
+  }catch(e){
+    log('❌ Error fatal: '+e.message);
+    console.error(e);
+  }
+}
+
+async function verificarConSheet(){
+  if(sesion?.rol!=='admin')return;
+  mostrarToast('Verificando...');
+  try{
+    const res=await fetch(SHEETS_SYNC+'?accion=obtener');
+    const sheetData=await res.json();
+    const sheetCount=sheetData.slice(1).filter(f=>f[0]!==''&&f[0]!==null).length;
+    
+    const{count:dbCount}=await db.from('stock').select('*',{count:'exact',head:true});
+    
+    const msg='Sheet: '+sheetCount+' filas | Supabase: '+dbCount+' productos';
+    alert('📊 Verificación:\n\n'+msg+'\n\n'+(Math.abs(sheetCount-(dbCount||0))<50?'✅ Datos consistentes':'⚠️ Hay diferencia, puede haber SKUs duplicados en el Sheet'));
   }catch(e){mostrarToast('Error: '+e.message)}
 }
 
