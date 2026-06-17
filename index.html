@@ -494,9 +494,21 @@ function cerrarSesion(){
 async function cargarDatos(){
   const t0=performance.now();
   try{
-    const{data,error}=await db.from('stock').select('*').order('id',{ascending:true});
-    if(error) throw error;
-    todosLosProductos=data||[];
+    // Paginar para superar el límite de 1000 filas de Supabase
+    let allData=[];
+    let page=0;
+    const pageSize=1000;
+    while(true){
+      const from=page*pageSize;
+      const to=from+pageSize-1;
+      const{data,error}=await db.from('stock').select('*').order('id',{ascending:true}).range(from,to);
+      if(error) throw error;
+      if(!data||data.length===0) break;
+      allData=allData.concat(data);
+      if(data.length<pageSize) break;
+      page++;
+    }
+    todosLosProductos=allData;
     actualizarMetricas();filtrarProductos();poblarListas();
     const ms=Math.round(performance.now()-t0);
     document.getElementById('topbar-sub').textContent=todosLosProductos.length+' productos · '+ms+'ms';
