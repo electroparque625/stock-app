@@ -73,7 +73,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .pq{font-size:14px;font-weight:700;flex-shrink:0}.pq.ok{color:var(--ok)}.pq.w{color:var(--warn)}.pq.e{color:var(--err)}
 .bk{display:flex;align-items:center;gap:4px;color:var(--pri);font-size:13px;cursor:pointer;margin-bottom:12px;background:none;border:none;padding:0;font-family:inherit}
 .dh{background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;margin-bottom:10px;display:flex;gap:12px}
-.di{width:72px;height:72px;border-radius:var(--rad);background:var(--bg);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0}
+.di{width:72px;height:72px;border-radius:var(--rad);background:var(--bg);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;position:relative;overflow:hidden}
 .di img{width:100%;height:100%;object-fit:cover;border-radius:var(--rad)}
 .db{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;margin-bottom:5px}
 .dt{font-size:16px;font-weight:700;margin-bottom:2px}.dk{font-size:11px;color:var(--tx3);font-family:monospace}
@@ -178,7 +178,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- DETAIL --><div class="sc" id="s-det">
 <button class="bk" onclick="go('home')">‹ Volver</button>
-<div class="dh"><div class="di" id="d-ic"><img id="d-img" alt="" style="display:none"/><span id="d-em">📦</span></div><div style="flex:1;min-width:0"><div class="db b-ok" id="d-bg">OK</div><div class="dt" id="d-nm">—</div><div class="dk" id="d-sk">—</div></div></div>
+<div class="dh"><div class="di" id="d-ic" onclick="$('photo-input').click()" style="cursor:pointer"><img id="d-img" alt="" style="display:none"/><span id="d-em">📦</span><div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:#fff;font-size:8px;text-align:center;padding:2px 0;border-radius:0 0 var(--rad) var(--rad)">📷 Foto</div></div><input type="file" id="photo-input" accept="image/*" style="display:none" onchange="uploadPhoto(this)"/><div style="flex:1;min-width:0"><div class="db b-ok" id="d-bg">OK</div><div class="dt" id="d-nm">—</div><div class="dk" id="d-sk">—</div></div></div>
 <div class="cd" id="d-ac" style="display:none"><div style="display:flex;align-items:center;gap:8px"><span id="d-ai" style="font-size:20px">🔴</span><div><div id="d-at" style="font-size:13px;font-weight:600">—</div><div id="d-as2" style="font-size:11px;color:var(--tx3)">—</div></div></div></div>
 <div class="cd"><div class="sn" id="d-stk">—</div><div class="sl">unidades en stock</div>
 <div class="st"><button class="sb2" onclick="chQ(-1)">−</button><input type="number" class="sq" id="d-q" value="1" min="1"/><button class="sb2" onclick="chQ(1)">+</button></div>
@@ -346,12 +346,12 @@ async function rFac(){
     const totalV=Object.values(canales).reduce((s,c)=>s+c.cnt,0);
     const mlTotal=(canales.ml_ivan?.units||0)+(canales.ml_gustavo?.units||0)+(canales.ml_mauro?.units||0)+(canales.mercadolibre?.units||0);
     $('fac-kpi').innerHTML='<div class="dc"><div class="dl">Ventas (30d)</div><div class="dv">'+totalV+'</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv">'+totalU+'</div></div><div class="dc"><div class="dl">Facturado</div><div class="dv ok">$'+totalM.toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">ML total</div><div class="dv">'+mlTotal+' u.</div></div>';
-    // PIE 1: General
-    const g=[{name:'MercadoLibre',val:mlTotal,color:'#FFE600'},{name:'Tienda Nube',val:canales.tiendanube?.units||0,color:'#2ecc71'},{name:'Mostrador',val:canales.mostrador?.units||0,color:'var(--pri)'}].filter(d=>d.val>0);
+    // PIE 1: General - clickable
+    const g=[{name:'MercadoLibre',val:mlTotal,color:'#FFE600',key:'ml'},{name:'Tienda Nube',val:canales.tiendanube?.units||0,color:'#2ecc71',key:'tiendanube'},{name:'Mostrador',val:canales.mostrador?.units||0,color:'var(--pri)',key:'mostrador'}].filter(d=>d.val>0);
     $('fac-pie-svg').innerHTML=g.length?makePie(g):'<div class="emp">Sin datos</div>';
-    // PIE 2: ML por cuenta
-    const ml=[{name:'Ivan (Cta 1)',val:canales.ml_ivan?.units||0,color:'#3498db'},{name:'Gustavo (Cta 2)',val:canales.ml_gustavo?.units||0,color:'#e67e22'},{name:'Mauro (Cta 3)',val:canales.ml_mauro?.units||0,color:'#9b59b6'},{name:'ML (sin cta)',val:canales.mercadolibre?.units||0,color:'#FFE600'}].filter(d=>d.val>0);
-    $('fac-pie-ml-svg').innerHTML=ml.length?makePie(ml,true):'<div class="emp">Sin ventas ML</div>';
+    // PIE 2: ML por cuenta - clickable
+    const ml=[{name:'Ivan (Cta 1)',val:canales.ml_ivan?.units||0,color:'#3498db',key:'ml_ivan'},{name:'Gustavo (Cta 2)',val:canales.ml_gustavo?.units||0,color:'#e67e22',key:'ml_gustavo'},{name:'Mauro (Cta 3)',val:canales.ml_mauro?.units||0,color:'#9b59b6',key:'ml_mauro'},{name:'ML (sin cta)',val:canales.mercadolibre?.units||0,color:'#FFE600',key:'mercadolibre'}].filter(d=>d.val>0);
+    $('fac-pie-ml-svg').innerHTML=ml.length?makePie(ml):'<div class="emp">Sin ventas ML</div>';
     // Detail cards
     const chMap={ml_ivan:{ico:'🛒',name:'Ivan (Cuenta 1)'},ml_gustavo:{ico:'🛒',name:'Gustavo (Cuenta 2)'},ml_mauro:{ico:'🛒',name:'Mauro (Cuenta 3)'},mercadolibre:{ico:'🛒',name:'MercadoLibre'},tiendanube:{ico:'🏪',name:'Tienda Nube'},mostrador:{ico:'🏬',name:'Mostrador'}};
     $('fac-detail').innerHTML='<div class="fac-card">'+Object.entries(canales).map(([k,v])=>{const c=chMap[k]||{ico:'📦',name:k};return'<div class="fac-row" style="cursor:pointer" onclick="showCanalVentas(\''+k+'\')"><div class="fac-ch"><span class="fac-ico">'+c.ico+'</span><div><div class="fac-name">'+c.name+'</div><div style="font-size:11px;color:var(--tx3)">'+v.cnt+' ventas · '+v.units+' u.</div></div></div><div class="fac-val" style="color:var(--ok)">$'+v.monto.toLocaleString('es-AR')+'</div></div>'}).join('')+'</div>';
@@ -363,17 +363,20 @@ async function rFac(){
 
 function showCanalVentas(canal){
   const ventas=window._facVentas||[];const chMap=window._chMap||{};
-  const filtered=canal==='all'?ventas:ventas.filter(v=>(v.canal||'mostrador')===canal);
-  const title=canal==='all'?'Últimas ventas':(chMap[canal]?.name||canal)+' — Ventas';
-  $('fac-list-title').textContent=title;
-  $('fac-list').innerHTML=filtered.slice(0,30).map(v=>{const ch=v.canal||'mostrador',c=chMap[ch]||{ico:'📦',name:ch};return'<div class="mr"><div class="mt"><div class="ma">'+(v.articulo||'—')+'</div><span class="mg" style="background:var(--pri-l);color:var(--pri)">'+c.ico+' '+c.name+'</span></div><div class="mm"><span>📅 '+(v.fecha||'')+' '+(v.hora||'')+'</span><span>👤 '+(v.usuario||'—')+'</span><span>−'+(v.cantidad||0)+' u.</span>'+(v.monto?'<span>$'+v.monto.toLocaleString('es-AR')+'</span>':'')+'</div></div>'}).join('')||'<div class="emp">Sin ventas en este canal</div>';
+  let filtered;
+  if(canal==='all')filtered=ventas;
+  else if(canal==='ml')filtered=ventas.filter(v=>(v.canal||'').startsWith('ml_')||(v.canal||'')==='mercadolibre');
+  else filtered=ventas.filter(v=>(v.canal||'mostrador')===canal);
+  const title=canal==='all'?'Todas las ventas':canal==='ml'?'Todas las ventas MercadoLibre':(chMap[canal]?.name||canal)+' — Ventas';
+  $('fac-list-title').textContent=title+' ('+filtered.length+')';
+  $('fac-list').innerHTML=filtered.slice(0,50).map(v=>{const ch=v.canal||'mostrador',c=chMap[ch]||{ico:'📦',name:ch};return'<div class="mr"><div class="mt"><div class="ma">'+(v.articulo||'—')+'</div><span class="mg" style="background:var(--pri-l);color:var(--pri)">'+c.ico+' '+c.name+'</span></div><div class="mm"><span>📅 '+(v.fecha||'')+' '+(v.hora||'')+'</span><span>👤 '+(v.usuario||'—')+'</span><span>−'+(v.cantidad||0)+' u.</span>'+(v.monto?'<span>$'+v.monto.toLocaleString('es-AR')+'</span>':'')+'</div></div>'}).join('')||'<div class="emp">Sin ventas en este canal</div>';
 }
 
-function makePie(data,clickable){
+function makePie(data){
   const total=data.reduce((s,d)=>s+d.val,0);if(!total)return'';
   let cum=0;const R=70,cx=85,cy=85;
-  const paths=data.map(d=>{const pct=d.val/total;if(pct>=1)return'<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="'+d.color+'"/>';const a1=cum*2*Math.PI-Math.PI/2;cum+=pct;const a2=cum*2*Math.PI-Math.PI/2;const la=pct>0.5?1:0;const x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1),x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);return'<path d="M'+cx+','+cy+' L'+x1.toFixed(1)+','+y1.toFixed(1)+' A'+R+','+R+' 0 '+la+',1 '+x2.toFixed(1)+','+y2.toFixed(1)+' Z" fill="'+d.color+'" stroke="var(--card)" stroke-width="2" style="cursor:pointer"/>'}).join('');
-  const legend=data.map(d=>'<div style="display:flex;align-items:center;gap:4px;font-size:11px;margin:2px 0"><span style="width:8px;height:8px;border-radius:50%;background:'+d.color+';flex-shrink:0;border:1px solid var(--brd)"></span>'+d.name+' · '+d.val+' u. ('+Math.round(d.val/total*100)+'%)</div>').join('');
+  const paths=data.map(d=>{const pct=d.val/total;const click=d.key?' onclick="showCanalVentas(\''+d.key+'\')"':'';if(pct>=1)return'<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="'+d.color+'"'+click+' style="cursor:pointer"/>';const a1=cum*2*Math.PI-Math.PI/2;cum+=pct;const a2=cum*2*Math.PI-Math.PI/2;const la=pct>0.5?1:0;const x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1),x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);return'<path d="M'+cx+','+cy+' L'+x1.toFixed(1)+','+y1.toFixed(1)+' A'+R+','+R+' 0 '+la+',1 '+x2.toFixed(1)+','+y2.toFixed(1)+' Z" fill="'+d.color+'" stroke="var(--card)" stroke-width="2"'+click+' style="cursor:pointer"/>'}).join('');
+  const legend=data.map(d=>{const click=d.key?' onclick="showCanalVentas(\''+d.key+'\')" style="cursor:pointer"':'';return'<div style="display:flex;align-items:center;gap:4px;font-size:11px;margin:2px 0;padding:3px 6px;border-radius:6px"'+click+' onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'"><span style="width:8px;height:8px;border-radius:50%;background:'+d.color+';flex-shrink:0;border:1px solid var(--brd)"></span><b>'+d.name+'</b> · '+d.val+' u. ('+Math.round(d.val/total*100)+'%)</div>'}).join('');
   return'<svg viewBox="0 0 170 170" width="150" height="150" style="max-width:100%">'+paths+'</svg><div style="margin-top:8px;text-align:left">'+legend+'</div>';
 }
 
@@ -425,6 +428,28 @@ async function doStockChange(op){
 async function setDirect(){const nv=parseInt($('d-eq').value);if(isNaN(nv)||nv<0||!cur)return;const prev=cur.cantidades||0,ne=cur.estado==='PAUSADA'?'PAUSADA':(nv>0?'STOCK':'SIN STOCK');const now=new Date();try{await db.from('stock').update({cantidades:nv,estado:ne,ultimo_movimiento:now.toLocaleDateString('es-AR')}).eq('id',cur.id);await db.from('movimientos').insert({fecha:now.toLocaleDateString('es-AR'),hora:now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:cur.articulo,sku:cur.sku,tipo:'ajuste',cantidad:Math.abs(nv-prev),stock_anterior:prev,stock_nuevo:nv,canal:'ajuste',monto:0});syncS('actualizarStock',{sku:cur.sku,nuevaCantidad:nv,nuevoEstado:ne});const{data:fresh}=await db.from('stock').select('*').eq('id',cur.id).single();if(fresh){cur=fresh;const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx]=fresh}showDet(cur);updM();filtrar();toast('Stock → '+nv+' u.')}catch(e){toast('Error: '+e.message)}}
 
 async function togMon(){if(!cur)return;const v=$('d-mn').checked;await db.from('stock').update({monitorear:v}).eq('id',cur.id);cur.monitorear=v;const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx].monitorear=v;toast(v?'⭐ Monitoreado':'Monitoreo off')}
+
+async function uploadPhoto(input){
+  if(!input.files[0]||!cur)return;
+  toast('Subiendo foto...');
+  try{
+    const file=input.files[0];
+    const ext=file.name.split('.').pop()||'jpg';
+    const path='productos/'+cur.id+'.'+ext;
+    // Delete old photo if exists
+    await db.storage.from('product-photos').remove([path]);
+    // Upload new
+    const{error}=await db.storage.from('product-photos').upload(path,file,{upsert:true,contentType:file.type});
+    if(error)throw error;
+    const{data:urlData}=db.storage.from('product-photos').getPublicUrl(path);
+    const url=urlData.publicUrl+'?t='+Date.now();
+    await db.from('stock').update({imagen:url}).eq('id',cur.id);
+    cur.imagen=url;const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx].imagen=url;
+    $('d-img').src=url;$('d-img').style.display='block';$('d-em').style.display='none';
+    toast('Foto guardada');
+  }catch(e){toast('Error foto: '+e.message)}
+  input.value='';
+}
 
 async function hideProduct(){if(!cur)return;if(!confirm('¿Pausar "'+cur.articulo+'"? No se mostrará en el listado principal.'))return;await db.from('stock').update({estado:'PAUSADA'}).eq('id',cur.id);cur.estado='PAUSADA';const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx].estado='PAUSADA';toast('Producto pausado');go('home');filtrar()}
 
