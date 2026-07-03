@@ -39,7 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .side .nb svg{width:18px;height:18px}.side .nb span{font-size:13px;color:var(--tx2)}
 .side .nb.a{background:var(--pri-l)}.side .nb.a svg{stroke:var(--pri)}.side .nb.a span{color:var(--pri);font-weight:600}
 .bnav{display:none}
-.sb{position:fixed;top:0;left:210px;right:0;z-index:19;padding:12px 24px;border-bottom:1px solid var(--brd);background:var(--card)}
+.sb{position:fixed;top:0;left:210px;right:0;z-index:19;padding:12px 24px;border-bottom:1px solid var(--brd);background:var(--card);box-sizing:border-box}
 .ct{margin-left:210px;padding:70px 24px 24px}
 .dg{grid-template-columns:repeat(4,1fr)!important}
 .mo{align-items:center}.ml{max-width:580px;border-radius:16px;margin-bottom:0}
@@ -47,8 +47,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .nb{flex:1;padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;border:none;background:none;font-family:inherit}
 .nb svg{width:20px;height:20px;stroke:var(--tx3);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .nb span{font-size:9px;color:var(--tx3)}.nb.a svg{stroke:var(--pri)}.nb.a span{color:var(--pri);font-weight:600}
-.sb{background:var(--card);border-bottom:1px solid var(--brd);padding:8px 14px;position:sticky;top:49px;z-index:19;display:none;width:100%;max-width:100%;overflow:hidden}.sb.v{display:block}
-.sr{display:flex;gap:8px;align-items:center}.sw{position:relative;flex:1}
+.sb{background:var(--card);border-bottom:1px solid var(--brd);padding:8px 14px;position:sticky;top:49px;z-index:19;display:none;box-sizing:border-box;width:100%;overflow:hidden}.sb.v{display:block}
+.sr{display:flex;gap:8px;align-items:center;max-width:100%}.sw{position:relative;flex:1;min-width:0}
 .sw input{width:100%;background:var(--bg);border:1px solid var(--brd);border-radius:var(--rs);padding:9px 12px 9px 34px;font-size:13px;color:var(--tx);outline:none}.sw input::placeholder{color:var(--tx3)}
 .si{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--tx3);fill:none;stroke-width:1.8;stroke-linecap:round}
 .ft{background:var(--bg);border:1px solid var(--brd);border-radius:var(--rs);padding:9px 12px;font-size:12px;color:var(--tx3);cursor:pointer;white-space:nowrap;font-family:inherit}.ft.a{background:var(--pri);border-color:var(--pri);color:#fff}
@@ -180,7 +180,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="cd"><div class="tg-row"><span class="tg-lbl">⭐ Monitorear este producto</span><label class="tg"><input type="checkbox" id="d-mn" onchange="togMon()"/><span class="tg-tr"></span><span class="tg-th"></span></label></div></div>
 <div class="it" id="d-inf"></div>
 <div id="d-mlw" style="display:none;margin-bottom:10px"><a id="d-mll" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rad);font-size:13px;font-weight:700;color:#333;text-decoration:none">🛒 MercadoLibre</a></div>
-<button class="eb" onclick="openEd()">✏ Editar producto</button></div>
+<button class="eb" onclick="openEd()">✏ Editar producto</button>
+<div style="display:flex;gap:8px;margin-bottom:10px"><button class="b bs" style="flex:1" onclick="hideProduct()">👁 Ocultar (pausar)</button><button class="b be" style="flex:1" id="d-del" onclick="deleteProduct()">🗑 Eliminar</button></div></div>
 
 <!-- ADD --><div class="sc" id="s-add">
 <div class="fs"><div class="fst">ID automático</div><div class="idb" id="nid">...</div></div>
@@ -215,7 +216,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <div class="toast" id="toast"></div>
 <script>
-const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbzumR5gbYj299NWs6PFbrgToVvyNu1a-YYL2WWfgh5MQrjn6pBJXbWI1EzG90lDCViv/exec';
+const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 const SA={usuario:'electroparque',nombre:'Electro Parque',rol:'admin'};
 function H(s){let h=0;for(let i=0;i<s.length;i++)h=Math.imul(31,h)+s.charCodeAt(i)|0;return h.toString(36)}
@@ -238,7 +239,7 @@ function sC(p){if(!p.cantidades)return'e';if(p.stock_minimo&&p.cantidades<p.stoc
 
 function go(s){document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='usr')loadUsr()}
 function setF(f,btn){filt=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');const t=$('f-t');t.classList.toggle('a',f!=='todos');t.textContent=f==='todos'?'Filtrar ▾':btn.textContent+' ▾';$('f-d').classList.remove('open');filtrar()}
-function filtrar(){const q=($('q').value||'').toLowerCase();let l=ALL;if(filt==='alerta')l=l.filter(p=>p.estado_alerta&&p.estado_alerta!=='OK');else if(filt==='monitorear')l=l.filter(p=>p.monitorear);else if(filt==='sinstock')l=l.filter(p=>!p.cantidades);else if(filt==='PAUSADA')l=l.filter(p=>(p.estado||'').toUpperCase()==='PAUSADA');else if(filt!=='todos')l=l.filter(p=>(p.articulo||'').toLowerCase().includes(filt.toLowerCase()));if(q)l=l.filter(p=>(p.articulo||'').toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q)||(p.marca||'').toLowerCase().includes(q)||String(p.cod_barra||'').includes(q)||String(p.id).includes(q));rList(l)}
+function filtrar(){const q=($('q').value||'').toLowerCase();let l=ALL;if(filt==='alerta')l=l.filter(p=>p.estado_alerta&&p.estado_alerta!=='OK');else if(filt==='monitorear')l=l.filter(p=>p.monitorear);else if(filt==='sinstock')l=l.filter(p=>!p.cantidades&&(p.estado||'').toUpperCase()!=='PAUSADA');else if(filt==='PAUSADA')l=l.filter(p=>(p.estado||'').toUpperCase()==='PAUSADA');else if(filt!=='todos'){l=l.filter(p=>(p.articulo||'').toLowerCase().includes(filt.toLowerCase())&&(p.estado||'').toUpperCase()!=='PAUSADA')}else{l=l.filter(p=>(p.estado||'').toUpperCase()!=='PAUSADA')}if(q){const words=q.split(/\s+/).filter(w=>w.length>0);l=l.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')+' '+(p.cod_barra||'')+' '+p.id).toLowerCase();return words.every(w=>h.includes(w))})}rList(l)}
 function rList(l){rend=l;const el=$('pl');if(!l.length){el.innerHTML='<div class="emp">Sin resultados</div>';return}el.innerHTML=l.map((p,i)=>{const sc=sC(p),ab=aB(p),ep=(p.estado||'').toUpperCase()==='PAUSADA';const tgs=(p.monitorear?'<span class="tg2 t-mon">⭐</span>':'')+(ep?'<span class="tg2 t-pau">PAUSADA</span>':ab[1]!=='b-ok'?'<span class="tg2 '+ab[1].replace('b-','t-')+'">'+ab[0]+'</span>':'');return'<div class="pr" onclick="vP('+i+')"><div class="pi">'+(p.emoji||ico(p.articulo))+'</div><div class="pd d-'+sc+'"></div><div style="flex:1;min-width:0"><div class="pn">'+(p.articulo||'?').replace(/</g,'&lt;')+tgs+'</div><div class="pm">'+(p.sku||'')+(p.marca?' · '+p.marca:'')+' · #'+p.id+'</div></div><div class="pq '+sc+'">'+(p.cantidades||0)+'</div><div style="color:var(--tx3)">›</div></div>'}).join('')}
 function vP(i){if(rend[i])showDet(rend[i])}
 
@@ -377,6 +378,10 @@ async function setDirect(){const nv=parseInt($('d-eq').value);if(isNaN(nv)||nv<0
 
 async function togMon(){if(!cur)return;const v=$('d-mn').checked;await db.from('stock').update({monitorear:v}).eq('id',cur.id);cur.monitorear=v;const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx].monitorear=v;toast(v?'⭐ Monitoreado':'Monitoreo off')}
 
+async function hideProduct(){if(!cur)return;if(!confirm('¿Pausar "'+cur.articulo+'"? No se mostrará en el listado principal.'))return;await db.from('stock').update({estado:'PAUSADA'}).eq('id',cur.id);cur.estado='PAUSADA';const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx].estado='PAUSADA';toast('Producto pausado');go('home');filtrar()}
+
+async function deleteProduct(){if(!cur||ses?.rol!=='admin')return;if(!confirm('¿ELIMINAR "'+cur.articulo+'" permanentemente? Esta acción no se puede deshacer.'))return;if(!confirm('¿Estás seguro? Se borra de la base de datos.'))return;await db.from('stock').delete().eq('id',cur.id);ALL=ALL.filter(x=>x.id!==cur.id);toast('Producto eliminado');cur=null;go('home');updM();filtrar()}
+
 /* EDIT */
 function openEd(){if(!cur)return;$('med').classList.add('show');$('ea').value=cur.articulo||'';$('emr').value=cur.marca||'';$('emo').value=cur.modelo||'';$('ecj').value=cur.caja||'';$('ees').value=cur.estanteria||'';$('emi').value=cur.stock_minimo||'';$('eco').value=cur.precio_al_costo||'';$('emg').value=cur.margen_ganancia||'';$('eve').value=cur.precio_venta||'';$('emy').value=cur.precio_mayorista||'';$('eob').value=cur.observaciones||'';$('elk').value=cur.link||'';$('eet').value=cur.estado==='PAUSADA'?'PAUSADA':(cur.cantidades>0?'STOCK':'SIN STOCK');$('eav').checked=!!cur.importacion_avion;$('eba').checked=!!cur.importacion_barco;$('emn').checked=!!cur.monitorear;$('epav').value=cur.pre_alerta_avion||'';$('emav').value=cur.minimo_avion||'';$('epba').value=cur.pre_alerta_barco||'';$('emba').value=cur.minimo_barco||'';$('em1').value=cur.ml_id_1||'';$('em2').value=cur.ml_id_2||'';$('em3').value=cur.ml_id_3||''}
 function closeEd(){$('med').classList.remove('show')}
@@ -461,7 +466,7 @@ async function syncLogs(){
       imported++;
     }
     toast('Importados: '+imported+' | Omitidos: '+skipped);
-  }catch(e){toast('Error: '+e.message)}
+  }catch(e){toast('Error LOGS: verificá que agregaste doGet al Apps Script y republicaste. ('+e.message+')')}
 }
 
 /* MIGRATE */
