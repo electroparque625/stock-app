@@ -161,7 +161,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div></div></div>
 
 <div class="ct">
-<!-- HOME --><div class="sc a" id="s-home"><div class="dg"><div class="dc"><div class="dl">Artículos</div><div class="dv" id="m-t">—</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv" id="m-u">—</div></div><div class="dc"><div class="dl">Stock bajo</div><div class="dv w" id="m-l">—</div></div><div class="dc"><div class="dl">Sin stock</div><div class="dv e" id="m-z">—</div></div></div><div id="pl"><div class="ld"><div class="sp"></div>Cargando...</div></div></div>
+<!-- HOME --><div class="sc a" id="s-home"><div class="dg"><div class="dc"><div class="dl">Artículos</div><div class="dv" id="m-t">—</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv" id="m-u">—</div></div><div class="dc"><div class="dl">Stock bajo</div><div class="dv w" id="m-l">—</div></div><div class="dc"><div class="dl">Sin stock</div><div class="dv e" id="m-z">—</div></div></div>
+<div id="inv-tabs" style="display:flex;gap:4px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px">
+<button class="fb a" onclick="setTab('stock',this)" style="white-space:nowrap;flex-shrink:0">🟢 En Stock</button>
+<button class="fb" onclick="setTab('sinstock',this)" style="white-space:nowrap;flex-shrink:0">🔴 Sin Stock</button>
+<button class="fb" onclick="setTab('avion',this)" style="white-space:nowrap;flex-shrink:0">✈️ Pedir Avión</button>
+<button class="fb" onclick="setTab('barco',this)" style="white-space:nowrap;flex-shrink:0">🚢 Pedir Barco</button>
+<button class="fb" onclick="setTab('todos',this)" style="white-space:nowrap;flex-shrink:0">📋 Todos</button>
+<button class="fb" onclick="setTab('pausados',this)" style="white-space:nowrap;flex-shrink:0">⏸ Pausados</button>
+</div>
+<div id="pl"><div class="ld"><div class="sp"></div>Cargando...</div></div></div>
 
 <!-- DASHBOARD (admin) --><div class="sc" id="s-dash"><div class="dg" id="dk"></div><div class="stit">⭐ Nivel de stock — Productos monitoreados</div><div id="d-bars" style="display:flex;align-items:flex-end;gap:6px;min-height:220px;padding:16px 10px 0;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);margin-bottom:14px;overflow-x:auto;position:relative"><div class="emp">Marcá productos con ⭐</div></div><div class="stit">Detalle por producto</div><div id="d-mo"><div class="emp">Marcá productos con ⭐ para verlos acá</div></div></div>
 
@@ -196,7 +205,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- MOV --><div class="sc" id="s-mov"><div id="mvl"><div class="ld"><div class="sp"></div>Cargando...</div></div></div>
 
-<!-- USERS --><div class="sc" id="s-usr"><div class="fs"><div class="fst">Nuevo usuario</div><div class="fr"><div class="f"><label>Nombre</label><input type="text" id="un"/></div><div class="f"><label>Usuario</label><input type="text" id="uu"/></div></div><div class="f"><label>Contraseña</label><input type="password" id="up"/></div><button class="b bp" onclick="createUsr()" style="margin-top:4px">Crear</button></div><div class="stit">Usuarios activos</div><div id="ul"><div class="ld"><div class="sp"></div></div></div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)"><div class="stit">Admin</div><button class="b bp" onclick="syncLogs()" style="margin-bottom:8px">📊 Sincronizar ventas desde LOGS</button><button class="b bw" onclick="migSheet()" style="margin-bottom:8px">📥 Migrar Sheet</button><button class="b bo" onclick="verData()" style="margin-bottom:8px">🔍 Verificar</button><div id="mlog" style="display:none;background:#111;color:#0f0;font-family:monospace;font-size:10px;padding:10px;border-radius:var(--rs);max-height:250px;overflow-y:auto;line-height:1.7;margin-top:8px"></div></div></div>
+<!-- USERS --><div class="sc" id="s-usr"><div class="fs"><div class="fst">Nuevo usuario</div><div class="fr"><div class="f"><label>Nombre</label><input type="text" id="un"/></div><div class="f"><label>Usuario</label><input type="text" id="uu"/></div></div><div class="f"><label>Contraseña</label><input type="password" id="up"/></div><button class="b bp" onclick="createUsr()" style="margin-top:4px">Crear</button></div><div class="stit">Usuarios activos</div><div id="ul"><div class="ld"><div class="sp"></div></div></div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)"><div class="stit">Admin</div><button class="b bp" onclick="syncLogs()" style="margin-bottom:8px">📊 Sincronizar ventas desde LOGS</button><button class="b bs" onclick="fixOldML()" style="margin-bottom:8px">🔄 Re-asignar cuentas ML</button><button class="b be" onclick="bulkDeleteSinStock()" style="margin-bottom:8px">🗑 Eliminar todos los SIN STOCK</button><button class="b bw" onclick="migSheet()" style="margin-bottom:8px">📥 Migrar Sheet</button><button class="b bo" onclick="verData()" style="margin-bottom:8px">🔍 Verificar</button><div id="mlog" style="display:none;background:#111;color:#0f0;font-family:monospace;font-size:10px;padding:10px;border-radius:var(--rs);max-height:250px;overflow-y:auto;line-height:1.7;margin-top:8px"></div></div></div>
 </div>
 
 <div class="bnav">
@@ -239,36 +248,29 @@ function aB(p){const a=p.estado_alerta||'OK';if(a==='SIN STOCK')return['🔴 SIN
 function sC(p){if(!p.cantidades)return'e';if(p.stock_minimo&&p.cantidades<p.stock_minimo)return'w';return'o'}
 
 function go(s){document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='usr')loadUsr()}
-function setF(f,btn){filt=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');const t=$('f-t');t.classList.toggle('a',f!=='todos');t.textContent=f==='todos'?'Filtrar ▾':btn.textContent+' ▾';$('f-d').classList.remove('open');filtrar()}
-function filtrar(){const q=($('q').value||'').toLowerCase();let l=ALL;if(filt==='alerta')l=l.filter(p=>p.estado_alerta&&p.estado_alerta!=='OK');else if(filt==='monitorear')l=l.filter(p=>p.monitorear);else if(filt==='sinstock')l=l.filter(p=>!p.cantidades&&(p.estado||'').toUpperCase()!=='PAUSADA');else if(filt==='PAUSADA')l=l.filter(p=>(p.estado||'').toUpperCase()==='PAUSADA');else if(filt!=='todos'){l=l.filter(p=>(p.articulo||'').toLowerCase().includes(filt.toLowerCase())&&(p.estado||'').toUpperCase()!=='PAUSADA')}else{l=l.filter(p=>(p.estado||'').toUpperCase()!=='PAUSADA')}if(q){const words=q.split(/\s+/).filter(w=>w.length>0);l=l.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')+' '+(p.cod_barra||'')+' '+p.id).toLowerCase();return words.every(w=>h.includes(w))})}rList(l)}
+let invTab='stock';
+function setTab(t,btn){invTab=t;document.querySelectorAll('#inv-tabs .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');filtrar()}
+function setF(f,btn){filt=f;document.querySelectorAll('#f-d .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');const t=$('f-t');t.classList.toggle('a',f!=='todos');t.textContent=f==='todos'?'Filtrar ▾':btn.textContent+' ▾';$('f-d').classList.remove('open');filtrar()}
+function filtrar(){const q=($('q').value||'').toLowerCase();let l=ALL;
+  if(invTab==='stock')l=l.filter(p=>p.cantidades>0&&(p.estado||'').toUpperCase()!=='PAUSADA');
+  else if(invTab==='sinstock')l=l.filter(p=>!p.cantidades&&(p.estado||'').toUpperCase()!=='PAUSADA');
+  else if(invTab==='avion')l=l.filter(p=>(p.estado_alerta||'').includes('AVION'));
+  else if(invTab==='barco')l=l.filter(p=>(p.estado_alerta||'').includes('BARCO'));
+  else if(invTab==='pausados')l=l.filter(p=>(p.estado||'').toUpperCase()==='PAUSADA');
+  else l=l.filter(p=>(p.estado||'').toUpperCase()!=='PAUSADA');
+  if(filt==='alerta')l=l.filter(p=>p.estado_alerta&&p.estado_alerta!=='OK');
+  else if(filt==='monitorear')l=l.filter(p=>p.monitorear);
+  else if(filt!=='todos'&&filt!=='sinstock'&&filt!=='PAUSADA')l=l.filter(p=>(p.articulo||'').toLowerCase().includes(filt.toLowerCase()));
+  if(q){const words=q.split(/\s+/).filter(w=>w.length>0);l=l.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')+' '+(p.cod_barra||'')+' '+p.id).toLowerCase();return words.every(w=>h.includes(w))})}
+  rList(l)}
 function rList(l){
   rend=l;const el=$('pl');
-  if(!l.length){el.innerHTML='<div class="emp">Sin resultados</div>';return}
-  // Group by status
-  const groups={};
-  l.forEach((p,i)=>{
-    const ea=p.estado_alerta||'OK';
-    let grp='EN STOCK';
-    if(!p.cantidades) grp='SIN STOCK';
-    else if(ea.includes('CRITICO AVION')||ea.includes('PRE ALERTA AVION')) grp='PEDIR AVIÓN ✈️';
-    else if(ea.includes('CRITICO BARCO')||ea.includes('PRE ALERTA BARCO')) grp='PEDIR BARCO 🚢';
-    else if((p.estado||'').toUpperCase()==='PAUSADA') grp='PAUSADOS';
-    if(!groups[grp])groups[grp]=[];
-    groups[grp].push({p,i:l.indexOf(p)});
-  });
-  const order=['PEDIR AVIÓN ✈️','PEDIR BARCO 🚢','SIN STOCK','EN STOCK','PAUSADOS'];
-  const colors={'PEDIR AVIÓN ✈️':'var(--warn)','PEDIR BARCO 🚢':'var(--warn)','SIN STOCK':'var(--err)','EN STOCK':'var(--ok)','PAUSADOS':'var(--tx3)'};
-  let html='';
-  order.forEach(grp=>{
-    if(!groups[grp]||!groups[grp].length)return;
-    html+='<div style="display:flex;align-items:center;gap:8px;margin:14px 0 6px"><div style="font-size:11px;font-weight:700;color:'+colors[grp]+';text-transform:uppercase;letter-spacing:.04em">'+grp+'</div><div style="font-size:10px;color:var(--tx3);background:var(--bg);padding:1px 8px;border-radius:10px">'+groups[grp].length+'</div><div style="flex:1;height:1px;background:var(--brd)"></div></div>';
-    html+=groups[grp].map(({p,i})=>{
-      const sc=sC(p),ab=aB(p),ep=(p.estado||'').toUpperCase()==='PAUSADA';
-      const tgs=(p.monitorear?'<span class="tg2 t-mon">⭐</span>':'')+(ep?'<span class="tg2 t-pau">PAUSADA</span>':ab[1]!=='b-ok'?'<span class="tg2 '+ab[1].replace('b-','t-')+'">'+ab[0]+'</span>':'');
-      return'<div class="pr" onclick="vP('+i+')"><div class="pi">'+(p.emoji||ico(p.articulo))+'</div><div class="pd d-'+sc+'"></div><div style="flex:1;min-width:0"><div class="pn">'+(p.articulo||'?').replace(/</g,'&lt;')+tgs+'</div><div class="pm">'+(p.sku||'')+(p.marca?' · '+p.marca:'')+' · #'+p.id+'</div></div><div class="pq '+sc+'">'+(p.cantidades||0)+'</div><div style="color:var(--tx3)">›</div></div>'
-    }).join('');
-  });
-  el.innerHTML=html;
+  if(!l.length){el.innerHTML='<div class="emp">Sin resultados en esta pestaña</div>';return}
+  el.innerHTML=l.map((p,i)=>{
+    const sc=sC(p),ab=aB(p),ep=(p.estado||'').toUpperCase()==='PAUSADA';
+    const tgs=(p.monitorear?'<span class="tg2 t-mon">⭐</span>':'')+(ep?'<span class="tg2 t-pau">PAUSADA</span>':ab[1]!=='b-ok'?'<span class="tg2 '+ab[1].replace('b-','t-')+'">'+ab[0]+'</span>':'');
+    return'<div class="pr" onclick="vP('+i+')"><div class="pi">'+(p.emoji||ico(p.articulo))+'</div><div class="pd d-'+sc+'"></div><div style="flex:1;min-width:0"><div class="pn">'+(p.articulo||'?').replace(/</g,'&lt;')+tgs+'</div><div class="pm">'+(p.sku||'')+(p.marca?' · '+p.marca:'')+' · #'+p.id+'</div></div><div class="pq '+sc+'">'+(p.cantidades||0)+'</div><div style="color:var(--tx3)">›</div></div>'
+  }).join('');
 }
 function vP(i){if(rend[i])showDet(rend[i])}
 
@@ -476,6 +478,28 @@ async function syncLogsSilent(){
     }
     if(imported>0)console.log('Auto-sync: '+imported+' ventas ML importadas');
   }catch(e){console.log('Auto-sync error:',e.message)}
+}
+
+/* FIX OLD ML DATA */
+async function fixOldML(){
+  if(ses?.rol!=='admin')return;toast('Re-asignando cuentas ML...');
+  try{const{data:old}=await db.from('movimientos').select('*').eq('canal','mercadolibre');if(!old||!old.length){toast('Nada para re-asignar');return}let f=0;for(const m of old){const cm=(m.usuario||'').match(/Cuenta\s*(\d)/i)||(m.articulo||'').match(/Cuenta\s*(\d)/i);if(cm){const c=cm[1],n=ML_CUENTAS[c]||c;await db.from('movimientos').update({canal:'ml_'+n.toLowerCase(),usuario:n}).eq('id',m.id);f++}}toast('Re-asignados: '+f)}catch(e){toast('Error: '+e.message)}
+}
+
+async function bulkDeleteSinStock(){
+  if(ses?.rol!=='admin')return;
+  const sinStock=ALL.filter(p=>!p.cantidades&&(p.estado||'').toUpperCase()!=='PAUSADA');
+  if(!sinStock.length){toast('No hay productos sin stock');return}
+  if(!confirm('¿Eliminar '+sinStock.length+' productos SIN STOCK permanentemente?'))return;
+  if(!confirm('ÚLTIMA CONFIRMACIÓN: se borran '+sinStock.length+' productos. ¿Seguro?'))return;
+  toast('Eliminando...');
+  try{
+    const ids=sinStock.map(p=>p.id);
+    const{error}=await db.from('stock').delete().in('id',ids);
+    if(error)throw error;
+    ALL=ALL.filter(p=>!ids.includes(p.id));
+    updM();filtrar();toast(sinStock.length+' productos eliminados');
+  }catch(e){toast('Error: '+e.message)}
 }
 
 /* SYNC LOGS FROM SHEET (manual with toasts) */
