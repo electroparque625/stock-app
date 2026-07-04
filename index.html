@@ -148,6 +148,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="nb" data-s="scan" onclick="go('scan')"><svg viewBox="0 0 22 22"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="14" y="3" width="5" height="5" rx="1"/><rect x="3" y="14" width="5" height="5" rx="1"/><path d="M14 14h5v5h-5z"/></svg><span>Escanear</span></button>
 <button class="nb" data-s="add" onclick="go('add')"><svg viewBox="0 0 22 22"><circle cx="11" cy="11" r="8"/><line x1="11" y1="7" x2="11" y2="15"/><line x1="7" y1="11" x2="15" y2="11"/></svg><span>Cargar</span></button>
 <button class="nb" data-s="mov" onclick="go('mov')"><svg viewBox="0 0 22 22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Movimientos</span></button>
+<button class="nb" data-s="tasks" onclick="go('tasks')"><svg viewBox="0 0 22 22"><rect x="3" y="3" width="16" height="16" rx="2"/><line x1="7" y1="8" x2="15" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg><span>Tareas</span></button>
 <button class="nb admin-only" data-s="usr" onclick="go('usr')" style="display:none"><svg viewBox="0 0 22 22"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><line x1="16" y1="11" x2="22" y2="11"/><line x1="19" y1="8" x2="19" y2="14"/></svg><span>Usuarios</span></button>
 </nav>
 <div class="tb-r"><span class="ch ch-g" id="t-sp">⚡ SQL</span><button class="ch ch-p" id="t-usr" onclick="doLogout()">Salir</button></div></div>
@@ -195,6 +196,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <!-- ADD --><div class="sc" id="s-add">
 <div class="fs"><div class="fst">ID automático</div><div class="idb" id="nid">...</div></div>
 <div class="fs"><div class="fst">Identificación</div><div class="f"><label>Artículo *</label><input type="text" id="fa" placeholder="Ej: Joystick PS5 DualSense"/></div><div class="fr"><div class="f"><label>SKU (auto)</label><input type="text" id="fsku" readonly style="color:var(--pri);font-weight:600"/></div><div class="f"><label>Cod. barras</label><input type="text" id="fbar"/></div></div><div class="fr"><div class="f"><label>Marca</label><input type="text" id="fmr" list="dlm"/><datalist id="dlm"></datalist></div><div class="f"><label>Modelo</label><input type="text" id="fmo" list="dlo"/><datalist id="dlo"></datalist></div></div></div>
+<div class="fs"><div class="fst">Foto</div><div style="border:2px dashed var(--brd);border-radius:var(--rad);padding:14px;text-align:center;cursor:pointer" onclick="$('f-photo').click()"><div style="font-size:28px;margin-bottom:4px">📷</div><div style="font-size:12px;color:var(--tx3)">Tocar para elegir foto</div></div><input type="file" id="f-photo" accept="image/*" style="display:none" onchange="previewNewPhoto(this)"/><img id="f-photo-prev" style="display:none;width:100%;max-height:160px;object-fit:cover;border-radius:var(--rs);margin-top:8px" alt=""/></div>
 <div class="fs"><div class="fst">Stock y ubicación</div><div class="fr"><div class="f"><label>Cantidad *</label><input type="number" id="fc" placeholder="0" min="0"/></div><div class="f"><label>Stock mín.</label><input type="number" id="fmi" min="0"/></div></div><div class="fr"><div class="f"><label>Caja</label><input type="text" id="fcj"/></div><div class="f"><label>Estantería</label><input type="text" id="fes"/></div></div></div>
 <div class="fs"><div class="fst">Importación</div><div class="tg-row"><span class="tg-lbl">✈️ Avión</span><label class="tg"><input type="checkbox" id="fav" onchange="$('fav-f').style.display=this.checked?'grid':'none'"/><span class="tg-tr"></span><span class="tg-th"></span></label></div><div class="fr" id="fav-f" style="display:none"><div class="f"><label>Pre-alerta (50d)</label><input type="number" id="fpav" min="0"/></div><div class="f"><label>Mínimo (20d)</label><input type="number" id="fmav" min="0"/></div></div><div class="tg-row"><span class="tg-lbl">🚢 Barco</span><label class="tg"><input type="checkbox" id="fba" onchange="$('fba-f').style.display=this.checked?'grid':'none'"/><span class="tg-tr"></span><span class="tg-th"></span></label></div><div class="fr" id="fba-f" style="display:none"><div class="f"><label>Pre-alerta (120d)</label><input type="number" id="fpba" min="0"/></div><div class="f"><label>Mínimo (60d)</label><input type="number" id="fmba" min="0"/></div></div><div class="tg-row"><span class="tg-lbl">⭐ Monitorear</span><label class="tg"><input type="checkbox" id="fmn"/><span class="tg-tr"></span><span class="tg-th"></span></label></div></div>
 <div class="fs"><div class="fst">Precios</div><div class="fr"><div class="f"><label>Costo</label><input type="number" id="fco" min="0"/></div><div class="f"><label>Margen %</label><input type="number" id="fmg" min="0"/></div></div><div class="fr"><div class="f"><label>P. venta</label><input type="number" id="fve" min="0"/></div><div class="f"><label>P. mayorista</label><input type="number" id="fmy" min="0"/></div></div></div>
@@ -205,6 +207,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- MOV --><div class="sc" id="s-mov"><div id="mvl"><div class="ld"><div class="sp"></div>Cargando...</div></div></div>
 
+<!-- TAREAS --><div class="sc" id="s-tasks">
+<div class="admin-only" style="display:none">
+<div class="fs"><div class="fst">Nueva tarea</div>
+<div class="f"><label>Título</label><input type="text" id="t-titulo" placeholder="Ej: Revisar stock de joysticks"/></div>
+<div class="f"><label>Descripción</label><input type="text" id="t-desc" placeholder="Detalles opcionales"/></div>
+<div class="f"><label>Asignar a</label><select id="t-asignar"><option value="">Seleccionar usuario...</option></select></div>
+<button class="b bp" onclick="createTask()" style="margin-top:4px">Asignar tarea</button>
+</div></div>
+<div class="stit" id="tasks-title">Mis tareas</div>
+<div id="tasks-progress" style="background:var(--brd);border-radius:4px;height:8px;margin-bottom:12px;overflow:hidden"><div id="tasks-bar" style="height:100%;background:var(--ok);border-radius:4px;transition:width .3s;width:0%"></div></div>
+<div style="font-size:11px;color:var(--tx3);margin-bottom:10px" id="tasks-pct">0% completado</div>
+<div id="tasks-list"><div class="ld"><div class="sp"></div></div></div>
+</div>
+
 <!-- USERS --><div class="sc" id="s-usr"><div class="fs"><div class="fst">Nuevo usuario</div><div class="fr"><div class="f"><label>Nombre</label><input type="text" id="un"/></div><div class="f"><label>Usuario</label><input type="text" id="uu"/></div></div><div class="f"><label>Contraseña</label><input type="password" id="up"/></div><button class="b bp" onclick="createUsr()" style="margin-top:4px">Crear</button></div><div class="stit">Usuarios activos</div><div id="ul"><div class="ld"><div class="sp"></div></div></div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)"><div class="stit">Admin</div><button class="b bp" onclick="syncLogs()" style="margin-bottom:8px">📊 Sincronizar ventas desde LOGS</button><button class="b bs" onclick="fixOldML()" style="margin-bottom:8px">🔄 Re-asignar cuentas ML</button><button class="b be" onclick="bulkDeleteSinStock()" style="margin-bottom:8px">🗑 Eliminar todos los SIN STOCK</button><button class="b bw" onclick="migSheet()" style="margin-bottom:8px">📥 Migrar Sheet</button><button class="b bo" onclick="verData()" style="margin-bottom:8px">🔍 Verificar</button><div id="mlog" style="display:none;background:#111;color:#0f0;font-family:monospace;font-size:10px;padding:10px;border-radius:var(--rs);max-height:250px;overflow-y:auto;line-height:1.7;margin-top:8px"></div></div></div>
 </div>
 
@@ -214,12 +230,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="nb" data-s="scan" onclick="go('scan')"><svg viewBox="0 0 22 22"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="14" y="3" width="5" height="5" rx="1"/><rect x="3" y="14" width="5" height="5" rx="1"/><path d="M14 14h5v5h-5z"/></svg><span>Escanear</span></button>
 <button class="nb" data-s="add" onclick="go('add')"><svg viewBox="0 0 22 22"><circle cx="11" cy="11" r="8"/><line x1="11" y1="7" x2="11" y2="15"/><line x1="7" y1="11" x2="15" y2="11"/></svg><span>Cargar</span></button>
 <button class="nb" data-s="mov" onclick="go('mov')"><svg viewBox="0 0 22 22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Historial</span></button>
+<button class="nb" data-s="tasks" onclick="go('tasks')"><svg viewBox="0 0 22 22"><rect x="3" y="3" width="16" height="16" rx="2"/><line x1="7" y1="8" x2="15" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg><span>Tareas</span></button>
 </div></div>
 
 <!-- MODAL EDIT --><div class="mo" id="med"><div class="ml"><div class="mb"></div><div class="mti">Editar producto</div>
 <div class="es2"><div class="es2t">Datos</div><div class="f"><label>Artículo</label><input type="text" id="ea"/></div><div class="fr"><div class="f"><label>Marca</label><input type="text" id="emr"/></div><div class="f"><label>Modelo</label><input type="text" id="emo"/></div></div><div class="fr"><div class="f"><label>Caja</label><input type="text" id="ecj"/></div><div class="f"><label>Estantería</label><input type="text" id="ees"/></div></div><div class="fr"><div class="f"><label>Stock mín.</label><input type="number" id="emi" min="0"/></div><div class="f"><label>Estado</label><select id="eet"><option value="STOCK">STOCK</option><option value="SIN STOCK">SIN STOCK</option><option value="PAUSADA">PAUSADA</option></select></div></div></div>
 <div class="es2"><div class="es2t">Importación</div><div class="tg-row"><span class="tg-lbl">✈️ Avión</span><label class="tg"><input type="checkbox" id="eav"/><span class="tg-tr"></span><span class="tg-th"></span></label></div><div class="fr"><div class="f"><label>Pre-alerta</label><input type="number" id="epav" min="0"/></div><div class="f"><label>Mínimo</label><input type="number" id="emav" min="0"/></div></div><div class="tg-row"><span class="tg-lbl">🚢 Barco</span><label class="tg"><input type="checkbox" id="eba"/><span class="tg-tr"></span><span class="tg-th"></span></label></div><div class="fr"><div class="f"><label>Pre-alerta</label><input type="number" id="epba" min="0"/></div><div class="f"><label>Mínimo</label><input type="number" id="emba" min="0"/></div></div><div class="tg-row"><span class="tg-lbl">⭐ Monitorear</span><label class="tg"><input type="checkbox" id="emn"/><span class="tg-tr"></span><span class="tg-th"></span></label></div></div>
 <div class="es2"><div class="es2t">Precios</div><div class="fr"><div class="f"><label>Costo</label><input type="number" id="eco" min="0"/></div><div class="f"><label>Margen %</label><input type="number" id="emg" min="0"/></div></div><div class="fr"><div class="f"><label>P. venta</label><input type="number" id="eve" min="0"/></div><div class="f"><label>P. mayorista</label><input type="number" id="emy" min="0"/></div></div></div>
+<div class="es2"><div class="es2t">Foto</div><div style="display:flex;align-items:center;gap:10px"><img id="e-photo-prev" style="width:60px;height:60px;object-fit:cover;border-radius:var(--rs);border:1px solid var(--brd);display:none" alt=""/><button class="b bs" style="flex:1" onclick="$('e-photo').click()">📷 Cambiar foto</button><input type="file" id="e-photo" accept="image/*" style="display:none" onchange="previewEditPhoto(this)"/></div></div>
 <div class="es2"><div class="es2t">Extra</div><div class="f"><label>Obs.</label><input type="text" id="eob"/></div><div class="f"><label>Link ML</label><input type="url" id="elk"/></div><div class="fr3"><div class="f"><label>ML 1</label><input type="text" id="em1"/></div><div class="f"><label>ML 2</label><input type="text" id="em2"/></div><div class="f"><label>ML 3</label><input type="text" id="em3"/></div></div></div>
 <div class="macts"><button class="b bs" onclick="closeEd()">Cancelar</button><button class="b bp" id="bes" onclick="saveEd()">Guardar</button></div></div></div>
 
@@ -247,7 +265,7 @@ function ico(a){a=(a||'').toLowerCase();if(/joystick|gamepad|dualsense|dualshock
 function aB(p){const a=p.estado_alerta||'OK';if(a==='SIN STOCK')return['🔴 SIN STOCK','b-sin'];if(a.includes('CRITICO AVION'))return['🔴 CRÍTICO ✈️','b-crit'];if(a.includes('CRITICO BARCO'))return['🔴 CRÍTICO 🚢','b-crit'];if(a.includes('PRE ALERTA AVION'))return['🟡 PRE-ALERTA ✈️','b-pre'];if(a.includes('PRE ALERTA BARCO'))return['🟡 PRE-ALERTA 🚢','b-pre'];return['🟢 OK','b-ok']}
 function sC(p){if(!p.cantidades)return'e';if(p.stock_minimo&&p.cantidades<p.stock_minimo)return'w';return'o'}
 
-function go(s){document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='usr')loadUsr()}
+function go(s){document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='tasks')loadTasks();if(s==='usr')loadUsr()}
 let invTab='stock';
 function setTab(t,btn){invTab=t;document.querySelectorAll('#inv-tabs .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');filtrar()}
 function setF(f,btn){filt=f;document.querySelectorAll('#f-d .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');const t=$('f-t');t.classList.toggle('a',f!=='todos');t.textContent=f==='todos'?'Filtrar ▾':btn.textContent+' ▾';$('f-d').classList.remove('open');filtrar()}
@@ -433,16 +451,7 @@ async function uploadPhoto(input){
   if(!input.files[0]||!cur)return;
   toast('Subiendo foto...');
   try{
-    const file=input.files[0];
-    const ext=file.name.split('.').pop()||'jpg';
-    const path='productos/'+cur.id+'.'+ext;
-    // Delete old photo if exists
-    await db.storage.from('product-photos').remove([path]);
-    // Upload new
-    const{error}=await db.storage.from('product-photos').upload(path,file,{upsert:true,contentType:file.type});
-    if(error)throw error;
-    const{data:urlData}=db.storage.from('product-photos').getPublicUrl(path);
-    const url=urlData.publicUrl+'?t='+Date.now();
+    const url=await uploadToStorage(input.files[0],cur.id);
     await db.from('stock').update({imagen:url}).eq('id',cur.id);
     cur.imagen=url;const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx].imagen=url;
     $('d-img').src=url;$('d-img').style.display='block';$('d-em').style.display='none';
@@ -451,26 +460,93 @@ async function uploadPhoto(input){
   input.value='';
 }
 
+async function uploadToStorage(file,productId){
+  const ext=file.name.split('.').pop()||'jpg';
+  const path='productos/'+productId+'.'+ext;
+  await db.storage.from('product-photos').remove([path]);
+  const{error}=await db.storage.from('product-photos').upload(path,file,{upsert:true,contentType:file.type});
+  if(error)throw error;
+  const{data:urlData}=db.storage.from('product-photos').getPublicUrl(path);
+  return urlData.publicUrl+'?t='+Date.now();
+}
+
+let newPhotoFile=null,editPhotoFile=null;
+function previewNewPhoto(input){
+  if(!input.files[0])return;newPhotoFile=input.files[0];
+  const r=new FileReader();r.onload=e=>{$('f-photo-prev').src=e.target.result;$('f-photo-prev').style.display='block'};r.readAsDataURL(input.files[0]);
+}
+function previewEditPhoto(input){
+  if(!input.files[0])return;editPhotoFile=input.files[0];
+  const r=new FileReader();r.onload=e=>{$('e-photo-prev').src=e.target.result;$('e-photo-prev').style.display='block'};r.readAsDataURL(input.files[0]);
+}
+
 async function hideProduct(){if(!cur)return;if(!confirm('¿Pausar "'+cur.articulo+'"? No se mostrará en el listado principal.'))return;await db.from('stock').update({estado:'PAUSADA'}).eq('id',cur.id);cur.estado='PAUSADA';const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx].estado='PAUSADA';toast('Producto pausado');go('home');filtrar()}
 
 async function deleteProduct(){if(!cur||ses?.rol!=='admin')return;if(!confirm('¿ELIMINAR "'+cur.articulo+'" permanentemente? Esta acción no se puede deshacer.'))return;if(!confirm('¿Estás seguro? Se borra de la base de datos.'))return;await db.from('stock').delete().eq('id',cur.id);ALL=ALL.filter(x=>x.id!==cur.id);toast('Producto eliminado');cur=null;go('home');updM();filtrar()}
 
 /* EDIT */
-function openEd(){if(!cur)return;$('med').classList.add('show');$('ea').value=cur.articulo||'';$('emr').value=cur.marca||'';$('emo').value=cur.modelo||'';$('ecj').value=cur.caja||'';$('ees').value=cur.estanteria||'';$('emi').value=cur.stock_minimo||'';$('eco').value=cur.precio_al_costo||'';$('emg').value=cur.margen_ganancia||'';$('eve').value=cur.precio_venta||'';$('emy').value=cur.precio_mayorista||'';$('eob').value=cur.observaciones||'';$('elk').value=cur.link||'';$('eet').value=cur.estado==='PAUSADA'?'PAUSADA':(cur.cantidades>0?'STOCK':'SIN STOCK');$('eav').checked=!!cur.importacion_avion;$('eba').checked=!!cur.importacion_barco;$('emn').checked=!!cur.monitorear;$('epav').value=cur.pre_alerta_avion||'';$('emav').value=cur.minimo_avion||'';$('epba').value=cur.pre_alerta_barco||'';$('emba').value=cur.minimo_barco||'';$('em1').value=cur.ml_id_1||'';$('em2').value=cur.ml_id_2||'';$('em3').value=cur.ml_id_3||''}
+function openEd(){if(!cur)return;$('med').classList.add('show');editPhotoFile=null;$('ea').value=cur.articulo||'';$('emr').value=cur.marca||'';$('emo').value=cur.modelo||'';$('ecj').value=cur.caja||'';$('ees').value=cur.estanteria||'';$('emi').value=cur.stock_minimo||'';$('eco').value=cur.precio_al_costo||'';$('emg').value=cur.margen_ganancia||'';$('eve').value=cur.precio_venta||'';$('emy').value=cur.precio_mayorista||'';$('eob').value=cur.observaciones||'';$('elk').value=cur.link||'';$('eet').value=cur.estado==='PAUSADA'?'PAUSADA':(cur.cantidades>0?'STOCK':'SIN STOCK');$('eav').checked=!!cur.importacion_avion;$('eba').checked=!!cur.importacion_barco;$('emn').checked=!!cur.monitorear;$('epav').value=cur.pre_alerta_avion||'';$('emav').value=cur.minimo_avion||'';$('epba').value=cur.pre_alerta_barco||'';$('emba').value=cur.minimo_barco||'';$('em1').value=cur.ml_id_1||'';$('em2').value=cur.ml_id_2||'';$('em3').value=cur.ml_id_3||'';if(cur.imagen){$('e-photo-prev').src=cur.imagen;$('e-photo-prev').style.display='block'}else{$('e-photo-prev').style.display='none'}}
 function closeEd(){$('med').classList.remove('show')}
-async function saveEd(){if(!cur)return;const b=$('bes');b.disabled=true;b.textContent='Guardando...';const u={articulo:$('ea').value,marca:$('emr').value,modelo:$('emo').value,caja:$('ecj').value,estanteria:$('ees').value,stock_minimo:+$('emi').value||0,precio_al_costo:+$('eco').value||0,margen_ganancia:+$('emg').value||0,precio_venta:+$('eve').value||0,precio_mayorista:+$('emy').value||0,observaciones:$('eob').value,link:$('elk').value||null,estado:$('eet').value,importacion_avion:$('eav').checked,importacion_barco:$('eba').checked,monitorear:$('emn').checked,pre_alerta_avion:+$('epav').value||0,minimo_avion:+$('emav').value||0,pre_alerta_barco:+$('epba').value||0,minimo_barco:+$('emba').value||0,ml_id_1:$('em1').value||null,ml_id_2:$('em2').value||null,ml_id_3:$('em3').value||null};try{const{data}=await db.from('stock').update(u).eq('id',cur.id).select().single();if(data){Object.assign(cur,data);const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)Object.assign(ALL[idx],data)}else Object.assign(cur,u);syncS('actualizarProducto',{sku:cur.sku,...u});showDet(cur);closeEd();toast('Actualizado')}catch(e){toast('Error: '+e.message)}b.disabled=false;b.textContent='Guardar'}
+async function saveEd(){if(!cur)return;const b=$('bes');b.disabled=true;b.textContent='Guardando...';const u={articulo:$('ea').value,marca:$('emr').value,modelo:$('emo').value,caja:$('ecj').value,estanteria:$('ees').value,stock_minimo:+$('emi').value||0,precio_al_costo:+$('eco').value||0,margen_ganancia:+$('emg').value||0,precio_venta:+$('eve').value||0,precio_mayorista:+$('emy').value||0,observaciones:$('eob').value,link:$('elk').value||null,estado:$('eet').value,importacion_avion:$('eav').checked,importacion_barco:$('eba').checked,monitorear:$('emn').checked,pre_alerta_avion:+$('epav').value||0,minimo_avion:+$('emav').value||0,pre_alerta_barco:+$('epba').value||0,minimo_barco:+$('emba').value||0,ml_id_1:$('em1').value||null,ml_id_2:$('em2').value||null,ml_id_3:$('em3').value||null};try{if(editPhotoFile){try{const purl=await uploadToStorage(editPhotoFile,cur.id);u.imagen=purl}catch(pe){console.warn('Foto:',pe)}editPhotoFile=null}const{data}=await db.from('stock').update(u).eq('id',cur.id).select().single();if(data){Object.assign(cur,data);const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)Object.assign(ALL[idx],data)}else Object.assign(cur,u);syncS('actualizarProducto',{sku:cur.sku,...u});showDet(cur);closeEd();toast('Actualizado')}catch(e){toast('Error: '+e.message)}b.disabled=false;b.textContent='Guardar'}
 
 /* NEW */
 let nId=null;
 async function loadNID(){$('nid').textContent='...';const{data}=await db.from('stock').select('id').order('id',{ascending:false}).limit(1);nId=(data&&data[0]?data[0].id:0)+1;$('nid').textContent=nId}
 function genSKU(art,marca,modelo,id){const c=(art||'').toLowerCase();let cat='GEN';if(/joystick|gamepad|dualsense/.test(c))cat='JOY';else if(/carplay|android auto/.test(c))cat='CPL';else if(/televisor|tv /.test(c))cat='TEL';else if(/control remoto|remoto/.test(c))cat='REM';else if(/placa|mainboard/.test(c))cat='PLA';else if(/auricular/.test(c))cat='AUR';else if(/cable|hdmi|usb/.test(c))cat='CAB';else if(/parlante/.test(c))cat='PAR';else if(/bateria|cargador/.test(c))cat='BAT';const m=(marca||'GEN').substring(0,3).toUpperCase().replace(/[^A-Z]/g,''),mo=(modelo||'000').substring(0,3).toUpperCase().replace(/[^A-Z0-9]/g,'');return m+'-'+mo+'-'+cat+'-'+id}
-async function saveNew(){const art=$('fa').value.trim();if(!art){toast('Artículo obligatorio');return}if(!nId){toast('Esperando ID');return}const b=$('bsv');b.disabled=true;b.textContent='Guardando...';const marca=$('fmr').value,modelo=$('fmo').value,sku=genSKU(art,marca,modelo,nId),cant=+$('fc').value||0,now=new Date().toLocaleDateString('es-AR');const prod={sku,articulo:art,cod_barra:$('fbar').value||null,marca:marca||null,modelo:modelo||null,cantidades:cant,fecha:now,caja:$('fcj').value||null,estanteria:$('fes').value||null,estado:cant>0?'STOCK':'SIN STOCK',link:$('flk').value||null,precio_al_costo:+$('fco').value||0,margen_ganancia:+$('fmg').value||0,precio_venta:+$('fve').value||0,precio_mayorista:+$('fmy').value||0,stock_minimo:+$('fmi').value||0,ultimo_movimiento:now,observaciones:$('fob').value||null,ml_id_1:$('fm1').value||null,ml_id_2:$('fm2').value||null,ml_id_3:$('fm3').value||null,importacion_avion:$('fav').checked,importacion_barco:$('fba').checked,pre_alerta_avion:+$('fpav')?.value||0,minimo_avion:+$('fmav')?.value||0,pre_alerta_barco:+$('fpba')?.value||0,minimo_barco:+$('fmba')?.value||0,monitorear:$('fmn').checked};try{const{data,error}=await db.from('stock').insert(prod).select().single();if(error)throw error;syncS('agregar',{id:data.id,sku,...prod});if(cant>0)await db.from('movimientos').insert({fecha:now,hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:art,sku,tipo:'ingreso',cantidad:cant,stock_anterior:0,stock_nuevo:cant,canal:'ingreso',monto:0});toast('#'+data.id+' guardado · SKU: '+sku);['fa','fbar','fmr','fmo','fc','fmi','fcj','fes','fco','fmg','fve','fmy','fob','flk','fm1','fm2','fm3','fsku'].forEach(id=>{const el=$(id);if(el)el.value=''});['fav','fba','fmn'].forEach(id=>{const el=$(id);if(el)el.checked=false});$('fav-f').style.display='none';$('fba-f').style.display='none';nId=null;loadData();loadNID()}catch(e){toast('Error: '+e.message)}b.disabled=false;b.textContent='Guardar producto'}
+async function saveNew(){const art=$('fa').value.trim();if(!art){toast('Artículo obligatorio');return}if(!nId){toast('Esperando ID');return}const b=$('bsv');b.disabled=true;b.textContent='Guardando...';const marca=$('fmr').value,modelo=$('fmo').value,sku=genSKU(art,marca,modelo,nId),cant=+$('fc').value||0,now=new Date().toLocaleDateString('es-AR');const prod={sku,articulo:art,cod_barra:$('fbar').value||null,marca:marca||null,modelo:modelo||null,cantidades:cant,fecha:now,caja:$('fcj').value||null,estanteria:$('fes').value||null,estado:cant>0?'STOCK':'SIN STOCK',link:$('flk').value||null,precio_al_costo:+$('fco').value||0,margen_ganancia:+$('fmg').value||0,precio_venta:+$('fve').value||0,precio_mayorista:+$('fmy').value||0,stock_minimo:+$('fmi').value||0,ultimo_movimiento:now,observaciones:$('fob').value||null,ml_id_1:$('fm1').value||null,ml_id_2:$('fm2').value||null,ml_id_3:$('fm3').value||null,importacion_avion:$('fav').checked,importacion_barco:$('fba').checked,pre_alerta_avion:+$('fpav')?.value||0,minimo_avion:+$('fmav')?.value||0,pre_alerta_barco:+$('fpba')?.value||0,minimo_barco:+$('fmba')?.value||0,monitorear:$('fmn').checked};try{const{data,error}=await db.from('stock').insert(prod).select().single();if(error)throw error;if(newPhotoFile){try{const purl=await uploadToStorage(newPhotoFile,data.id);await db.from('stock').update({imagen:purl}).eq('id',data.id)}catch(pe){console.warn('Foto:',pe)}newPhotoFile=null;$('f-photo-prev').style.display='none'}syncS('agregar',{id:data.id,sku,...prod});if(cant>0)await db.from('movimientos').insert({fecha:now,hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:art,sku,tipo:'ingreso',cantidad:cant,stock_anterior:0,stock_nuevo:cant,canal:'ingreso',monto:0});toast('#'+data.id+' guardado · SKU: '+sku);['fa','fbar','fmr','fmo','fc','fmi','fcj','fes','fco','fmg','fve','fmy','fob','flk','fm1','fm2','fm3','fsku'].forEach(id=>{const el=$(id);if(el)el.value=''});['fav','fba','fmn'].forEach(id=>{const el=$(id);if(el)el.checked=false});$('fav-f').style.display='none';$('fba-f').style.display='none';nId=null;loadData();loadNID()}catch(e){toast('Error: '+e.message)}b.disabled=false;b.textContent='Guardar producto'}
 
 /* SCANNER */
 function doScan(){const c=$('scq').value.trim();if(!c)return;const p=ALL.find(x=>String(x.cod_barra)===c||String(x.sku).toLowerCase()===c.toLowerCase()||String(x.id)===c);$('scr').style.display='none';$('scnf').style.display='none';if(p){$('scr').style.display='block';$('scr').innerHTML='<div class="ar" onclick="showDet(ALL.find(x=>x.id==='+p.id+'))"><div class="ae">'+(p.emoji||ico(p.articulo))+'</div><div class="ai"><div class="an">'+p.articulo+'</div><div class="am">'+(p.sku||'')+' · Stock: '+(p.cantidades||0)+'</div></div><div class="as c-'+sC(p)+'">'+(p.cantidades||0)+'</div></div>'}else $('scnf').style.display='block'}
 
 /* MOV */
 async function loadMov(){const el=$('mvl');el.innerHTML='<div class="ld"><div class="sp"></div></div>';try{const{data}=await db.from('movimientos').select('*').order('created_at',{ascending:false}).limit(100);if(!data||!data.length){el.innerHTML='<div class="emp">Sin movimientos</div>';return}const chI={mercadolibre:'🛒',tiendanube:'🏪',mostrador:'🏬',ingreso:'📥',ajuste:'🔧'};el.innerHTML=data.map(m=>{const t=(m.tipo||'').toLowerCase(),tc=t.includes('venta')?'mv':t.includes('ingreso')?'mi2':'mj',tl=t.includes('venta')?'Venta':t.includes('ingreso')?'Ingreso':'Ajuste',ch=m.canal||'';return'<div class="mr"><div class="mt"><div class="ma">'+(m.articulo||'—')+'</div><span class="mg '+tc+'">'+tl+(ch&&chI[ch]?' '+chI[ch]:'')+'</span></div><div class="mm"><span>📅 '+(m.fecha||'')+' '+(m.hora||'')+'</span><span>👤 '+(m.usuario||'—')+'</span><span>'+(t.includes('venta')?'−':'+')+Math.abs(m.cantidad||0)+' u.</span>'+(m.monto?'<span>$'+m.monto.toLocaleString('es-AR')+'</span>':'')+'</div></div>'}).join('')}catch(e){el.innerHTML='<div class="emp">Error</div>'}}
+
+/* TASKS */
+async function loadTasks(){
+  // Populate user dropdown for admin
+  if(ses?.rol==='admin'){
+    const{data:users}=await db.from('usuarios').select('usuario,nombre').order('nombre');
+    const sel=$('t-asignar');if(sel){sel.innerHTML='<option value="">Seleccionar...</option>';(users||[]).forEach(u=>sel.innerHTML+='<option value="'+u.usuario+'">'+u.nombre+'</option>')}
+  }
+  // Load tasks: admin sees all, user sees own
+  const q=ses?.rol==='admin'?db.from('tareas').select('*').order('created_at',{ascending:false}):db.from('tareas').select('*').eq('asignado_a',ses?.usuario).order('created_at',{ascending:false});
+  const{data:tasks}=await q;
+  const el=$('tasks-list');
+  if(!tasks||!tasks.length){el.innerHTML='<div class="emp">Sin tareas pendientes 🎉</div>';$('tasks-bar').style.width='100%';$('tasks-pct').textContent='Todo listo';return}
+  const done=tasks.filter(t=>t.estado==='completada').length;
+  const pct=Math.round(done/tasks.length*100);
+  $('tasks-bar').style.width=pct+'%';$('tasks-bar').style.background=pct===100?'var(--ok)':'var(--pri)';
+  $('tasks-pct').textContent=pct+'% completado ('+done+'/'+tasks.length+')';
+  $('tasks-title').textContent=ses?.rol==='admin'?'Todas las tareas':'Mis tareas';
+  el.innerHTML=tasks.map(t=>{
+    const isDone=t.estado==='completada';
+    const asig=ses?.rol==='admin'?' · 👤 '+t.asignado_a:'';
+    return'<div style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:12px 14px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px;opacity:'+(isDone?'.5':'1')+'">'
+      +'<input type="checkbox" '+(isDone?'checked':'')+' onchange="toggleTask('+t.id+',this.checked)" style="margin-top:2px;width:18px;height:18px;cursor:pointer;flex-shrink:0"/>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;'+(isDone?'text-decoration:line-through;color:var(--tx3)':'')+'">'+t.titulo+'</div>'
+      +(t.descripcion?'<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+t.descripcion+'</div>':'')
+      +'<div style="font-size:10px;color:var(--tx3);margin-top:3px">'+new Date(t.created_at).toLocaleDateString('es-AR')+asig+'</div></div>'
+      +(ses?.rol==='admin'?'<button class="b be" style="width:auto;padding:4px 8px;font-size:10px" onclick="deleteTask('+t.id+')">✕</button>':'')
+      +'</div>'
+  }).join('');
+}
+
+async function createTask(){
+  const titulo=$('t-titulo').value.trim(),desc=$('t-desc').value.trim(),asig=$('t-asignar').value;
+  if(!titulo||!asig){toast('Completá título y asignar a');return}
+  await db.from('tareas').insert({titulo,descripcion:desc||null,asignado_a:asig,creado_por:ses?.usuario||'admin'});
+  $('t-titulo').value='';$('t-desc').value='';$('t-asignar').value='';
+  toast('Tarea asignada');loadTasks();
+}
+
+async function toggleTask(id,done){
+  await db.from('tareas').update({estado:done?'completada':'pendiente',completado_at:done?new Date().toISOString():null}).eq('id',id);
+  loadTasks();
+}
+
+async function deleteTask(id){
+  await db.from('tareas').delete().eq('id',id);loadTasks();
+}
 
 /* USERS */
 async function createUsr(){if(ses?.rol!=='admin')return;const n=$('un').value.trim(),u=$('uu').value.trim().toLowerCase(),p=$('up').value;if(!n||!u||!p){toast('Completá todo');return}try{const{error}=await db.from('usuarios').insert({usuario:u,nombre:n,pass_hash:H(p),rol:'usuario',primer_login:true,activo:true});if(error)throw error;$('un').value='';$('uu').value='';$('up').value='';toast(n+' creado');loadUsr()}catch(e){toast('Error: '+(e.message||'ya existe'))}}
@@ -483,22 +559,27 @@ async function syncLogsSilent(){
     const res=await fetch(SYNC+'?accion=obtenerLogs');
     const data=await res.json();
     if(!data||data.length<2)return;
-    const rows=data.slice(1);let imported=0;
-    for(const row of rows){
-      const txt=String(row[1]||'')+' '+String(row[2]||'');
-      if(!txt.includes('Venta'))continue;
-      const cuentaMatch=txt.match(/Cuenta\s*(\d)/i);
+    let imported=0;
+    for(const row of data.slice(1)){
+      const col1=String(row[1]||''),col2=String(row[2]||''),txt=col1+' '+col2;
+      if(!col1.includes('Venta'))continue;
+      const cuentaMatch=col1.match(/Cuenta\s*(\d)/i);
+      const ordenMatch=txt.match(/Orden:\s*(\d+)/i);
       const cantMatch=txt.match(/Cant:\s*(\d+)/i);
       const mlaMatch=txt.match(/MLA:\s*(MLA\d+)/i);
-      const cuenta=cuentaMatch?cuentaMatch[1]:'1';
+      if(!ordenMatch)continue;
+      const orden=ordenMatch[1],cuenta=cuentaMatch?cuentaMatch[1]:'1';
       const cant=cantMatch?parseInt(cantMatch[1]):1;
       const mla=mlaMatch?mlaMatch[1]:'';
       const artMatch=txt.match(/Cant:\s*\d+\s*\|\s*(.+?)\s*\|\s*OK/i);
       const articulo=artMatch?artMatch[1].trim():'Venta ML';
       const fecha=row[0]?String(row[0]).split(' ')[0]:'';
       const hora=row[0]?String(row[0]).split(' ')[1]||'':'';
-      if(mla){const{data:ex}=await db.from('movimientos').select('id').ilike('articulo','%'+mla+'%').limit(1);if(ex&&ex.length)continue}
-      await db.from('movimientos').insert({fecha,hora,usuario:(ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta),articulo:articulo+' ['+mla+']',sku:mla,tipo:'venta',cantidad:cant,stock_anterior:0,stock_nuevo:0,canal:'ml_'+(ML_CUENTAS[cuenta]||cuenta).toLowerCase(),monto:0});
+      // Dedup by order number
+      const{data:ex}=await db.from('movimientos').select('id').eq('sku',orden).limit(1);
+      if(ex&&ex.length)continue;
+      const nombre=ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta;
+      await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:0,stock_nuevo:0,canal:'ml_'+nombre.toLowerCase(),monto:0});
       imported++;
     }
     if(imported>0)console.log('Auto-sync: '+imported+' ventas ML importadas');
@@ -529,35 +610,31 @@ async function bulkDeleteSinStock(){
 
 /* SYNC LOGS FROM SHEET (manual with toasts) */
 async function syncLogs(){
-  if(ses?.rol!=='admin')return;
-  toast('Descargando LOGS del Sheet...');
+  if(ses?.rol!=='admin')return;toast('Descargando LOGS...');
   try{
     const res=await fetch(SYNC+'?accion=obtenerLogs');
     const data=await res.json();
-    if(!data||data.length<2){toast('Sin logs nuevos');return}
-    const rows=data.slice(1);
+    if(!data||data.length<2){toast('Sin logs');return}
     let imported=0,skipped=0;
-    for(const row of rows){
-      const txt=String(row[1]||'')+' '+String(row[2]||'');
-      if(!txt.includes('Venta')){skipped++;continue}
-      // Parse: "Venta Cuenta 2" + "Orden: xxx | MLA: MLA123 | Cant: 1 | Articulo | OK"
-      const cuentaMatch=txt.match(/Cuenta\s*(\d)/i);
+    for(const row of data.slice(1)){
+      const col1=String(row[1]||''),col2=String(row[2]||''),txt=col1+' '+col2;
+      if(!col1.includes('Venta')){skipped++;continue}
+      const cuentaMatch=col1.match(/Cuenta\s*(\d)/i);
+      const ordenMatch=txt.match(/Orden:\s*(\d+)/i);
       const cantMatch=txt.match(/Cant:\s*(\d+)/i);
       const mlaMatch=txt.match(/MLA:\s*(MLA\d+)/i);
-      const cuenta=cuentaMatch?cuentaMatch[1]:'1';
+      if(!ordenMatch){skipped++;continue}
+      const orden=ordenMatch[1],cuenta=cuentaMatch?cuentaMatch[1]:'1';
       const cant=cantMatch?parseInt(cantMatch[1]):1;
       const mla=mlaMatch?mlaMatch[1]:'';
-      // Extract article name between Cant: X | and | OK
       const artMatch=txt.match(/Cant:\s*\d+\s*\|\s*(.+?)\s*\|\s*OK/i);
       const articulo=artMatch?artMatch[1].trim():'Venta ML';
       const fecha=row[0]?String(row[0]).split(' ')[0]:'';
       const hora=row[0]?String(row[0]).split(' ')[1]||'':'';
-      // Check if already imported (by MLA + fecha to avoid dupes)
-      if(mla){
-        const{data:existing}=await db.from('movimientos').select('id').ilike('articulo','%'+mla+'%').limit(1);
-        if(existing&&existing.length){skipped++;continue}
-      }
-      await db.from('movimientos').insert({fecha,hora,usuario:(ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta),articulo:articulo+' ['+mla+']',sku:mla,tipo:'venta',cantidad:cant,stock_anterior:0,stock_nuevo:0,canal:'ml_'+(ML_CUENTAS[cuenta]||cuenta).toLowerCase(),monto:0});
+      const{data:ex}=await db.from('movimientos').select('id').eq('sku',orden).limit(1);
+      if(ex&&ex.length){skipped++;continue}
+      const nombre=ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta;
+      await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:0,stock_nuevo:0,canal:'ml_'+nombre.toLowerCase(),monto:0});
       imported++;
     }
     toast('Importados: '+imported+' | Omitidos: '+skipped);
@@ -565,7 +642,17 @@ async function syncLogs(){
 }
 
 /* MIGRATE */
-async function migSheet(){if(ses?.rol!=='admin'||!confirm('¿Migrar Sheet?'))return;const lg=$('mlog');lg.style.display='block';const log=m=>{lg.innerHTML+=m+'<br>';lg.scrollTop=lg.scrollHeight};try{log('📥 Descargando...');const res=await fetch(SYNC+'?accion=obtener');const data=await res.json();const rows=data.slice(1).filter(f=>f[0]!=null&&f[0]!=='');log('📊 '+rows.length+' filas');const prods=[],skus=new Set();let skip=0;for(const f of rows){const sku=String(f[1]||'').trim();if(!sku){skip++;continue}if(skus.has(sku))continue;skus.add(sku);prods.push({id:+f[0]||undefined,sku,cod_barra:f[2]?String(f[2]):null,marca:f[3]?String(f[3]):null,modelo:f[4]?String(f[4]):null,cantidades:+f[5]||0,articulo:String(f[6]||''),fecha:f[7]?String(f[7]):null,caja:f[8]?String(f[8]):null,estanteria:f[9]?String(f[9]):null,estado:f[10]?String(f[10]):'SIN STOCK',link:f[12]?String(f[12]):null,precio_al_costo:+f[14]||0,margen_ganancia:+f[15]||0,precio_venta:+f[16]||0,precio_mayorista:+f[17]||0,stock_minimo:+f[18]||0,ultimo_movimiento:f[19]?String(f[19]):null,imagen:f[21]?String(f[21]):null,observaciones:f[22]?String(f[22]):null,ml_id_1:f[23]?String(f[23]):null,ml_id_2:f[24]?String(f[24]):null})}log('✅ '+prods.length+' ('+skip+' sin SKU)');log('🗑️ Limpiando...');await db.from('stock').delete().neq('id',0);let ok=0;for(let i=0;i<prods.length;i+=100){const b=prods.slice(i,i+100);const{error}=await db.from('stock').insert(b);if(error){for(const p of b){const{error:e2}=await db.from('stock').insert(p);if(!e2)ok++}}else{ok+=b.length;log('📦 '+ok+'/'+prods.length)}}try{await db.rpc('reset_stock_sequence')}catch(e){}log('🎉 '+ok+' migrados');loadData()}catch(e){log('❌ '+e.message)}}
+async function migSheet(){if(ses?.rol!=='admin'||!confirm('¿Importar productos NUEVOS del Sheet? (no se modifican los existentes)'))return;const lg=$('mlog');lg.style.display='block';const log=m=>{lg.innerHTML+=m+'<br>';lg.scrollTop=lg.scrollHeight};try{log('📥 Descargando Sheet...');const res=await fetch(SYNC+'?accion=obtener');const data=await res.json();const rows=data.slice(1).filter(f=>f[0]!=null&&f[0]!=='');log('📊 '+rows.length+' filas en Sheet');
+// Get existing SKUs from Supabase
+const existingSKUs=new Set(ALL.map(p=>p.sku));
+log('📦 '+existingSKUs.size+' productos ya en Supabase');
+const newProds=[],skus=new Set();let skip=0,dupes=0;
+for(const f of rows){const sku=String(f[1]||'').trim();if(!sku){skip++;continue}if(skus.has(sku)||existingSKUs.has(sku)){dupes++;continue}skus.add(sku);
+newProds.push({sku,cod_barra:f[2]?String(f[2]):null,marca:f[3]?String(f[3]):null,modelo:f[4]?String(f[4]):null,cantidades:+f[5]||0,articulo:String(f[6]||''),fecha:f[7]?String(f[7]):null,caja:f[8]?String(f[8]):null,estanteria:f[9]?String(f[9]):null,estado:f[10]?String(f[10]):'SIN STOCK',link:f[12]?String(f[12]):null,precio_al_costo:+f[14]||0,margen_ganancia:+f[15]||0,precio_venta:+f[16]||0,precio_mayorista:+f[17]||0,stock_minimo:+f[18]||0,ultimo_movimiento:f[19]?String(f[19]):null,imagen:f[21]?String(f[21]):null,observaciones:f[22]?String(f[22]):null,ml_id_1:f[23]?String(f[23]):null,ml_id_2:f[24]?String(f[24]):null})}
+if(!newProds.length){log('✅ No hay productos nuevos para importar');return}
+log('🆕 '+newProds.length+' productos nuevos ('+dupes+' ya existían, '+skip+' sin SKU)');
+let ok=0;for(let i=0;i<newProds.length;i+=100){const b=newProds.slice(i,i+100);const{error}=await db.from('stock').insert(b);if(error){for(const p of b){const{error:e2}=await db.from('stock').insert(p);if(!e2)ok++}}else{ok+=b.length;log('📦 '+ok+'/'+newProds.length)}}
+log('🎉 '+ok+' productos nuevos importados (los existentes no se tocaron)');loadData()}catch(e){log('❌ '+e.message)}}
 async function verData(){toast('Verificando...');try{const res=await fetch(SYNC+'?accion=obtener');const d=await res.json();const sc=d.slice(1).filter(f=>f[0]!=null&&f[0]!=='').length;const{count}=await db.from('stock').select('*',{count:'exact',head:true});alert('Sheet: '+sc+'\nSupabase: '+(count||'?')+'\n\n'+(Math.abs(sc-(count||0))<100?'✅ OK':'⚠️ Diferencia'))}catch(e){toast('Error')}}
 
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
