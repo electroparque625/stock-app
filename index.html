@@ -260,6 +260,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="macts"><button class="b bs" onclick="closeEd()">Cancelar</button><button class="b bp" id="bes" onclick="saveEd()">Guardar</button></div></div></div>
 
 <div class="toast" id="toast"></div>
+
+<!-- NOTIFICATION PANEL -->
+<div id="notif-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px">
+<div style="background:var(--card);border-radius:16px;width:100%;max-width:440px;max-height:80vh;overflow-y:auto;padding:20px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-size:16px;font-weight:700">🔔 Alertas de stock</div><button onclick="$('notif-overlay').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx3)">✕</button></div>
+<div id="notif-list"></div>
+<button class="b bp" onclick="$('notif-overlay').style.display='none'" style="margin-top:12px">Entendido</button>
+</div></div>
 <script>
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
@@ -276,7 +284,26 @@ function startApp(u){saveSes(u);$('scr-login').style.display='none';$('scr-cp').
 function doLogout(){if(!confirm('¿Cerrar sesión?'))return;clearSes();$('app').style.display='none';$('scr-login').style.display='flex';$('l-u').value='';$('l-p').value='';$('l-e').classList.remove('show')}
 
 async function loadData(){const t0=performance.now();try{let a=[],p=0;while(true){const{data,error}=await db.from('stock').select('*').order('id',{ascending:true}).range(p*1000,p*1000+999);if(error)throw error;if(!data||!data.length)break;a=a.concat(data);if(data.length<1000)break;p++}ALL=a;updM();filtrar();fillL();$('t-sub').textContent=ALL.length+' productos · '+Math.round(performance.now()-t0)+'ms'}catch(e){$('pl').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
-function fillL(){const m=[...new Set(ALL.map(p=>p.marca).filter(Boolean))].sort(),o=[...new Set(ALL.map(p=>p.modelo).filter(Boolean))].sort();$('dlm').innerHTML=m.map(x=>'<option value="'+x+'">').join('');$('dlo').innerHTML=o.map(x=>'<option value="'+x+'">').join('')}
+function fillL(){const m=[...new Set(ALL.map(p=>p.marca).filter(Boolean))].sort(),o=[...new Set(ALL.map(p=>p.modelo).filter(Boolean))].sort();$('dlm').innerHTML=m.map(x=>'<option value="'+x+'">').join('');$('dlo').innerHTML=o.map(x=>'<option value="'+x+'">').join('');showStockAlerts()}
+function showStockAlerts(){
+  const alertas=ALL.filter(p=>p.monitorear&&p.estado_alerta&&p.estado_alerta!=='OK');
+  if(!alertas.length)return;
+  const el=$('notif-list');
+  el.innerHTML='<div style="font-size:12px;color:var(--tx3);margin-bottom:10px">'+alertas.length+' producto'+(alertas.length>1?'s':'')+' monitoreado'+(alertas.length>1?'s':'')+' requiere'+(alertas.length>1?'n':'')+' atención:</div>'
+    +alertas.map(p=>{
+      const sc=sC(p);
+      let urg='';
+      if(p.estado_alerta==='SIN STOCK')urg='\u{1F534} SIN STOCK — Reponer urgente';
+      else if(p.estado_alerta.includes('CRITICO'))urg='\u{1F534} CRÍTICO — Pedir '+(p.estado_alerta.includes('AVION')?'por avión ✈️':'por barco \u{1F6A2}');
+      else urg='\u{1F7E1} PRE-ALERTA — Planificar compra '+(p.estado_alerta.includes('AVION')?'✈️':'\u{1F6A2}');
+      const borderCol=p.estado_alerta.includes('SIN')||p.estado_alerta.includes('CRITICO')?'var(--err)':'var(--warn)';
+      return'<div style="background:var(--bg);border-radius:var(--rs);padding:10px 12px;margin-bottom:6px;border-left:3px solid '+borderCol+'">'
+        +'<div style="font-size:13px;font-weight:600">'+(p.emoji||ico(p.articulo))+' '+p.articulo+'</div>'
+        +'<div style="font-size:11px;color:var(--tx3);margin-top:2px">Stock: '+(p.cantidades||0)+' u. · '+(p.sku||'')+'</div>'
+        +'<div style="font-size:11px;font-weight:600;margin-top:3px;color:'+borderCol+'">'+urg+'</div></div>'
+    }).join('');
+  $('notif-overlay').style.display='flex';
+}
 function updM(){$('m-t').textContent=ALL.length;$('m-u').textContent=ALL.reduce((s,p)=>s+(p.cantidades||0),0).toLocaleString('es-AR');$('m-l').textContent=ALL.filter(p=>p.cantidades>0&&p.stock_minimo>0&&p.cantidades<p.stock_minimo).length;$('m-z').textContent=ALL.filter(p=>!p.cantidades).length}
 function syncS(a,p){fetch(SYNC+'?accion='+a+'&'+new URLSearchParams(p),{mode:'no-cors'}).catch(()=>{})}
 function ico(a){a=(a||'').toLowerCase();if(/joystick|gamepad|dualsense|dualshock|control (xbox|ps)/.test(a))return'🎮';if(/carplay.*moto|moto.*carplay/.test(a))return'🏍️';if(/carplay|android auto|estereo|pantalla.*auto/.test(a))return'🚗';if(/televisor|tv |smart tv/.test(a))return'📺';if(/placa|mainboard|fuente tv/.test(a))return'🔧';if(/control remoto|remoto|mando/.test(a))return'📡';if(/auricular|headset/.test(a))return'🎧';if(/cable|hdmi|usb|adaptador/.test(a))return'🔌';if(/bateria|cargador/.test(a))return'🔋';if(/parlante|speaker/.test(a))return'🔊';return'📦'}
@@ -626,7 +653,7 @@ async function loadTasks(){
       else statusTag='<span style="font-size:9px;background:var(--warn-l);color:var(--warn);padding:2px 6px;border-radius:10px;font-weight:600;margin-left:6px">⏳ No visto</span>';
     }
     const asig=isAdmin?' · 👤 '+t.asignado_a:'';
-    return'<div style="background:var(--card);border-radius:var(--rad);border:1px solid '+(isDone?'var(--brd)':t.visto?'var(--pri)':'var(--warn)');padding:12px 14px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px;opacity:'+(isDone?'.5':'1')+'">'
+    return'<div style="background:var(--card);border-radius:var(--rad);border:1px solid '+(isDone?'var(--brd)':t.visto?'var(--pri)':'var(--warn)')+';padding:12px 14px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px;opacity:'+(isDone?'.5':'1')+'">'
       +'<input type="checkbox" '+(isDone?'checked':'')+' onchange="toggleTask('+t.id+',this.checked)" style="margin-top:2px;width:18px;height:18px;cursor:pointer;flex-shrink:0;accent-color:var(--ok)"/>'
       +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;'+(isDone?'text-decoration:line-through;color:var(--tx3)':'')+'">'+t.titulo+statusTag+'</div>'
       +(t.descripcion?'<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+t.descripcion+'</div>':'')
