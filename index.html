@@ -50,7 +50,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .nb{position:relative}.notif-badge{position:absolute;top:2px;right:calc(50% - 18px);background:var(--err);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1;display:none}.notif-badge.show{display:flex}
 .sb{background:var(--card);border-bottom:1px solid var(--brd);padding:8px 14px;position:relative;z-index:19;display:none;box-sizing:border-box;overflow:hidden}.sb.v{display:block}
 .sr{display:flex;gap:6px;align-items:center}.sw{position:relative;flex:1;min-width:0;overflow:hidden}
-.sw input{width:100%;background:var(--bg);border:1px solid var(--brd);border-radius:var(--rs);padding:8px 10px 8px 30px;font-size:13px;color:var(--tx);outline:none;box-sizing:border-box}.sw input::placeholder{color:var(--tx3)}
+.sw input{width:100%;background:var(--bg);border:1px solid var(--brd);border-radius:var(--rs);padding:7px 10px 7px 28px;font-size:12px;color:var(--tx);outline:none;box-sizing:border-box}.sw input::placeholder{color:var(--tx3)}
 .si{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--tx3);fill:none;stroke-width:1.8;stroke-linecap:round}
 .ft{background:var(--bg);border:1px solid var(--brd);border-radius:var(--rs);padding:9px 12px;font-size:12px;color:var(--tx3);cursor:pointer;white-space:nowrap;font-family:inherit}.ft.a{background:var(--pri);border-color:var(--pri);color:#fff}
 .fd{background:var(--card);border:1px solid var(--brd);border-radius:var(--rad);padding:8px;margin-top:8px;display:none}.fd.open{display:block}
@@ -152,7 +152,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="nb" data-s="tasks" onclick="go('tasks')"><svg viewBox="0 0 22 22"><rect x="3" y="3" width="16" height="16" rx="2"/><line x1="7" y1="8" x2="15" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg><span>Tareas</span><div class="notif-badge" id="task-badge-s"></div></button>
 <button class="nb admin-only" data-s="usr" onclick="go('usr')" style="display:none"><svg viewBox="0 0 22 22"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><line x1="16" y1="11" x2="22" y2="11"/><line x1="19" y1="8" x2="19" y2="14"/></svg><span>Usuarios</span></button>
 </nav>
-<div class="tb-r"><span class="ch ch-g" id="t-sp">⚡ SQL</span><button class="ch ch-p" id="t-usr" onclick="doLogout()">Salir</button></div></div>
+<div class="tb-r"><button id="notif-btn" onclick="toggleNotifPanel()" style="position:relative;background:none;border:none;cursor:pointer;font-size:20px;padding:4px">🔔<div class="notif-badge" id="notif-bell-badge"></div></button><span class="ch ch-g" id="t-sp">⚡</span><button class="ch ch-p" id="t-usr" onclick="doLogout()">Salir</button></div></div>
 
 <div class="sb v" id="sbar"><div class="sr"><div class="sw"><svg class="si" viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4.5"/><line x1="10" y1="10" x2="14" y2="14"/></svg><input type="text" placeholder="Buscar nombre, SKU, marca..." id="q" oninput="filtrar()"/></div><button class="ft" id="f-t" onclick="$('f-d').classList.toggle('open')">Filtrar ▾</button></div>
 <div class="fd" id="f-d"><div class="fg">
@@ -161,6 +161,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="fb" onclick="setF('Joystick',this)">🎮 Joysticks</button><button class="fb" onclick="setF('CarPlay',this)">🚗 CarPlay</button>
 <button class="fb" onclick="setF('Televisor',this)">📺 TV</button><button class="fb" onclick="setF('PAUSADA',this)">⏸ Pausados</button>
 </div></div></div>
+
+<div id="notif-panel" style="display:none;position:fixed;top:50px;right:10px;width:340px;max-width:calc(100vw - 20px);max-height:70vh;overflow-y:auto;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);box-shadow:0 8px 30px rgba(0,0,0,.15);z-index:200;padding:14px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:14px;font-weight:700">🔔 Notificaciones</div><button onclick="$('notif-panel').style.display='none'" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--tx3)">✕</button></div>
+<div id="notif-panel-list"></div>
+</div>
 
 <div class="ct">
 <!-- HOME --><div class="sc a" id="s-home"><div class="dg"><div class="dc"><div class="dl">Artículos</div><div class="dv" id="m-t">—</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv" id="m-u">—</div></div><div class="dc"><div class="dl">Stock bajo</div><div class="dv w" id="m-l">—</div></div><div class="dc"><div class="dl">Sin stock</div><div class="dv e" id="m-z">—</div></div></div>
@@ -284,7 +289,7 @@ function startApp(u){saveSes(u);$('scr-login').style.display='none';$('scr-cp').
 function doLogout(){if(!confirm('¿Cerrar sesión?'))return;clearSes();$('app').style.display='none';$('scr-login').style.display='flex';$('l-u').value='';$('l-p').value='';$('l-e').classList.remove('show')}
 
 async function loadData(){const t0=performance.now();try{let a=[],p=0;while(true){const{data,error}=await db.from('stock').select('*').order('id',{ascending:true}).range(p*1000,p*1000+999);if(error)throw error;if(!data||!data.length)break;a=a.concat(data);if(data.length<1000)break;p++}ALL=a;updM();filtrar();fillL();$('t-sub').textContent=ALL.length+' productos · '+Math.round(performance.now()-t0)+'ms'}catch(e){$('pl').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
-function fillL(){const m=[...new Set(ALL.map(p=>p.marca).filter(Boolean))].sort(),o=[...new Set(ALL.map(p=>p.modelo).filter(Boolean))].sort();$('dlm').innerHTML=m.map(x=>'<option value="'+x+'">').join('');$('dlo').innerHTML=o.map(x=>'<option value="'+x+'">').join('');showStockAlerts()}
+function fillL(){const m=[...new Set(ALL.map(p=>p.marca).filter(Boolean))].sort(),o=[...new Set(ALL.map(p=>p.modelo).filter(Boolean))].sort();$('dlm').innerHTML=m.map(x=>'<option value="'+x+'">').join('');$('dlo').innerHTML=o.map(x=>'<option value="'+x+'">').join('');showStockAlerts();updateNotifBadge()}
 function showStockAlerts(){
   const alertas=ALL.filter(p=>p.monitorear&&p.estado_alerta&&p.estado_alerta!=='OK');
   if(!alertas.length)return;
@@ -617,8 +622,9 @@ async function updateTaskBadge(){
     const usr=ses?.usuario;if(!usr)return;
     if(ses?.rol==='admin'){['task-badge-s','task-badge-b'].forEach(id=>{const el=$(id);if(el)el.classList.remove('show')});return}
     const{count}=await db.from('tareas').select('id',{count:'exact',head:true}).eq('asignado_a',usr).eq('estado','pendiente');
-    const cnt=count||0;
+    const cnt=count||0;window._pendingTaskCount=cnt;
     ['task-badge-s','task-badge-b'].forEach(id=>{const el=$(id);if(el){el.textContent=cnt;el.classList.toggle('show',cnt>0)}});
+    updateNotifBadge();
   }catch(e){}
 }
 
@@ -788,6 +794,51 @@ log('🎉 '+ok+' productos nuevos importados (los existentes no se tocaron)');lo
 async function verData(){toast('Verificando...');try{const res=await fetch(SYNC+'?accion=obtener');const d=await res.json();const sc=d.slice(1).filter(f=>f[0]!=null&&f[0]!=='').length;const{count}=await db.from('stock').select('*',{count:'exact',head:true});alert('Sheet: '+sc+'\nSupabase: '+(count||'?')+'\n\n'+(Math.abs(sc-(count||0))<100?'✅ OK':'⚠️ Diferencia'))}catch(e){toast('Error')}}
 
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
+
+/* NOTIFICATION PANEL */
+function toggleNotifPanel(){
+  const p=$('notif-panel');
+  if(p.style.display==='none'){p.style.display='block';buildNotifPanel()}
+  else p.style.display='none';
+}
+
+function buildNotifPanel(){
+  const items=[];
+  // Stock alerts from monitored products
+  const stockAlerts=ALL.filter(p=>p.monitorear&&p.estado_alerta&&p.estado_alerta!=='OK');
+  stockAlerts.forEach(p=>{
+    const isUrgent=p.estado_alerta==='SIN STOCK'||p.estado_alerta.includes('CRITICO');
+    items.push({type:'stock',urgent:isUrgent,html:'<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:var(--rs);margin-bottom:5px;border-left:3px solid '+(isUrgent?'var(--err)':'var(--warn)')+';cursor:pointer" onclick="showDet(ALL.find(x=>x.id==='+p.id+'));$(\'notif-panel\').style.display=\'none\'">'
+      +'<div style="font-size:18px">'+(p.emoji||ico(p.articulo))+'</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.articulo+'</div>'
+      +'<div style="font-size:10px;color:'+(isUrgent?'var(--err)':'var(--warn)')+';font-weight:600">'+(p.estado_alerta.replace('_',' '))+' · '+(p.cantidades||0)+' u.</div></div></div>'});
+  });
+  // Pending tasks
+  if(ses?.rol!=='admin'){
+    const pendingTasks=window._pendingTaskCount||0;
+    if(pendingTasks>0)items.push({type:'task',urgent:false,html:'<div style="padding:8px 10px;background:var(--pri-l);border-radius:var(--rs);margin-bottom:5px;border-left:3px solid var(--pri);cursor:pointer" onclick="go(\'tasks\');$(\'notif-panel\').style.display=\'none\'"><div style="font-size:12px;font-weight:600;color:var(--pri)">📋 '+pendingTasks+' tarea'+(pendingTasks>1?'s':'')+' pendiente'+(pendingTasks>1?'s':'')+'</div><div style="font-size:10px;color:var(--tx3)">Tocá para ver</div></div>'});
+  }
+  // Update bell badge
+  const totalNotifs=stockAlerts.length+(ses?.rol!=='admin'?(window._pendingTaskCount||0):0);
+  const badge=$('notif-bell-badge');
+  if(badge){badge.textContent=totalNotifs;badge.classList.toggle('show',totalNotifs>0)}
+  // Render
+  const el=$('notif-panel-list');
+  if(!items.length){el.innerHTML='<div class="emp" style="padding:20px">Sin notificaciones 🎉</div>';return}
+  let html='';
+  if(stockAlerts.length)html+='<div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin:6px 0 4px">Stock · '+stockAlerts.length+' alertas</div>'+items.filter(i=>i.type==='stock').map(i=>i.html).join('');
+  const taskItems=items.filter(i=>i.type==='task');
+  if(taskItems.length)html+='<div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin:10px 0 4px">Tareas</div>'+taskItems.map(i=>i.html).join('');
+  el.innerHTML=html;
+}
+
+function updateNotifBadge(){
+  const stockAlerts=ALL.filter(p=>p.monitorear&&p.estado_alerta&&p.estado_alerta!=='OK');
+  const tasks=ses?.rol!=='admin'?(window._pendingTaskCount||0):0;
+  const total=stockAlerts.length+tasks;
+  const badge=$('notif-bell-badge');
+  if(badge){badge.textContent=total;badge.classList.toggle('show',total>0)}
+}
 
 /* INIT */
 try{const s=localStorage.getItem('ep4');if(s){const d=JSON.parse(s);if(d.usuario===SA.usuario)startApp({...SA});else db.from('usuarios').select('*').eq('usuario',d.usuario).eq('activo',true).single().then(({data})=>{if(data)startApp({usuario:data.usuario,nombre:data.nombre,rol:data.rol});else{clearSes();$('scr-login').style.display='flex'}}).catch(()=>{$('scr-login').style.display='flex'})}else $('scr-login').style.display='flex'}catch(e){$('scr-login').style.display='flex'}
