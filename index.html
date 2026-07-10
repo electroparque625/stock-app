@@ -208,7 +208,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="cd" id="d-ac" style="display:none"><div style="display:flex;align-items:center;gap:8px"><span id="d-ai" style="font-size:20px">🔴</span><div><div id="d-at" style="font-size:13px;font-weight:600">—</div><div id="d-as2" style="font-size:11px;color:var(--tx3)">—</div></div></div></div>
 <div class="cd"><div class="sn" id="d-stk">—</div><div class="sl">unidades en stock</div>
 <div class="st"><button class="sb2" onclick="chQ(-1)">−</button><input type="number" class="sq" id="d-q" value="1" min="1"/><button class="sb2" onclick="chQ(1)">+</button></div>
-<div id="canal-sel" style="display:none"><div class="stit">Canal de venta</div><div class="ch-sel"><div class="ch-opt sel" data-ch="mostrador" onclick="selCh(this)"><span class="ch-ico">🏬</span>Mostrador</div><div class="ch-opt" data-ch="mercadolibre" onclick="selCh(this)"><span class="ch-ico">🛒</span>MercadoLibre</div><div class="ch-opt" data-ch="tiendanube" onclick="selCh(this)"><span class="ch-ico">🏪</span>Tienda Nube</div></div><button class="b be" style="margin-top:8px" onclick="confirmVenta()">Confirmar venta</button></div>
+<div id="canal-sel" style="display:none">
+<div id="sale-choice" style="text-align:center;padding:8px 0"><div class="fst" style="margin-bottom:8px">¿Es una venta?</div><div style="display:flex;gap:8px"><button class="b bo" onclick="$('sale-choice').style.display='none';$('sale-canal').style.display='block'" style="flex:1">Sí, es venta</button><button class="b bs" onclick="confirmAjuste()" style="flex:1">No, ajuste de stock</button></div></div>
+<div id="sale-canal" style="display:none"><div class="fst">Canal de venta</div><div class="ch-sel"><div class="ch-opt sel" data-ch="mostrador" onclick="selCh(this)"><span class="ch-ico">🏬</span>Mostrador</div><div class="ch-opt" data-ch="mercadolibre" onclick="selCh(this)"><span class="ch-ico">🛒</span>MercadoLibre</div><div class="ch-opt" data-ch="tiendanube" onclick="selCh(this)"><span class="ch-ico">🏪</span>Tienda Nube</div></div><button class="b be" style="margin-top:8px" onclick="confirmVenta()">Confirmar venta</button></div>
+</div>
 <div class="or"><button class="ob o-r" id="br" onclick="adjStk('restar')">− Restar (venta)</button><button class="ob o-s" id="bs2" onclick="adjStk('sumar')">+ Sumar (ingreso)</button></div>
 <div class="er"><span class="el2">Total:</span><input type="number" class="ei" id="d-eq" min="0"/><button class="es" onclick="setDirect()">Guardar</button></div>
 </div>
@@ -562,13 +565,28 @@ function selCh(el){document.querySelectorAll('.ch-opt').forEach(x=>x.classList.r
 
 async function adjStk(op){
   cQty=Math.max(1,parseInt($('d-q').value)||1);if(!cur)return;
-  if(op==='restar'){$('canal-sel').style.display='block';return}
-  // Sumar goes directly
+  if(op==='restar'){$('canal-sel').style.display='block';$('sale-choice').style.display='block';$('sale-canal').style.display='none';return}
   await doStockChange('sumar');
 }
 
-async function confirmVenta(){
-  await doStockChange('restar');
+async function confirmVenta(){await doStockChange('restar')}
+
+async function confirmAjuste(){
+  if(!cur)return;
+  cQty=Math.max(1,parseInt($('d-q').value)||1);
+  const prev=cur.cantidades||0,nv=Math.max(0,prev-cQty);
+  const ne=cur.estado==='PAUSADA'?'PAUSADA':(nv>0?'STOCK':'SIN STOCK');const now=new Date();
+  $('br').disabled=$('bs2').disabled=true;
+  try{
+    await db.from('stock').update({cantidades:nv,estado:ne,ultimo_movimiento:now.toLocaleDateString('es-AR')}).eq('id',cur.id);
+    await db.from('movimientos').insert({fecha:now.toLocaleDateString('es-AR'),hora:now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:cur.articulo,sku:cur.sku,tipo:'ajuste',cantidad:cQty,stock_anterior:prev,stock_nuevo:nv,canal:'ajuste',monto:0});
+    syncS('actualizarStock',{sku:cur.sku,nuevaCantidad:nv,nuevoEstado:ne});
+    const{data:fresh}=await db.from('stock').select('*').eq('id',cur.id).single();
+    if(fresh){cur=fresh;const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx]=fresh}
+    $('canal-sel').style.display='none';showDet(cur);updM();filtrar();
+    toast('Ajuste: −'+cQty+' u. (sin venta)');cQty=1;$('d-q').value=1;
+  }catch(e){toast('Error: '+e.message)}
+  $('br').disabled=$('bs2').disabled=false;
 }
 
 async function doStockChange(op){
