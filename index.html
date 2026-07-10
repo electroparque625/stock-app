@@ -183,7 +183,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- DASHBOARD (admin) --><div class="sc" id="s-dash"><div class="dg" id="dk"></div><div class="stit">⭐ Nivel de stock — Productos monitoreados</div><div id="d-bars" style="display:flex;align-items:flex-end;gap:6px;min-height:220px;padding:16px 10px 0;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);margin-bottom:14px;overflow-x:auto;position:relative"><div class="emp">Marcá productos con ⭐</div></div><div class="stit">Detalle por producto</div><div id="d-mo"><div class="emp">Marcá productos con ⭐ para verlos acá</div></div></div>
 
-<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div><div class="stit" id="fac-list-title" style="margin-top:14px">Últimas ventas</div><div id="fac-list"></div></div>
+<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
+<div class="stit" style="margin-top:14px">💰 Facturación real MercadoLibre</div>
+<div class="dg" id="fac-ml-kpi"></div>
+<div id="fac-ml-detail"></div>
+<div class="stit" id="fac-list-title" style="margin-top:14px">Últimas ventas</div><div id="fac-list"></div></div>
 
 <!-- MONITOR DETAIL --><div class="sc" id="s-mondet">
 <button class="bk" onclick="go('dash')">‹ Volver al Dashboard</button>
@@ -362,7 +366,7 @@ function filtrar(){const q=($('q').value||'').toLowerCase();let l=ALL;
   if(filt==='alerta')l=l.filter(p=>p.estado_alerta&&p.estado_alerta!=='OK');
   else if(filt==='monitorear')l=l.filter(p=>p.monitorear);
   else if(filt!=='todos'&&filt!=='sinstock'&&filt!=='PAUSADA')l=l.filter(p=>(p.articulo||'').toLowerCase().includes(filt.toLowerCase()));
-  if(q){const words=q.split(/\s+/).filter(w=>w.length>0);l=l.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')+' '+(p.cod_barra||'')+' '+p.id).toLowerCase();return words.every(w=>h.includes(w))})}
+  if(q){const words=q.split(/\s+/).filter(w=>w.length>0);l=l.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')+' '+(p.cod_barra||'')+' '+(p.ml_id_1||'')+' '+(p.ml_id_2||'')+' '+(p.ml_id_3||'')+' '+p.id).toLowerCase();return words.every(w=>h.includes(w))})}
   rList(l)}
 function rList(l){
   rend=l;const el=$('pl');
@@ -459,7 +463,57 @@ async function rFac(){
     // Default: show all
     window._facVentas=ventas;window._chMap=chMap;
     showCanalVentas('all');
+    // Fetch real ML billing
+    loadMLBilling();
   }catch(e){$('fac-detail').innerHTML='<div class="emp">Error: '+e.message+'</div>'}
+}
+
+async function loadMLBilling(){
+  $('fac-ml-kpi').innerHTML='<div class="dc full"><div class="ld"><div class="sp"></div>Cargando facturación ML...</div></div>';
+  $('fac-ml-detail').innerHTML='';
+  try{
+    const res=await fetch(SYNC+'?accion=ventasML');
+    const ventas=await res.json();
+    if(!ventas||!ventas.length){$('fac-ml-kpi').innerHTML='<div class="dc full"><div class="emp">Sin datos de ML</div></div>';return}
+    const byCuenta={};
+    let totalBruto=0,totalComision=0,totalNeto=0,totalVentas=0;
+    ventas.forEach(v=>{
+      const cta=v.cuenta||'Desconocida';
+      if(!byCuenta[cta])byCuenta[cta]={bruto:0,comision:0,neto:0,cnt:0,items:[]};
+      byCuenta[cta].bruto+=v.bruto||0;
+      byCuenta[cta].comision+=v.comision||0;
+      byCuenta[cta].neto+=v.neto||0;
+      byCuenta[cta].cnt++;
+      byCuenta[cta].items.push(v);
+      totalBruto+=v.bruto||0;totalComision+=v.comision||0;totalNeto+=v.neto||0;totalVentas++;
+    });
+    $('fac-ml-kpi').innerHTML='<div class="dc"><div class="dl">Bruto</div><div class="dv">$'+Math.round(totalBruto).toLocaleString('es-AR')+'</div></div>'
+      +'<div class="dc"><div class="dl">Comisión ML</div><div class="dv e">-$'+Math.round(totalComision).toLocaleString('es-AR')+'</div></div>'
+      +'<div class="dc"><div class="dl">Neto (te queda)</div><div class="dv ok">$'+Math.round(totalNeto).toLocaleString('es-AR')+'</div></div>'
+      +'<div class="dc"><div class="dl">Ventas</div><div class="dv">'+totalVentas+'</div></div>';
+    $('fac-ml-detail').innerHTML='<div class="fac-card">'+Object.entries(byCuenta).map(([cta,d])=>{
+      const ctaNames={'Cuenta 1':'Ivan','Cuenta 2':'Gustavo','Cuenta 3':'Mauro'};
+      const nombre=ctaNames[cta]||cta;
+      return'<div class="fac-row" style="cursor:pointer" onclick="showMLDetalle(\''+cta+'\')">'
+        +'<div class="fac-ch"><span class="fac-ico">🛒</span><div><div class="fac-name">'+nombre+' ('+cta+')</div>'
+        +'<div style="font-size:11px;color:var(--tx3)">'+d.cnt+' ventas · Bruto $'+Math.round(d.bruto).toLocaleString('es-AR')+'</div></div></div>'
+        +'<div style="text-align:right"><div class="fac-val" style="color:var(--ok)">$'+Math.round(d.neto).toLocaleString('es-AR')+'</div>'
+        +'<div style="font-size:10px;color:var(--err)">-$'+Math.round(d.comision).toLocaleString('es-AR')+' ML</div></div></div>'
+    }).join('')+'</div>';
+    window._mlVentas=ventas;window._mlByCuenta=byCuenta;
+  }catch(e){$('fac-ml-kpi').innerHTML='<div class="dc full"><div class="emp">Error ML: '+e.message+'</div></div>'}
+}
+
+function showMLDetalle(cuenta){
+  const data=window._mlByCuenta;if(!data||!data[cuenta])return;
+  const items=data[cuenta].items;
+  const ctaNames={'Cuenta 1':'Ivan','Cuenta 2':'Gustavo','Cuenta 3':'Mauro'};
+  $('fac-list-title').textContent='💰 '+(ctaNames[cuenta]||cuenta)+' — Detalle de ventas';
+  $('fac-list').innerHTML=items.map(v=>{
+    const fecha=v.fecha?new Date(v.fecha).toLocaleDateString('es-AR'):'';
+    return'<div class="mr"><div class="mt"><div class="ma">'+v.titulo+'</div><span class="mg" style="background:var(--ok-l);color:var(--ok)">$'+Math.round(v.neto).toLocaleString('es-AR')+' neto</span></div>'
+      +'<div class="mm"><span>📅 '+fecha+'</span><span>MLA: '+v.mla+'</span><span>×'+v.cantidad+'</span><span>Bruto: $'+Math.round(v.bruto).toLocaleString('es-AR')+'</span><span style="color:var(--err)">Comisión: -$'+Math.round(v.comision).toLocaleString('es-AR')+'</span></div></div>'
+  }).join('');
 }
 
 function showCanalVentas(canal){
@@ -865,6 +919,8 @@ async function syncLogsSilent(){
       if(ex&&ex.length)continue;
       const nombre=ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta;
       await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:0,stock_nuevo:0,canal:'ml_'+nombre.toLowerCase(),monto:0});
+      // Restar stock en Supabase
+      if(mla){const prod=ALL.find(x=>x.ml_id_1===mla||x.ml_id_2===mla||x.ml_id_3===mla);if(prod&&prod.cantidades>0){const nv=Math.max(0,prod.cantidades-cant);await db.from('stock').update({cantidades:nv,estado:nv>0?'STOCK':'SIN STOCK'}).eq('id',prod.id);prod.cantidades=nv;const idx=ALL.findIndex(x=>x.id===prod.id);if(idx>-1)ALL[idx].cantidades=nv}}
       imported++;
     }
     if(imported>0)console.log('Auto-sync: '+imported+' ventas ML importadas');
@@ -920,6 +976,8 @@ async function syncLogs(){
       if(ex&&ex.length){skipped++;continue}
       const nombre=ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta;
       await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:0,stock_nuevo:0,canal:'ml_'+nombre.toLowerCase(),monto:0});
+      // Restar stock en Supabase
+      if(mla){const prod=ALL.find(x=>x.ml_id_1===mla||x.ml_id_2===mla||x.ml_id_3===mla);if(prod&&prod.cantidades>0){const nv=Math.max(0,prod.cantidades-cant);await db.from('stock').update({cantidades:nv,estado:nv>0?'STOCK':'SIN STOCK'}).eq('id',prod.id);prod.cantidades=nv;const idx=ALL.findIndex(x=>x.id===prod.id);if(idx>-1)ALL[idx].cantidades=nv}}
       imported++;
     }
     toast('Importados: '+imported+' | Omitidos: '+skipped);
