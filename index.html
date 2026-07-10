@@ -467,6 +467,7 @@ async function rFac(){
     $('fac-detail').innerHTML='<div class="fac-card">'+Object.entries(canales).map(([k,v])=>{const c=chMap[k]||{ico:'📦',name:k};return'<div class="fac-row" style="cursor:pointer" onclick="showCanalVentas(\''+k+'\')"><div class="fac-ch"><span class="fac-ico">'+c.ico+'</span><div><div class="fac-name">'+c.name+'</div><div style="font-size:11px;color:var(--tx3)">'+v.cnt+' ventas · '+v.units+' u.</div></div></div><div class="fac-val" style="color:var(--ok)">$'+v.monto.toLocaleString('es-AR')+'</div></div>'}).join('')+'</div>';
     // Default: show all
     window._facVentas=ventas;window._chMap=chMap;
+    window._otrosVentas=totalV;
     showCanalVentas('all');
     loadMLBilling();
   }catch(e){$('fac-detail').innerHTML='<div class="emp">Error: '+e.message+'</div>'}
@@ -484,38 +485,23 @@ async function uploadMLReport(){
     const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
     let headerRow=-1;
     for(let i=0;i<Math.min(rows.length,15);i++){if(rows[i]&&rows[i].some(c=>String(c).includes('# de venta'))){headerRow=i;break}}
-    if(headerRow<0){st.textContent='No encontré headers. ¿Es el reporte de ventas de ML?';return}
-    st.textContent='Cruzando con LOGS e inventario...';
-    // Build order->product map from movimientos (LOGS imported)
-    const{data:movs}=await db.from('movimientos').select('sku,articulo').ilike('canal','ml_%');
-    const ordenMap={};
-    (movs||[]).forEach(m=>{if(m.sku)ordenMap[m.sku]={articulo:m.articulo,mla:''}; const mlaM=(m.articulo||'').match(/\[(MLA\d+)\]/);if(mlaM)ordenMap[m.sku].mla=mlaM[1]});
-    // Build MLA->product map from inventory
-    const mlaMap={};
-    ALL.forEach(p=>{if(p.ml_id_1)mlaMap[p.ml_id_1]=p.articulo;if(p.ml_id_2)mlaMap[p.ml_id_2]=p.articulo;if(p.ml_id_3)mlaMap[p.ml_id_3]=p.articulo});
+    if(headerRow<0){st.textContent='No encontré headers';return}
+    st.textContent='Procesando ventas...';
     await db.from('facturacion_ml').delete().eq('cuenta',cuenta);
     const inserts=[];
     for(let i=headerRow+1;i<rows.length;i++){
       const r=rows[i];const orden=String(r[0]||'');
       if(!orden.startsWith('200'))continue;
       const bruto=parseFloat(r[7])||0;const neto=parseFloat(r[18])||0;
-      const envio=parseFloat(r[12])||0;const costoEnvio=parseFloat(r[13])||0;
-      const esFull=Math.abs(costoEnvio)>0||String(r[3]||'').includes('Full');
-      // Cross-reference
-      let producto='Orden #'+orden;
-      const logEntry=ordenMap[orden];
-      if(logEntry&&logEntry.mla){
-        const nombre=mlaMap[logEntry.mla];
-        producto=nombre?nombre+' ['+logEntry.mla+']':logEntry.articulo||logEntry.mla;
-      }else if(logEntry){
-        producto=logEntry.articulo||producto;
-      }
-      if(esFull&&!producto.includes('FULL'))producto='📦 FULL · '+producto;
-      inserts.push({cuenta,orden,fecha:String(r[1]||''),estado:producto,unidades:parseInt(r[6])||1,bruto,deducciones:bruto-neto,neto});
+      const mla=String(r[23]||'').trim();
+      const titulo=String(r[24]||'').trim();
+      const comprador=String(r[33]||'').trim();
+      const entrega=String(r[41]||'').trim();
+      inserts.push({cuenta,orden,fecha:String(r[1]||''),estado:String(r[2]||''),unidades:parseInt(r[6])||1,bruto,deducciones:bruto-neto,neto,mla,titulo,comprador,entrega});
     }
     let ok=0;
-    for(let i=0;i<inserts.length;i+=100){const batch=inserts.slice(i,i+100);const{error}=await db.from('facturacion_ml').insert(batch);if(!error)ok+=batch.length}
-    st.textContent='✅ '+ok+' ventas de '+cuenta+' importadas y cruzadas con inventario';
+    for(let i=0;i<inserts.length;i+=100){const batch=inserts.slice(i,i+100);const{error}=await db.from('facturacion_ml').insert(batch);if(!error)ok+=batch.length;else console.warn(error)}
+    st.textContent='✅ '+ok+' ventas de '+cuenta+' importadas';
     toast(ok+' ventas importadas');loadMLBilling();
   }catch(e){st.textContent='Error: '+e.message}
 }
@@ -556,9 +542,9 @@ async function loadMLBilling(){
     const pieMl=$('fac-pie-ml-svg');
     const mlPie=Object.entries(byCuenta).map(([k,v])=>{const colors={ivan:'#3498db',gustavo:'#e67e22',mauro:'#9b59b6'};const names={ivan:'Ivan',gustavo:'Gustavo',mauro:'Mauro'};return{name:names[k]||k,val:Math.round(v.neto)||0,color:colors[k]||'#999',key:k}}).filter(d=>d.val>0);
     if(pieMl)pieMl.innerHTML=mlPie.length?makePie(mlPie):'<div class="emp">Subí reportes ML</div>';
-    // Also update general pie with ML total
+    // Also update general pie with ML + others by sales count
     const gPie=$('fac-pie-svg');
-    if(gPie){const gData=[{name:'MercadoLibre',val:Math.round(totalNeto),color:'#FFE600',key:'ml'},{name:'Otros canales',val:1,color:'var(--pri)',key:'all'}].filter(d=>d.val>0);gPie.innerHTML=gData.length?makePie(gData):''}
+    if(gPie){const gData=[{name:'MercadoLibre',val:totalVentas,color:'#FFE600',key:'ml'},{name:'Mostrador/TN',val:window._otrosVentas||0,color:'var(--pri)',key:'all'}].filter(d=>d.val>0);gPie.innerHTML=gData.length?makePie(gData):''}
   }catch(e){$('fac-ml-kpi').innerHTML='<div class="dc full"><div class="emp">Error: '+e.message+'</div></div>'}
 }
 
@@ -569,15 +555,22 @@ function showMLDetalle(cuenta){
   $('fac-list-title').textContent='💰 '+(ctaNames[cuenta]||cuenta)+' — Detalle';
   $('fac-list').innerHTML=items.map((v,i)=>{
     const dedPct=v.bruto>0?Math.round(v.deducciones/v.bruto*100):0;
-    return'<div class="mr" style="cursor:pointer" onclick="this.querySelector(\'.fac-expanded\').style.display=this.querySelector(\'.fac-expanded\').style.display===\'none\'?\'block\':\'none\'"><div class="mt"><div class="ma">'+v.estado+'</div><span class="mg" style="background:var(--ok-l);color:var(--ok)">$'+Math.round(v.neto).toLocaleString('es-AR')+'</span></div>'
-      +'<div class="mm"><span>📅 '+v.fecha+'</span><span>×'+v.unidades+'</span></div>'
+    const esFull=(v.entrega||'').toLowerCase().includes('full');
+    const tag=esFull?'📦 Full':'🚚 '+(v.entrega||'Envío');
+    return'<div class="mr" style="cursor:pointer" onclick="this.querySelector(\'.fac-expanded\').style.display=this.querySelector(\'.fac-expanded\').style.display===\'none\'?\'block\':\'none\'">'
+      +'<div class="mt"><div class="ma">'+(v.titulo||v.estado||'Orden #'+v.orden)+'</div><span class="mg" style="background:var(--ok-l);color:var(--ok)">$'+Math.round(v.neto).toLocaleString('es-AR')+'</span></div>'
+      +'<div class="mm"><span>📅 '+v.fecha+'</span><span>'+tag+'</span>'+(v.comprador?'<span>👤 '+v.comprador+'</span>':'')+'</div>'
       +'<div class="fac-expanded" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--brd);font-size:12px">'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
       +'<div>Orden: <b>#'+v.orden+'</b></div>'
+      +(v.mla?'<div>MLA: <b>'+v.mla+'</b></div>':'')
       +'<div>Unidades: <b>'+v.unidades+'</b></div>'
       +'<div>Bruto: <b>$'+Math.round(v.bruto).toLocaleString('es-AR')+'</b></div>'
       +'<div style="color:var(--err)">Deducciones: <b>-$'+Math.round(v.deducciones).toLocaleString('es-AR')+' ('+dedPct+'%)</b></div>'
       +'<div style="color:var(--ok)">Neto: <b>$'+Math.round(v.neto).toLocaleString('es-AR')+'</b></div>'
+      +(v.comprador?'<div>Comprador: <b>'+v.comprador+'</b></div>':'')
+      +(v.entrega?'<div>Entrega: <b>'+v.entrega+'</b></div>':'')
+      +'<div>Estado: <b>'+(v.estado||'—')+'</b></div>'
       +'<div>Cuenta: <b>'+v.cuenta+'</b></div>'
       +'</div></div></div>'
   }).join('');
