@@ -489,8 +489,8 @@ async function loadMLBilling(){
     });
     $('fac-ml-kpi').innerHTML='<div class="dc"><div class="dl">Bruto</div><div class="dv">$'+Math.round(totalBruto).toLocaleString('es-AR')+'</div></div>'
       +'<div class="dc"><div class="dl">Comisión ML</div><div class="dv e">-$'+Math.round(totalComision).toLocaleString('es-AR')+'</div></div>'
-      +'<div class="dc"><div class="dl">Neto (te queda)</div><div class="dv ok">$'+Math.round(totalNeto).toLocaleString('es-AR')+'</div></div>'
-      +'<div class="dc"><div class="dl">Ventas</div><div class="dv">'+totalVentas+'</div></div>';
+      +'<div class="dc"><div class="dl">Costo productos</div><div class="dv e">-$'+Math.round(totalCosto).toLocaleString('es-AR')+'</div></div>'
+      +'<div class="dc"><div class="dl">Ganancia real</div><div class="dv ok">$'+Math.round(totalGanancia).toLocaleString('es-AR')+'</div></div>';
     $('fac-ml-detail').innerHTML='<div class="fac-card">'+Object.entries(byCuenta).map(([cta,d])=>{
       const ctaNames={'Cuenta 1':'Ivan','Cuenta 2':'Gustavo','Cuenta 3':'Mauro'};
       const nombre=ctaNames[cta]||cta;
@@ -1032,7 +1032,7 @@ async function fullResync(){
       if(error){for(const p of b){const{error:e2}=await db.from('stock').insert(p);if(!e2)ok++;else log('❌ '+p.sku+': '+e2.message)}}
       else{ok+=b.length;log('📦 '+ok+'/'+prods.length)}
     }
-    try{await db.rpc('reset_stock_sequence')}catch(e){log('⚠️ Secuencia: SELECT setval(stock_id_seq, MAX(id)) manualmente')}
+    try{await db.rpc('reset_stock_sequence')}catch(e){try{await db.rpc('exec_sql',{query:"SELECT setval('stock_id_seq',(SELECT COALESCE(MAX(id),0) FROM stock))"});log('✅ Secuencia reseteada')}catch(e2){log('⚠️ Ejecutá manualmente: SELECT setval(stock_id_seq, MAX(id) FROM stock)')}}
     log('🎉 Re-sync completo: '+ok+' productos importados con ML Links 2 y 3');
     loadData();
   }catch(e){log('❌ '+e.message)}
