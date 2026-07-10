@@ -265,7 +265,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- USERS --><div class="sc" id="s-usr"><div class="fs"><div class="fst">Nuevo usuario</div><div class="fr"><div class="f"><label>Nombre</label><input type="text" id="un"/></div><div class="f"><label>Usuario</label><input type="text" id="uu"/></div></div><div class="f"><label>Contraseña</label><input type="password" id="up"/></div>
 <div class="f"><label>Rol</label><select id="u-rol"><option value="usuario">Usuario (sin precios)</option><option value="admin">Admin (ve precios)</option></select></div><button class="b bp" onclick="createUsr()" style="margin-top:4px">Crear</button></div><div class="stit">Usuarios activos</div><div id="ul"><div class="ld"><div class="sp"></div></div></div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)"><div class="stit">Admin</div><button class="b bp" onclick="syncLogs()" style="margin-bottom:8px">📊 Sincronizar ventas desde LOGS</button>
-<button class="b bp" onclick="syncMLLinks()" style="margin-bottom:8px">🔗 Importar ML Links 2 y 3 del Sheet</button><button class="b bs" onclick="fixOldML()" style="margin-bottom:8px">🔄 Re-asignar cuentas ML</button><button class="b be" onclick="bulkDeleteSinStock()" style="margin-bottom:8px">🗑 Eliminar todos los SIN STOCK</button><button class="b bw" onclick="migSheet()" style="margin-bottom:8px">📥 Migrar Sheet</button><button class="b bo" onclick="verData()" style="margin-bottom:8px">🔍 Verificar</button><div id="mlog" style="display:none;background:#111;color:#0f0;font-family:monospace;font-size:10px;padding:10px;border-radius:var(--rs);max-height:250px;overflow-y:auto;line-height:1.7;margin-top:8px"></div></div></div>
+<button class="b bp" onclick="syncMLLinks()" style="margin-bottom:8px">🔗 Importar ML Links 2 y 3 del Sheet</button><button class="b bs" onclick="fixOldML()" style="margin-bottom:8px">🔄 Re-asignar cuentas ML</button><button class="b be" onclick="bulkDeleteSinStock()" style="margin-bottom:8px">🗑 Eliminar todos los SIN STOCK</button><button class="b bw" onclick="migSheet()" style="margin-bottom:8px">📥 Importar nuevos del Sheet</button>
+<button class="b be" onclick="fullResync()" style="margin-bottom:8px">🔄 Re-sync COMPLETO (borra y reimporta todo)</button><button class="b bo" onclick="verData()" style="margin-bottom:8px">🔍 Verificar</button><div id="mlog" style="display:none;background:#111;color:#0f0;font-family:monospace;font-size:10px;padding:10px;border-radius:var(--rs);max-height:250px;overflow-y:auto;line-height:1.7;margin-top:8px"></div></div></div>
 </div>
 
 <div class="bnav">
@@ -920,6 +921,46 @@ log('🆕 '+newProds.length+' productos nuevos ('+dupes+' ya existían, '+skip+'
 let ok=0;for(let i=0;i<newProds.length;i+=100){const b=newProds.slice(i,i+100);const{error}=await db.from('stock').insert(b);if(error){for(const p of b){const{error:e2}=await db.from('stock').insert(p);if(!e2)ok++}}else{ok+=b.length;log('📦 '+ok+'/'+newProds.length)}}
 log('🎉 '+ok+' productos nuevos importados (los existentes no se tocaron)');loadData()}catch(e){log('❌ '+e.message)}}
 async function verData(){toast('Verificando...');try{const res=await fetch(SYNC+'?accion=obtener');const d=await res.json();const sc=d.slice(1).filter(f=>f[0]!=null&&f[0]!=='').length;const{count}=await db.from('stock').select('*',{count:'exact',head:true});alert('Sheet: '+sc+'\nSupabase: '+(count||'?')+'\n\n'+(Math.abs(sc-(count||0))<100?'✅ OK':'⚠️ Diferencia'))}catch(e){toast('Error')}}
+
+async function fullResync(){
+  if(!isSA())return;
+  if(!confirm('⚠️ Esto BORRA todo el stock en Supabase y lo reimporta completo del Sheet. Los monitoreados se pierden.\n\n¿Continuar?'))return;
+  if(!confirm('ÚLTIMA CONFIRMACIÓN: se borra TODO y se reimporta. ¿Seguro?'))return;
+  const lg=$('mlog');lg.style.display='block';const log=m=>{lg.innerHTML+=m+'<br>';lg.scrollTop=lg.scrollHeight};
+  try{
+    log('🗑️ Limpiando Supabase...');
+    await db.from('stock').delete().neq('id',0);
+    log('📥 Descargando Sheet...');
+    const res=await fetch(SYNC+'?accion=obtener');
+    const data=await res.json();
+    const headers=data[0];
+    const rows=data.slice(1).filter(f=>f[0]!=null&&f[0]!=='');
+    log('📊 '+rows.length+' filas en Sheet');
+    // Find link columns dynamically
+    let colLink2=-1,colLink3=-1;
+    headers.forEach((h,i)=>{const hUp=String(h).toUpperCase().replace(/\s/g,'');if(hUp.includes('LINK_ML2')||hUp.includes('LINKML2'))colLink2=i;if(hUp.includes('LINK_ML3')||hUp.includes('LINKML3'))colLink3=i});
+    log('📎 Link2 col:'+colLink2+' Link3 col:'+colLink3);
+    const prods=[],skus=new Set();let skip=0;
+    for(const f of rows){
+      const sku=String(f[1]||'').trim();
+      if(!sku){skip++;continue}
+      if(skus.has(sku)){skip++;continue}
+      skus.add(sku);
+      prods.push({sku,cod_barra:f[2]?String(f[2]):null,marca:f[3]?String(f[3]):null,modelo:f[4]?String(f[4]):null,cantidades:+f[5]||0,articulo:String(f[6]||''),fecha:f[7]?String(f[7]):null,caja:f[8]?String(f[8]):null,estanteria:f[9]?String(f[9]):null,estado:f[10]?String(f[10]):'SIN STOCK',link:f[12]?String(f[12]):null,link_2:colLink2>=0&&f[colLink2]?String(f[colLink2]):null,link_3:colLink3>=0&&f[colLink3]?String(f[colLink3]):null,precio_al_costo:+f[14]||0,margen_ganancia:+f[15]||0,precio_venta:+f[16]||0,precio_mayorista:+f[17]||0,stock_minimo:+f[18]||0,ultimo_movimiento:f[19]?String(f[19]):null,imagen:f[21]?String(f[21]):null,observaciones:f[22]?String(f[22]):null,ml_id_1:f[23]?String(f[23]):null,ml_id_2:f[24]?String(f[24]):null});
+    }
+    log('✅ '+prods.length+' productos ('+skip+' omitidos)');
+    let ok=0;
+    for(let i=0;i<prods.length;i+=100){
+      const b=prods.slice(i,i+100);
+      const{error}=await db.from('stock').insert(b);
+      if(error){for(const p of b){const{error:e2}=await db.from('stock').insert(p);if(!e2)ok++;else log('❌ '+p.sku+': '+e2.message)}}
+      else{ok+=b.length;log('📦 '+ok+'/'+prods.length)}
+    }
+    try{await db.rpc('reset_stock_sequence')}catch(e){log('⚠️ Secuencia: SELECT setval(stock_id_seq, MAX(id)) manualmente')}
+    log('🎉 Re-sync completo: '+ok+' productos importados con ML Links 2 y 3');
+    loadData();
+  }catch(e){log('❌ '+e.message)}
+}
 
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
 
