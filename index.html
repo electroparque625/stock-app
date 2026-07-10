@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Electro Parque — Stock</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{--pri:#1a6dca;--pri-l:#e3f0ff;--ok:#2d8a3e;--ok-l:#e6f4ea;--warn:#b5760a;--warn-l:#fdf0d5;--err:#c23535;--err-l:#fde8e8;--bg:#f4f5f7;--card:#fff;--brd:#e2e4e9;--tx:#1c1c1e;--tx2:#5f6368;--tx3:#9aa0a6;--rad:12px;--rs:8px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -185,6 +186,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
 <div class="stit" style="margin-top:14px">💰 Facturación real MercadoLibre</div>
+<div class="fs admin-only" style="display:none"><div class="fst">Subir reporte de MercadoLibre</div>
+<div class="fr"><div class="f"><label>Cuenta</label><select id="fac-upload-cuenta"><option value="ivan">Ivan (Cuenta 1)</option><option value="gustavo">Gustavo (Cuenta 2)</option><option value="mauro">Mauro (Cuenta 3)</option></select></div><div class="f"><label>Archivo Excel</label><input type="file" id="fac-upload-file" accept=".xlsx,.xls" style="padding:6px"/></div></div>
+<button class="b bp" onclick="uploadMLReport()" style="margin-top:4px">📊 Procesar reporte</button>
+<div id="fac-upload-status" style="font-size:11px;color:var(--tx3);margin-top:6px"></div>
+</div>
 <div class="dg" id="fac-ml-kpi"></div>
 <div id="fac-ml-detail"></div>
 <div class="stit" id="fac-list-title" style="margin-top:14px">Últimas ventas</div><div id="fac-list"></div></div>
@@ -443,7 +449,7 @@ async function rFac(){
   try{
     const now=new Date(),d30=new Date(now-30*86400000);
     const{data:movs}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',d30.toISOString()).order('created_at',{ascending:false});
-    const ventas=movs||[];
+    const ventas=(movs||[]).filter(v=>!(v.canal||'').startsWith('ml_')&&v.canal!=='mercadolibre');
     const canales={};
     ventas.forEach(v=>{const ch=v.canal||'mostrador';if(!canales[ch])canales[ch]={cnt:0,units:0,monto:0};canales[ch].cnt++;canales[ch].units+=v.cantidad||0;canales[ch].monto+=v.monto||0});
     const totalU=Object.values(canales).reduce((s,c)=>s+c.units,0);
@@ -463,57 +469,92 @@ async function rFac(){
     // Default: show all
     window._facVentas=ventas;window._chMap=chMap;
     showCanalVentas('all');
-    // Fetch real ML billing
     loadMLBilling();
   }catch(e){$('fac-detail').innerHTML='<div class="emp">Error: '+e.message+'</div>'}
 }
 
+async function uploadMLReport(){
+  const file=$('fac-upload-file').files[0];
+  const cuenta=$('fac-upload-cuenta').value;
+  if(!file){toast('Elegí un archivo');return}
+  const st=$('fac-upload-status');st.textContent='Leyendo Excel...';
+  try{
+    const data=await file.arrayBuffer();
+    const wb=XLSX.read(data);
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    // Find header row (look for "# de venta")
+    let headerRow=-1;
+    for(let i=0;i<Math.min(rows.length,15);i++){
+      const r=rows[i];if(r&&r.some(c=>String(c).includes('# de venta'))){headerRow=i;break}
+    }
+    if(headerRow<0){st.textContent='No encontré los headers. ¿Es el reporte de ventas de ML?';return}
+    st.textContent='Headers en fila '+(headerRow+1)+'. Procesando...';
+    // Delete old data for this account
+    await db.from('facturacion_ml').delete().eq('cuenta',cuenta);
+    const inserts=[];
+    for(let i=headerRow+1;i<rows.length;i++){
+      const r=rows[i];
+      const orden=String(r[0]||'');
+      if(!orden.startsWith('200'))continue;
+      inserts.push({cuenta,orden,fecha:String(r[1]||''),estado:String(r[2]||''),unidades:parseInt(r[6])||1,bruto:parseFloat(r[7])||0,deducciones:Math.abs(parseFloat(r[7])||0)-Math.abs(parseFloat(r[18])||0),neto:parseFloat(r[18])||0});
+    }
+    // Insert in batches
+    let ok=0;
+    for(let i=0;i<inserts.length;i+=100){
+      const batch=inserts.slice(i,i+100);
+      const{error}=await db.from('facturacion_ml').insert(batch);
+      if(!error)ok+=batch.length;
+    }
+    st.textContent='✅ '+ok+' ventas de '+cuenta+' importadas';
+    toast(ok+' ventas importadas para '+cuenta);
+    loadMLBilling();
+  }catch(e){st.textContent='Error: '+e.message}
+}
+
 async function loadMLBilling(){
-  $('fac-ml-kpi').innerHTML='<div class="dc full"><div class="ld"><div class="sp"></div>Cargando facturación ML...</div></div>';
+  $('fac-ml-kpi').innerHTML='<div class="dc full"><div class="ld"><div class="sp"></div>Cargando...</div></div>';
   $('fac-ml-detail').innerHTML='';
   try{
-    const res=await fetch(SYNC+'?accion=ventasML');
-    const ventas=await res.json();
-    if(!ventas||!ventas.length){$('fac-ml-kpi').innerHTML='<div class="dc full"><div class="emp">Sin datos de ML</div></div>';return}
+    const{data:ventas}=await db.from('facturacion_ml').select('*').order('created_at',{ascending:false});
+    if(!ventas||!ventas.length){$('fac-ml-kpi').innerHTML='<div class="dc full"><div class="emp">Subí los reportes de ML para ver la facturación real</div></div>';return}
     const byCuenta={};
-    let totalBruto=0,totalComision=0,totalCosto=0,totalGanancia=0,totalVentas=0;
+    let totalBruto=0,totalDed=0,totalNeto=0,totalVentas=0;
     ventas.forEach(v=>{
-      const cta=v.cuenta||'Desconocida';
-      if(!byCuenta[cta])byCuenta[cta]={bruto:0,comision:0,costo:0,ganancia:0,cnt:0,items:[]};
+      const cta=v.cuenta;
+      if(!byCuenta[cta])byCuenta[cta]={bruto:0,deducciones:0,neto:0,cnt:0,items:[]};
       byCuenta[cta].bruto+=v.bruto||0;
-      byCuenta[cta].comision+=v.comision||0;
-      byCuenta[cta].costo+=v.costo||0;
-      byCuenta[cta].ganancia+=v.ganancia||0;
+      byCuenta[cta].deducciones+=v.deducciones||0;
+      byCuenta[cta].neto+=v.neto||0;
       byCuenta[cta].cnt++;
       byCuenta[cta].items.push(v);
-      totalBruto+=v.bruto||0;totalComision+=v.comision||0;totalCosto+=v.costo||0;totalGanancia+=v.ganancia||0;totalVentas++;
+      totalBruto+=v.bruto||0;totalDed+=v.deducciones||0;totalNeto+=v.neto||0;totalVentas++;
     });
-    $('fac-ml-kpi').innerHTML='<div class="dc"><div class="dl">Bruto</div><div class="dv">$'+Math.round(totalBruto).toLocaleString('es-AR')+'</div></div>'
-      +'<div class="dc"><div class="dl">Comisión ML</div><div class="dv e">-$'+Math.round(totalComision).toLocaleString('es-AR')+'</div></div>'
-      +'<div class="dc"><div class="dl">Costo productos</div><div class="dv e">-$'+Math.round(totalCosto).toLocaleString('es-AR')+'</div></div>'
-      +'<div class="dc"><div class="dl">Ganancia real</div><div class="dv ok">$'+Math.round(totalGanancia).toLocaleString('es-AR')+'</div></div>';
+    $('fac-ml-kpi').innerHTML='<div class="dc"><div class="dl">Bruto total</div><div class="dv">$'+Math.round(totalBruto).toLocaleString('es-AR')+'</div></div>'
+      +'<div class="dc"><div class="dl">Deducciones ML</div><div class="dv e">-$'+Math.round(totalDed).toLocaleString('es-AR')+'</div></div>'
+      +'<div class="dc"><div class="dl">Neto en mano</div><div class="dv ok">$'+Math.round(totalNeto).toLocaleString('es-AR')+'</div></div>'
+      +'<div class="dc"><div class="dl">Ventas</div><div class="dv">'+totalVentas+'</div></div>';
+    const ctaNames={ivan:'Ivan (Cuenta 1)',gustavo:'Gustavo (Cuenta 2)',mauro:'Mauro (Cuenta 3)'};
     $('fac-ml-detail').innerHTML='<div class="fac-card">'+Object.entries(byCuenta).map(([cta,d])=>{
-      const ctaNames={'Cuenta 1':'Ivan','Cuenta 2':'Gustavo','Cuenta 3':'Mauro'};
-      const nombre=ctaNames[cta]||cta;
+      const pctDed=d.bruto>0?Math.round(d.deducciones/d.bruto*100):0;
       return'<div class="fac-row" style="cursor:pointer" onclick="showMLDetalle(\''+cta+'\')">'
-        +'<div class="fac-ch"><span class="fac-ico">🛒</span><div><div class="fac-name">'+nombre+' ('+cta+')</div>'
-        +'<div style="font-size:11px;color:var(--tx3)">'+d.cnt+' ventas · Bruto $'+Math.round(d.bruto).toLocaleString('es-AR')+'</div></div></div>'
-        +'<div style="text-align:right"><div class="fac-val" style="color:var(--ok)">$'+Math.round(d.ganancia).toLocaleString('es-AR')+'</div>'
-        +'<div style="font-size:10px;color:var(--err)">-$'+Math.round(d.comision).toLocaleString('es-AR')+' ML</div></div></div>'
+        +'<div class="fac-ch"><span class="fac-ico">🛒</span><div><div class="fac-name">'+(ctaNames[cta]||cta)+'</div>'
+        +'<div style="font-size:11px;color:var(--tx3)">'+d.cnt+' ventas · Bruto $'+Math.round(d.bruto).toLocaleString('es-AR')+' · ML se lleva '+pctDed+'%</div></div></div>'
+        +'<div style="text-align:right"><div class="fac-val" style="color:var(--ok)">$'+Math.round(d.neto).toLocaleString('es-AR')+'</div>'
+        +'<div style="font-size:10px;color:var(--err)">-$'+Math.round(d.deducciones).toLocaleString('es-AR')+'</div></div></div>'
     }).join('')+'</div>';
-    window._mlVentas=ventas;window._mlByCuenta=byCuenta;
-  }catch(e){$('fac-ml-kpi').innerHTML='<div class="dc full"><div class="emp">Error ML: '+e.message+'</div></div>'}
+    window._mlByCuenta=byCuenta;
+  }catch(e){$('fac-ml-kpi').innerHTML='<div class="dc full"><div class="emp">Error: '+e.message+'</div></div>'}
 }
 
 function showMLDetalle(cuenta){
   const data=window._mlByCuenta;if(!data||!data[cuenta])return;
   const items=data[cuenta].items;
-  const ctaNames={'Cuenta 1':'Ivan','Cuenta 2':'Gustavo','Cuenta 3':'Mauro'};
-  $('fac-list-title').textContent='💰 '+(ctaNames[cuenta]||cuenta)+' — Detalle de ventas';
-  $('fac-list').innerHTML=items.map(v=>{
-    const fecha=v.fecha?new Date(v.fecha).toLocaleDateString('es-AR'):'';
-    return'<div class="mr"><div class="mt"><div class="ma">'+v.titulo+'</div><span class="mg" style="background:var(--ok-l);color:var(--ok)">$'+Math.round(v.ganancia||0).toLocaleString('es-AR')+' ganancia</span></div>'
-      +'<div class="mm"><span>📅 '+fecha+'</span><span>MLA: '+v.mla+'</span><span>×'+v.cantidad+'</span><span>Bruto: $'+Math.round(v.bruto).toLocaleString('es-AR')+'</span><span style="color:var(--err)">ML: -$'+Math.round(v.comision).toLocaleString('es-AR')+'</span>'+(v.costo?'<span style="color:var(--err)">Costo: -$'+Math.round(v.costo).toLocaleString('es-AR')+'</span>':'')+'</div></div>'
+  const ctaNames={ivan:'Ivan (Cuenta 1)',gustavo:'Gustavo (Cuenta 2)',mauro:'Mauro (Cuenta 3)'};
+  $('fac-list-title').textContent='💰 '+(ctaNames[cuenta]||cuenta)+' — Detalle';
+  $('fac-list').innerHTML=items.slice(0,50).map(v=>{
+    return'<div class="mr"><div class="mt"><div class="ma">Orden #'+v.orden+'</div><span class="mg" style="background:var(--ok-l);color:var(--ok)">$'+Math.round(v.neto).toLocaleString('es-AR')+' neto</span></div>'
+      +'<div class="mm"><span>📅 '+v.fecha+'</span><span>'+v.estado+'</span><span>×'+v.unidades+'</span><span>Bruto: $'+Math.round(v.bruto).toLocaleString('es-AR')+'</span><span style="color:var(--err)">ML: -$'+Math.round(v.deducciones).toLocaleString('es-AR')+'</span></div></div>'
   }).join('');
 }
 
