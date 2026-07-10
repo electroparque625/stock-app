@@ -467,7 +467,7 @@ async function rFac(){
     $('fac-detail').innerHTML='<div class="fac-card">'+Object.entries(canales).map(([k,v])=>{const c=chMap[k]||{ico:'📦',name:k};return'<div class="fac-row" style="cursor:pointer" onclick="showCanalVentas(\''+k+'\')"><div class="fac-ch"><span class="fac-ico">'+c.ico+'</span><div><div class="fac-name">'+c.name+'</div><div style="font-size:11px;color:var(--tx3)">'+v.cnt+' ventas · '+v.units+' u.</div></div></div><div class="fac-val" style="color:var(--ok)">$'+v.monto.toLocaleString('es-AR')+'</div></div>'}).join('')+'</div>';
     // Default: show all
     window._facVentas=ventas;window._chMap=chMap;
-    window._otrosVentas=totalV;
+    window._otrosVentas=totalV;window._otrosVentasCount=totalV;window._otrosUnits=totalU;window._otrosFac=totalM;
     showCanalVentas('all');
     loadMLBilling();
   }catch(e){$('fac-detail').innerHTML='<div class="emp">Error: '+e.message+'</div>'}
@@ -545,6 +545,12 @@ async function loadMLBilling(){
     // Also update general pie with ML + others by sales count
     const gPie=$('fac-pie-svg');
     if(gPie){const gData=[{name:'MercadoLibre',val:totalVentas,color:'#FFE600',key:'ml'},{name:'Mostrador/TN',val:window._otrosVentas||0,color:'var(--pri)',key:'all'}].filter(d=>d.val>0);gPie.innerHTML=gData.length?makePie(gData):''}
+    // Update top KPIs with combined totals
+    const otrosV=window._otrosVentasCount||0,otrosU=window._otrosUnits||0,otrosFac=window._otrosFac||0;
+    $('fac-kpi').innerHTML='<div class="dc"><div class="dl">Ventas total</div><div class="dv">'+(totalVentas+otrosV)+'</div></div>'
+      +'<div class="dc"><div class="dl">ML ventas</div><div class="dv">'+totalVentas+'</div></div>'
+      +'<div class="dc"><div class="dl">Facturado ML (neto)</div><div class="dv ok">$'+Math.round(totalNeto).toLocaleString('es-AR')+'</div></div>'
+      +'<div class="dc"><div class="dl">Mostrador/TN</div><div class="dv">$'+Math.round(otrosFac).toLocaleString('es-AR')+'</div></div>';
   }catch(e){$('fac-ml-kpi').innerHTML='<div class="dc full"><div class="emp">Error: '+e.message+'</div></div>'}
 }
 
