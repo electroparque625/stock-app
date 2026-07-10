@@ -540,7 +540,7 @@ async function loadMLBilling(){
     window._mlByCuenta=byCuenta;window._mlReportNeto=totalNeto;window._mlReportByCuenta=byCuenta;
     // Render ML PIE CHARTS here (after data is loaded)
     const pieMl=$('fac-pie-ml-svg');
-    const mlPie=Object.entries(byCuenta).map(([k,v])=>{const colors={ivan:'#3498db',gustavo:'#e67e22',mauro:'#9b59b6'};const names={ivan:'Ivan',gustavo:'Gustavo',mauro:'Mauro'};return{name:names[k]||k,val:Math.round(v.neto)||0,color:colors[k]||'#999',key:k}}).filter(d=>d.val>0);
+    const mlPie=Object.entries(byCuenta).map(([k,v])=>{const colors={ivan:'#3498db',gustavo:'#e67e22',mauro:'#9b59b6'};const names={ivan:'Ivan',gustavo:'Gustavo',mauro:'Mauro'};return{name:names[k]||k,val:v.cnt,color:colors[k]||'#999',key:k}}).filter(d=>d.val>0);
     if(pieMl)pieMl.innerHTML=mlPie.length?makePie(mlPie):'<div class="emp">Subí reportes ML</div>';
     // Also update general pie with ML + others by sales count
     const gPie=$('fac-pie-svg');
