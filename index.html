@@ -457,14 +457,11 @@ async function rFac(){
     const totalV=Object.values(canales).reduce((s,c)=>s+c.cnt,0);
     const mlTotal=(canales.ml_ivan?.units||0)+(canales.ml_gustavo?.units||0)+(canales.ml_mauro?.units||0)+(canales.mercadolibre?.units||0);
     $('fac-kpi').innerHTML='<div class="dc"><div class="dl">Ventas (30d)</div><div class="dv">'+totalV+'</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv">'+totalU+'</div></div><div class="dc"><div class="dl">Facturado</div><div class="dv ok">$'+totalM.toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">ML total</div><div class="dv">'+mlTotal+' u.</div></div>';
-    // PIE 1: General - ML from reports + TN/Mostrador from movimientos
-    const mlReportTotal=window._mlReportNeto||0;
-    const g=[{name:'MercadoLibre',val:mlReportTotal||1,color:'#FFE600',key:'ml'},{name:'Tienda Nube',val:canales.tiendanube?.units||0,color:'#2ecc71',key:'tiendanube'},{name:'Mostrador',val:canales.mostrador?.units||0,color:'var(--pri)',key:'mostrador'}].filter(d=>d.val>0);
-    $('fac-pie-svg').innerHTML=g.length?makePie(g):'<div class="emp">Sin datos</div>';
-    // PIE 2: ML por cuenta from reports
-    const mlPie=window._mlReportByCuenta||{};
-    const ml=Object.entries(mlPie).map(([k,v])=>{const colors={ivan:'#3498db',gustavo:'#e67e22',mauro:'#9b59b6'};const names={ivan:'Ivan',gustavo:'Gustavo',mauro:'Mauro'};return{name:names[k]||k,val:Math.round(v.neto)||0,color:colors[k]||'#999',key:k}}).filter(d=>d.val>0);
-    $('fac-pie-ml-svg').innerHTML=ml.length?makePie(ml):'<div class="emp">Subí reportes ML</div>';
+    // PIE 1: General - will update after ML reports load
+    const g=[{name:'Tienda Nube',val:canales.tiendanube?.units||0,color:'#2ecc71',key:'tiendanube'},{name:'Mostrador',val:canales.mostrador?.units||0,color:'var(--pri)',key:'mostrador'}].filter(d=>d.val>0);
+    $('fac-pie-svg').innerHTML=g.length?makePie(g):'<div class="emp">Sin ventas manuales</div>';
+    // PIE 2: ML - will be filled by loadMLBilling
+    $('fac-pie-ml-svg').innerHTML='<div class="ld"><div class="sp"></div></div>';
     // Detail cards
     const chMap={ml_ivan:{ico:'🛒',name:'Ivan (Cuenta 1)'},ml_gustavo:{ico:'🛒',name:'Gustavo (Cuenta 2)'},ml_mauro:{ico:'🛒',name:'Mauro (Cuenta 3)'},mercadolibre:{ico:'🛒',name:'MercadoLibre'},tiendanube:{ico:'🏪',name:'Tienda Nube'},mostrador:{ico:'🏬',name:'Mostrador'}};
     $('fac-detail').innerHTML='<div class="fac-card">'+Object.entries(canales).map(([k,v])=>{const c=chMap[k]||{ico:'📦',name:k};return'<div class="fac-row" style="cursor:pointer" onclick="showCanalVentas(\''+k+'\')"><div class="fac-ch"><span class="fac-ico">'+c.ico+'</span><div><div class="fac-name">'+c.name+'</div><div style="font-size:11px;color:var(--tx3)">'+v.cnt+' ventas · '+v.units+' u.</div></div></div><div class="fac-val" style="color:var(--ok)">$'+v.monto.toLocaleString('es-AR')+'</div></div>'}).join('')+'</div>';
@@ -555,6 +552,13 @@ async function loadMLBilling(){
         +'<div style="font-size:10px;color:var(--err)">-$'+Math.round(d.deducciones).toLocaleString('es-AR')+'</div></div></div>'
     }).join('')+'</div>';
     window._mlByCuenta=byCuenta;window._mlReportNeto=totalNeto;window._mlReportByCuenta=byCuenta;
+    // Render ML PIE CHARTS here (after data is loaded)
+    const pieMl=$('fac-pie-ml-svg');
+    const mlPie=Object.entries(byCuenta).map(([k,v])=>{const colors={ivan:'#3498db',gustavo:'#e67e22',mauro:'#9b59b6'};const names={ivan:'Ivan',gustavo:'Gustavo',mauro:'Mauro'};return{name:names[k]||k,val:Math.round(v.neto)||0,color:colors[k]||'#999',key:k}}).filter(d=>d.val>0);
+    if(pieMl)pieMl.innerHTML=mlPie.length?makePie(mlPie):'<div class="emp">Subí reportes ML</div>';
+    // Also update general pie with ML total
+    const gPie=$('fac-pie-svg');
+    if(gPie){const gData=[{name:'MercadoLibre',val:Math.round(totalNeto),color:'#FFE600',key:'ml'},{name:'Otros canales',val:1,color:'var(--pri)',key:'all'}].filter(d=>d.val>0);gPie.innerHTML=gData.length?makePie(gData):''}
   }catch(e){$('fac-ml-kpi').innerHTML='<div class="dc full"><div class="emp">Error: '+e.message+'</div></div>'}
 }
 
@@ -563,9 +567,19 @@ function showMLDetalle(cuenta){
   const items=data[cuenta].items;
   const ctaNames={ivan:'Ivan (Cuenta 1)',gustavo:'Gustavo (Cuenta 2)',mauro:'Mauro (Cuenta 3)'};
   $('fac-list-title').textContent='💰 '+(ctaNames[cuenta]||cuenta)+' — Detalle';
-  $('fac-list').innerHTML=items.slice(0,50).map(v=>{
-    return'<div class="mr"><div class="mt"><div class="ma">'+v.estado+'</div><span class="mg" style="background:var(--ok-l);color:var(--ok)">$'+Math.round(v.neto).toLocaleString('es-AR')+' neto</span></div>'
-      +'<div class="mm"><span>📅 '+v.fecha+'</span><span>×'+v.unidades+'</span><span>Bruto: $'+Math.round(v.bruto).toLocaleString('es-AR')+'</span><span style="color:var(--err)">ML: -$'+Math.round(v.deducciones).toLocaleString('es-AR')+'</span></div></div>'
+  $('fac-list').innerHTML=items.map((v,i)=>{
+    const dedPct=v.bruto>0?Math.round(v.deducciones/v.bruto*100):0;
+    return'<div class="mr" style="cursor:pointer" onclick="this.querySelector(\'.fac-expanded\').style.display=this.querySelector(\'.fac-expanded\').style.display===\'none\'?\'block\':\'none\'"><div class="mt"><div class="ma">'+v.estado+'</div><span class="mg" style="background:var(--ok-l);color:var(--ok)">$'+Math.round(v.neto).toLocaleString('es-AR')+'</span></div>'
+      +'<div class="mm"><span>📅 '+v.fecha+'</span><span>×'+v.unidades+'</span></div>'
+      +'<div class="fac-expanded" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--brd);font-size:12px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">'
+      +'<div>Orden: <b>#'+v.orden+'</b></div>'
+      +'<div>Unidades: <b>'+v.unidades+'</b></div>'
+      +'<div>Bruto: <b>$'+Math.round(v.bruto).toLocaleString('es-AR')+'</b></div>'
+      +'<div style="color:var(--err)">Deducciones: <b>-$'+Math.round(v.deducciones).toLocaleString('es-AR')+' ('+dedPct+'%)</b></div>'
+      +'<div style="color:var(--ok)">Neto: <b>$'+Math.round(v.neto).toLocaleString('es-AR')+'</b></div>'
+      +'<div>Cuenta: <b>'+v.cuenta+'</b></div>'
+      +'</div></div></div>'
   }).join('');
 }
 
