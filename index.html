@@ -372,7 +372,7 @@ function filtrar(){const q=($('q').value||'').toLowerCase();let l=ALL;
   if(filt==='alerta')l=l.filter(p=>p.estado_alerta&&p.estado_alerta!=='OK');
   else if(filt==='monitorear')l=l.filter(p=>p.monitorear);
   else if(filt!=='todos'&&filt!=='sinstock'&&filt!=='PAUSADA')l=l.filter(p=>(p.articulo||'').toLowerCase().includes(filt.toLowerCase()));
-  if(q){const words=q.split(/\s+/).filter(w=>w.length>0);l=l.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')+' '+(p.cod_barra||'')+' '+(p.ml_id_1||'')+' '+(p.ml_id_2||'')+' '+(p.ml_id_3||'')+' '+p.id).toLowerCase();return words.every(w=>h.includes(w))})}
+  if(q){const words=q.split(/\s+/).filter(w=>w.length>0);l=l.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')+' '+(p.cod_barra||'')+' '+(p.ml_id_1||'')+' '+(p.ml_id_2||'')+' '+(p.ml_id_3||'')+' '+(p.observaciones||'')+' '+p.id).toLowerCase();return words.every(w=>h.includes(w))})}
   rList(l)}
 function rList(l){
   rend=l;const el=$('pl');
