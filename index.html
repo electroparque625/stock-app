@@ -1022,7 +1022,7 @@ async function fullResync(){
       if(!sku){skip++;continue}
       if(skus.has(sku)){skip++;continue}
       skus.add(sku);
-      prods.push({sku,cod_barra:f[2]?String(f[2]):null,marca:f[3]?String(f[3]):null,modelo:f[4]?String(f[4]):null,cantidades:+f[5]||0,articulo:String(f[6]||''),fecha:f[7]?String(f[7]):null,caja:f[8]?String(f[8]):null,estanteria:f[9]?String(f[9]):null,estado:f[10]?String(f[10]):'SIN STOCK',link:f[12]?String(f[12]):null,link_2:colLink2>=0&&f[colLink2]?String(f[colLink2]):null,link_3:colLink3>=0&&f[colLink3]?String(f[colLink3]):null,precio_al_costo:+f[14]||0,margen_ganancia:+f[15]||0,precio_venta:+f[16]||0,precio_mayorista:+f[17]||0,stock_minimo:+f[18]||0,ultimo_movimiento:f[19]?String(f[19]):null,imagen:f[21]?String(f[21]):null,observaciones:f[22]?String(f[22]):null,ml_id_1:f[23]?String(f[23]):null,ml_id_2:f[24]?String(f[24]):null});
+      prods.push({id:+f[0]||undefined,sku,cod_barra:f[2]?String(f[2]):null,marca:f[3]?String(f[3]):null,modelo:f[4]?String(f[4]):null,cantidades:+f[5]||0,articulo:String(f[6]||''),fecha:f[7]?String(f[7]):null,caja:f[8]?String(f[8]):null,estanteria:f[9]?String(f[9]):null,estado:f[10]?String(f[10]):'SIN STOCK',link:f[12]?String(f[12]):null,link_2:colLink2>=0&&f[colLink2]?String(f[colLink2]):null,link_3:colLink3>=0&&f[colLink3]?String(f[colLink3]):null,precio_al_costo:+f[14]||0,margen_ganancia:+f[15]||0,precio_venta:+f[16]||0,precio_mayorista:+f[17]||0,stock_minimo:+f[18]||0,ultimo_movimiento:f[19]?String(f[19]):null,imagen:f[21]?String(f[21]):null,observaciones:f[22]?String(f[22]):null,ml_id_1:f[23]?String(f[23]):null,ml_id_2:f[24]?String(f[24]):null});
     }
     log('✅ '+prods.length+' productos ('+skip+' omitidos)');
     let ok=0;
