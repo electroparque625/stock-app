@@ -476,16 +476,17 @@ async function loadMLBilling(){
     const ventas=await res.json();
     if(!ventas||!ventas.length){$('fac-ml-kpi').innerHTML='<div class="dc full"><div class="emp">Sin datos de ML</div></div>';return}
     const byCuenta={};
-    let totalBruto=0,totalComision=0,totalNeto=0,totalVentas=0;
+    let totalBruto=0,totalComision=0,totalCosto=0,totalGanancia=0,totalVentas=0;
     ventas.forEach(v=>{
       const cta=v.cuenta||'Desconocida';
-      if(!byCuenta[cta])byCuenta[cta]={bruto:0,comision:0,neto:0,cnt:0,items:[]};
+      if(!byCuenta[cta])byCuenta[cta]={bruto:0,comision:0,costo:0,ganancia:0,cnt:0,items:[]};
       byCuenta[cta].bruto+=v.bruto||0;
       byCuenta[cta].comision+=v.comision||0;
-      byCuenta[cta].neto+=v.neto||0;
+      byCuenta[cta].costo+=v.costo||0;
+      byCuenta[cta].ganancia+=v.ganancia||0;
       byCuenta[cta].cnt++;
       byCuenta[cta].items.push(v);
-      totalBruto+=v.bruto||0;totalComision+=v.comision||0;totalNeto+=v.neto||0;totalVentas++;
+      totalBruto+=v.bruto||0;totalComision+=v.comision||0;totalCosto+=v.costo||0;totalGanancia+=v.ganancia||0;totalVentas++;
     });
     $('fac-ml-kpi').innerHTML='<div class="dc"><div class="dl">Bruto</div><div class="dv">$'+Math.round(totalBruto).toLocaleString('es-AR')+'</div></div>'
       +'<div class="dc"><div class="dl">Comisión ML</div><div class="dv e">-$'+Math.round(totalComision).toLocaleString('es-AR')+'</div></div>'
@@ -497,7 +498,7 @@ async function loadMLBilling(){
       return'<div class="fac-row" style="cursor:pointer" onclick="showMLDetalle(\''+cta+'\')">'
         +'<div class="fac-ch"><span class="fac-ico">🛒</span><div><div class="fac-name">'+nombre+' ('+cta+')</div>'
         +'<div style="font-size:11px;color:var(--tx3)">'+d.cnt+' ventas · Bruto $'+Math.round(d.bruto).toLocaleString('es-AR')+'</div></div></div>'
-        +'<div style="text-align:right"><div class="fac-val" style="color:var(--ok)">$'+Math.round(d.neto).toLocaleString('es-AR')+'</div>'
+        +'<div style="text-align:right"><div class="fac-val" style="color:var(--ok)">$'+Math.round(d.ganancia).toLocaleString('es-AR')+'</div>'
         +'<div style="font-size:10px;color:var(--err)">-$'+Math.round(d.comision).toLocaleString('es-AR')+' ML</div></div></div>'
     }).join('')+'</div>';
     window._mlVentas=ventas;window._mlByCuenta=byCuenta;
@@ -511,8 +512,8 @@ function showMLDetalle(cuenta){
   $('fac-list-title').textContent='💰 '+(ctaNames[cuenta]||cuenta)+' — Detalle de ventas';
   $('fac-list').innerHTML=items.map(v=>{
     const fecha=v.fecha?new Date(v.fecha).toLocaleDateString('es-AR'):'';
-    return'<div class="mr"><div class="mt"><div class="ma">'+v.titulo+'</div><span class="mg" style="background:var(--ok-l);color:var(--ok)">$'+Math.round(v.neto).toLocaleString('es-AR')+' neto</span></div>'
-      +'<div class="mm"><span>📅 '+fecha+'</span><span>MLA: '+v.mla+'</span><span>×'+v.cantidad+'</span><span>Bruto: $'+Math.round(v.bruto).toLocaleString('es-AR')+'</span><span style="color:var(--err)">Comisión: -$'+Math.round(v.comision).toLocaleString('es-AR')+'</span></div></div>'
+    return'<div class="mr"><div class="mt"><div class="ma">'+v.titulo+'</div><span class="mg" style="background:var(--ok-l);color:var(--ok)">$'+Math.round(v.ganancia||0).toLocaleString('es-AR')+' ganancia</span></div>'
+      +'<div class="mm"><span>📅 '+fecha+'</span><span>MLA: '+v.mla+'</span><span>×'+v.cantidad+'</span><span>Bruto: $'+Math.round(v.bruto).toLocaleString('es-AR')+'</span><span style="color:var(--err)">ML: -$'+Math.round(v.comision).toLocaleString('es-AR')+'</span>'+(v.costo?'<span style="color:var(--err)">Costo: -$'+Math.round(v.costo).toLocaleString('es-AR')+'</span>':'')+'</div></div>'
   }).join('');
 }
 
