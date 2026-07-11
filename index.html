@@ -152,6 +152,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="nb" data-s="mov" onclick="go('mov')"><svg viewBox="0 0 22 22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Movimientos</span></button>
 <button class="nb" data-s="tasks" onclick="go('tasks')"><svg viewBox="0 0 22 22"><rect x="3" y="3" width="16" height="16" rx="2"/><line x1="7" y1="8" x2="15" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg><span>Tareas</span><div class="notif-badge" id="task-badge-s"></div></button>
 <button class="nb" data-s="pizarra" onclick="go('pizarra')"><svg viewBox="0 0 22 22"><rect x="2" y="4" width="18" height="14" rx="2"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="2" y1="9" x2="20" y2="9"/></svg><span>Pizarra</span></button>
+<button class="nb" data-s="rep" onclick="go('rep')"><svg viewBox="0 0 22 22"><path d="M14.7 6.3a1 1 0 000 1.4l0 0a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg><span>Reparaciones</span></button>
 <button class="nb admin-only" data-s="usr" onclick="go('usr')" style="display:none"><svg viewBox="0 0 22 22"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><line x1="16" y1="11" x2="22" y2="11"/><line x1="19" y1="8" x2="19" y2="14"/></svg><span>Usuarios</span></button>
 </nav>
 <div class="tb-r"><button id="notif-btn" onclick="toggleNotifPanel()" style="position:relative;background:none;border:none;cursor:pointer;font-size:20px;padding:4px">🔔<div class="notif-badge" id="notif-bell-badge"></div></button><span class="ch ch-g" id="t-sp">⚡</span><button class="ch ch-p" id="t-usr" onclick="doLogout()">Salir</button></div></div>
@@ -251,6 +252,87 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- MOV --><div class="sc" id="s-mov"><div id="mvl"><div class="ld"><div class="sp"></div>Cargando...</div></div></div>
 
+<!-- REPARACIONES --><div class="sc" id="s-rep">
+<div class="dg">
+<div class="dc"><div class="dl">OTs activas</div><div class="dv" id="rep-activas">—</div></div>
+<div class="dc"><div class="dl">Listas p/ retirar</div><div class="dv ok" id="rep-listas">—</div></div>
+<div class="dc"><div class="dl">En reparación</div><div class="dv w" id="rep-enrep">—</div></div>
+<div class="dc"><div class="dl">Total histórico</div><div class="dv" id="rep-total">—</div></div>
+</div>
+<div style="display:flex;gap:8px;margin-bottom:10px">
+<button class="b bp" onclick="$('s-rep-new').style.display='block';$('s-rep-new').scrollIntoView()" style="flex:1">+ Nueva OT</button>
+<button class="b bs" onclick="loadRep()" style="width:auto;padding:12px 16px">🔄</button>
+</div>
+<div style="display:flex;gap:4px;margin-bottom:10px;overflow-x:auto" id="rep-tabs">
+<button class="fb a" onclick="setRepTab('activas',this)">Activas</button>
+<button class="fb" onclick="setRepTab('ingresado',this)">Ingresados</button>
+<button class="fb" onclick="setRepTab('en_diagnostico',this)">Diagnóstico</button>
+<button class="fb" onclick="setRepTab('presupuesto',this)">Presupuesto</button>
+<button class="fb" onclick="setRepTab('en_reparacion',this)">Reparación</button>
+<button class="fb" onclick="setRepTab('listo',this)">Listas</button>
+<button class="fb" onclick="setRepTab('entregado',this)">Entregadas</button>
+<button class="fb" onclick="setRepTab('todas',this)">Todas</button>
+</div>
+<div id="rep-list"><div class="ld"><div class="sp"></div></div></div>
+<!-- NEW OT FORM -->
+<div id="s-rep-new" style="display:none;margin-top:14px">
+<div class="fs"><div class="fst">👤 Cliente</div>
+<div class="f"><label>Teléfono</label><input type="tel" id="rc-tel" placeholder="Buscar cliente..." oninput="searchRepClient()"/></div>
+<div id="rc-found" style="display:none;padding:6px 10px;background:var(--ok-l);border-radius:var(--rs);margin-bottom:8px;font-size:12px"></div>
+<div class="f"><label>Nombre completo</label><input type="text" id="rc-nom"/></div>
+<div class="fr"><div class="f"><label>DNI/CUIT</label><input type="text" id="rc-dni"/></div><div class="f"><label>Email</label><input type="email" id="rc-email"/></div></div>
+</div>
+<div class="fs"><div class="fst">📺 Equipo</div>
+<div class="fr"><div class="f"><label>Tipo</label><select id="ro-tipo"><option>TV</option><option>Notebook</option><option>Celular</option><option>Electrodoméstico</option><option>Otro</option></select></div><div class="f"><label>Marca</label><input type="text" id="ro-marca"/></div></div>
+<div class="fr"><div class="f"><label>Modelo</label><input type="text" id="ro-modelo"/></div><div class="f"><label>N° Serie / IMEI</label><input type="text" id="ro-serie"/></div></div>
+<div class="f"><label>Accesorios incluidos</label><input type="text" id="ro-acc" placeholder="Control, cable, cargador..."/></div>
+<div class="f"><label>Estado físico</label><input type="text" id="ro-fisico" placeholder="Rayones, golpes..."/></div>
+</div>
+<div class="fs"><div class="fst">🔧 Falla</div>
+<div class="f"><label>Falla reportada por el cliente *</label><input type="text" id="ro-falla" placeholder="En palabras del cliente"/></div>
+<div class="f"><label>Costo diagnóstico</label><input type="number" id="ro-diag" value="0" min="0"/></div>
+</div>
+<div style="display:flex;gap:8px"><button class="b bp" onclick="saveNewOT()" style="flex:1">Guardar OT</button><button class="b bs" onclick="$('s-rep-new').style.display='none'" style="width:auto;padding:12px 16px">✕</button></div>
+</div>
+</div>
+
+<!-- OT DETAIL --><div class="sc" id="s-rep-det">
+<button class="bk" onclick="go('rep')">‹ Volver</button>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div><div style="font-size:20px;font-weight:800;color:var(--pri)" id="ot-num">OT #—</div><div style="font-size:11px;color:var(--tx3)" id="ot-fecha">—</div></div>
+<button class="b bs" onclick="printOT()" style="width:auto;padding:8px 14px;font-size:12px">🖨 Imprimir OT</button>
+</div>
+<div class="cd" id="ot-status-card"></div>
+<div class="cd"><div class="fst">👤 Cliente</div><div id="ot-cliente-info"></div></div>
+<div class="cd"><div class="fst">📺 Equipo</div><div id="ot-equipo-info"></div></div>
+<div class="cd" id="ot-diag-section"><div class="fst">🔍 Diagnóstico</div>
+<div class="f"><label>Técnico</label><input type="text" id="ot-tec-diag"/></div>
+<div class="f"><label>Falla confirmada</label><input type="text" id="ot-falla-conf"/></div>
+<div class="tg-row"><span class="tg-lbl">Requiere repuesto</span><label class="tg"><input type="checkbox" id="ot-req-rep"/><span class="tg-tr"></span><span class="tg-th"></span></label></div>
+<div class="f"><label>Repuesto necesario</label><input type="text" id="ot-repuesto"/></div>
+<button class="b bp" onclick="saveOTDiag()" style="margin-top:6px">Guardar diagnóstico</button>
+</div>
+<div class="cd" id="ot-presu-section"><div class="fst">💰 Presupuesto</div>
+<div class="fr"><div class="f"><label>Repuestos $</label><input type="number" id="ot-cost-rep" min="0"/></div><div class="f"><label>Mano de obra $</label><input type="number" id="ot-cost-mo" min="0"/></div></div>
+<div class="f"><label>Total</label><div class="idb" id="ot-cost-total">$0</div></div>
+<div style="display:flex;gap:8px;margin-top:8px"><button class="b bo" onclick="approveOT()">✅ Aprobado</button><button class="b be" onclick="rejectOT()">❌ Rechazado</button></div>
+</div>
+<div class="cd" id="ot-rep-section"><div class="fst">🔧 Reparación</div>
+<div class="f"><label>Técnico reparación</label><input type="text" id="ot-tec-rep"/></div>
+<div class="f"><label>Observaciones técnicas</label><input type="text" id="ot-obs-tec"/></div>
+<div class="fr"><div class="f"><label>Resultado calidad</label><select id="ot-calidad"><option value="aprobado">Aprobado</option><option value="reprobado">Reprobado</option></select></div><div class="f"><label>Forma de pago</label><select id="ot-pago"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>MercadoPago</option></select></div></div>
+<button class="b bp" onclick="completeRepair()" style="margin-top:6px">Completar reparación</button>
+</div>
+<div class="cd" id="ot-entrega-section"><div class="fst">📦 Entrega</div>
+<button class="b bo" onclick="deliverOT()">Marcar como entregado</button>
+</div>
+</div>
+
+<!-- PRINT TEMPLATE --><div id="print-ot" style="display:none">
+<style>@media print{body>*{display:none!important}#print-ot{display:block!important;font-family:Arial,sans-serif;font-size:12px;color:#000}}</style>
+<div id="print-content"></div>
+</div>
+
 <!-- PIZARRA --><div class="sc" id="s-pizarra">
 <div style="display:flex;gap:4px;margin-bottom:12px;overflow-x:auto" id="piz-days"></div>
 <div class="admin-only" style="display:none;margin-bottom:10px">
@@ -290,6 +372,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="nb" data-s="mov" onclick="go('mov')"><svg viewBox="0 0 22 22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Historial</span></button>
 <button class="nb" data-s="tasks" onclick="go('tasks')"><svg viewBox="0 0 22 22"><rect x="3" y="3" width="16" height="16" rx="2"/><line x1="7" y1="8" x2="15" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg><span>Tareas</span><div class="notif-badge" id="task-badge-b"></div></button>
 <button class="nb" data-s="pizarra" onclick="go('pizarra')"><svg viewBox="0 0 22 22"><rect x="2" y="4" width="18" height="14" rx="2"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="2" y1="9" x2="20" y2="9"/></svg><span>Pizarra</span></button>
+<button class="nb" data-s="rep" onclick="go('rep')"><svg viewBox="0 0 22 22"><path d="M14.7 6.3a1 1 0 000 1.4l0 0a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg><span>Reparaciones</span></button>
 </div></div>
 
 <!-- MODAL EDIT --><div class="mo" id="med"><div class="ml"><div class="mb"></div><div class="mti">Editar producto</div>
@@ -357,7 +440,7 @@ function ico(a){a=(a||'').toLowerCase();if(/joystick|gamepad|dualsense|dualshock
 function aB(p){const a=p.estado_alerta||'OK';if(a==='SIN STOCK')return['🔴 SIN STOCK','b-sin'];if(a.includes('CRITICO AVION'))return['🔴 CRÍTICO ✈️','b-crit'];if(a.includes('CRITICO BARCO'))return['🔴 CRÍTICO 🚢','b-crit'];if(a.includes('PRE ALERTA AVION'))return['🟡 PRE-ALERTA ✈️','b-pre'];if(a.includes('PRE ALERTA BARCO'))return['🟡 PRE-ALERTA 🚢','b-pre'];return['🟢 OK','b-ok']}
 function sC(p){if(!p.cantidades)return'e';if(p.stock_minimo&&p.cantidades<p.stock_minimo)return'w';return'o'}
 
-function go(s){document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='usr')loadUsr()}
+function go(s){document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='rep')loadRep();if(s==='usr')loadUsr()}
 let invTab='stock';
 function setTab(t,btn){invTab=t;document.querySelectorAll('#inv-tabs .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');filtrar()}
 function setF(f,btn){filt=f;document.querySelectorAll('#f-d .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');const t=$('f-t');t.classList.toggle('a',f!=='todos');t.textContent=f==='todos'?'Filtrar ▾':btn.textContent+' ▾';$('f-d').classList.remove('open');filtrar()}
@@ -621,8 +704,10 @@ async function loadMonChart(){
     const mlas=[monProd.ml_id_1,monProd.ml_id_2,monProd.ml_id_3].filter(Boolean);
     if(mlas.length){
       for(const mla of mlas){
-        const{data:byMla}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+mla+'%');
-        if(byMla)ventas=ventas.concat(byMla.filter(v=>!ventas.find(x=>x.id===v.id)));
+        const{data:byArt}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+mla+'%');
+        if(byArt)ventas=ventas.concat(byArt.filter(v=>!ventas.find(x=>x.id===v.id)));
+        const{data:bySku}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).eq('sku',mla);
+        if(bySku)ventas=ventas.concat(bySku.filter(v=>!ventas.find(x=>x.id===v.id)));
       }
     }else{
       const{data:byArt}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+(monProd.articulo||'')+'%').order('created_at',{ascending:false});
@@ -789,6 +874,22 @@ function doScan(){const c=$('scq').value.trim();if(!c)return;const p=ALL.find(x=
 
 /* MOV */
 async function loadMov(){const el=$('mvl');el.innerHTML='<div class="ld"><div class="sp"></div></div>';try{const{data}=await db.from('movimientos').select('*').order('created_at',{ascending:false}).limit(100);if(!data||!data.length){el.innerHTML='<div class="emp">Sin movimientos</div>';return}const chI={mercadolibre:'🛒',tiendanube:'🏪',mostrador:'🏬',ingreso:'📥',ajuste:'🔧'};el.innerHTML=data.map(m=>{const t=(m.tipo||'').toLowerCase(),tc=t.includes('venta')?'mv':t.includes('ingreso')?'mi2':'mj',tl=t.includes('venta')?'Venta':t.includes('ingreso')?'Ingreso':'Ajuste',ch=m.canal||'';return'<div class="mr"><div class="mt"><div class="ma">'+(m.articulo||'—')+'</div><span class="mg '+tc+'">'+tl+(ch&&chI[ch]?' '+chI[ch]:'')+'</span></div><div class="mm"><span>📅 '+(m.fecha||'')+' '+(m.hora||'')+'</span><span>👤 '+(m.usuario||'—')+'</span><span>'+(t.includes('venta')?'−':'+')+Math.abs(m.cantidad||0)+' u.</span>'+(m.monto?'<span>$'+m.monto.toLocaleString('es-AR')+'</span>':'')+'</div></div>'}).join('')}catch(e){el.innerHTML='<div class="emp">Error</div>'}}
+
+/* REPARACIONES */
+let repTab='activas',allOTs=[],curOT=null;
+const OT_STATES={ingresado:{lbl:'Ingresado',color:'var(--tx3)',ico:'📥'},en_diagnostico:{lbl:'En diagnóstico',color:'var(--pri)',ico:'🔍'},presupuesto_enviado:{lbl:'Presupuesto',color:'var(--warn)',ico:'💰'},rechazado:{lbl:'Rechazado',color:'var(--err)',ico:'❌'},en_reparacion:{lbl:'En reparación',color:'var(--pri)',ico:'🔧'},control_calidad:{lbl:'Control calidad',color:'#9b59b6',ico:'✅'},listo_retirar:{lbl:'Listo p/ retirar',color:'var(--ok)',ico:'📦'},entregado:{lbl:'Entregado',color:'var(--tx3)',ico:'🏁'}};
+function setRepTab(t,btn){repTab=t;document.querySelectorAll('#rep-tabs .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');renderRepList()}
+async function loadRep(){try{const{data}=await db.from('rep_ordenes').select('*,rep_clientes(*)').order('created_at',{ascending:false});allOTs=data||[];renderRepList();$('rep-activas').textContent=allOTs.filter(o=>o.estado!=='entregado'&&o.estado!=='rechazado').length;$('rep-listas').textContent=allOTs.filter(o=>o.estado==='listo_retirar').length;$('rep-enrep').textContent=allOTs.filter(o=>o.estado==='en_reparacion').length;$('rep-total').textContent=allOTs.length}catch(e){$('rep-list').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
+function renderRepList(){let list=allOTs;if(repTab==='activas')list=list.filter(o=>o.estado!=='entregado'&&o.estado!=='rechazado');else if(repTab==='listo')list=list.filter(o=>o.estado==='listo_retirar');else if(repTab!=='todas')list=list.filter(o=>o.estado===repTab);$('rep-list').innerHTML=list.length?list.map(o=>{const st=OT_STATES[o.estado]||{lbl:o.estado,color:'var(--tx3)',ico:'📋'};const cli=o.rep_clientes;return'<div class="ar" onclick="showOT('+o.id+')"><div class="ae">'+st.ico+'</div><div class="ai"><div class="an">OT #'+o.id+' · '+(o.marca||'')+' '+(o.modelo||'')+'</div><div class="am">'+(cli?cli.nombre:'?')+' · '+(o.falla_cliente||'').substring(0,40)+'</div></div><span class="ab" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:'+st.color+'">'+st.lbl+'</span></div>'}).join(''):'<div class="emp">Sin órdenes</div>'}
+async function searchRepClient(){const tel=$('rc-tel').value.trim();if(tel.length<4){$('rc-found').style.display='none';return}const{data}=await db.from('rep_clientes').select('*').ilike('telefono','%'+tel+'%').limit(1);if(data&&data.length){const c=data[0];$('rc-nom').value=c.nombre;$('rc-dni').value=c.dni_cuit||'';$('rc-email').value=c.email||'';$('rc-found').style.display='block';$('rc-found').textContent='✅ Cliente: '+c.nombre;$('rc-found').dataset.id=c.id}else{$('rc-found').style.display='none';$('rc-found').dataset.id=''}}
+async function saveNewOT(){const nom=$('rc-nom').value.trim(),tel=$('rc-tel').value.trim(),falla=$('ro-falla').value.trim();if(!nom||!tel||!falla){toast('Completá cliente, teléfono y falla');return}try{let cid=$('rc-found').dataset.id;if(!cid){const{data:nc,error:ce}=await db.from('rep_clientes').insert({nombre:nom,telefono:tel,dni_cuit:$('rc-dni').value||null,email:$('rc-email').value||null}).select().single();if(ce)throw ce;cid=nc.id}const{data:ot,error}=await db.from('rep_ordenes').insert({id_cliente:+cid,recibido_por:ses?.nombre||'—',tipo_equipo:$('ro-tipo').value,marca:$('ro-marca').value||null,modelo:$('ro-modelo').value||null,numero_serie:$('ro-serie').value||null,accesorios:$('ro-acc').value||null,observaciones_fisico:$('ro-fisico').value||null,falla_cliente:falla,costo_diagnostico:+$('ro-diag').value||0}).select().single();if(error)throw error;toast('OT #'+ot.id+' creada');$('s-rep-new').style.display='none';['rc-tel','rc-nom','rc-dni','rc-email','ro-marca','ro-modelo','ro-serie','ro-acc','ro-fisico','ro-falla'].forEach(id=>$(id).value='');$('ro-diag').value='0';$('rc-found').style.display='none';loadRep()}catch(e){toast('Error: '+e.message)}}
+async function showOT(id){const{data:ot}=await db.from('rep_ordenes').select('*,rep_clientes(*)').eq('id',id).single();if(!ot)return;curOT=ot;document.querySelectorAll('.sc').forEach(s=>s.classList.remove('a'));$('s-rep-det').classList.add('a');$('sbar').classList.remove('v');const st=OT_STATES[ot.estado]||{lbl:ot.estado,color:'var(--tx3)',ico:'📋'};$('ot-num').textContent='OT #'+ot.id;$('ot-fecha').textContent='Ingreso: '+new Date(ot.fecha_ingreso).toLocaleDateString('es-AR')+' · Recibió: '+(ot.recibido_por||'—');$('ot-status-card').innerHTML='<div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">'+st.ico+'</span><div><div style="font-size:15px;font-weight:700;color:'+st.color+'">'+st.lbl+'</div><div style="font-size:11px;color:var(--tx3)">'+ot.falla_cliente+'</div></div></div>';const cli=ot.rep_clientes||{};$('ot-cliente-info').innerHTML='<div style="font-size:13px"><b>'+cli.nombre+'</b> · 📱 '+cli.telefono+(cli.dni_cuit?' · DNI: '+cli.dni_cuit:'')+(cli.email?' · ✉ '+cli.email:'')+'</div>';$('ot-equipo-info').innerHTML='<div style="font-size:13px"><b>'+(ot.tipo_equipo||'')+'</b> · '+(ot.marca||'')+' '+(ot.modelo||'')+(ot.numero_serie?' · S/N: '+ot.numero_serie:'')+(ot.accesorios?'<br>Accesorios: '+ot.accesorios:'')+(ot.observaciones_fisico?'<br>Estado: '+ot.observaciones_fisico:'')+'</div>';const es=ot.estado;$('ot-diag-section').style.display=(es==='ingresado'||es==='en_diagnostico')?'block':'none';$('ot-presu-section').style.display=(es==='presupuesto_enviado'||es==='en_diagnostico')?'block':'none';$('ot-rep-section').style.display=(es==='en_reparacion'||es==='control_calidad')?'block':'none';$('ot-entrega-section').style.display=(es==='listo_retirar')?'block':'none';$('ot-tec-diag').value=ot.tecnico_diagnostico||'';$('ot-falla-conf').value=ot.falla_confirmada||'';$('ot-req-rep').checked=!!ot.requiere_repuesto;$('ot-repuesto').value=ot.repuesto_necesario||'';$('ot-cost-rep').value=ot.costo_repuestos||0;$('ot-cost-mo').value=ot.costo_mano_obra||0;$('ot-cost-total').textContent='$'+((+ot.costo_repuestos||0)+(+ot.costo_mano_obra||0)).toLocaleString('es-AR');$('ot-tec-rep').value=ot.tecnico_reparacion||'';$('ot-obs-tec').value=ot.observaciones_tecnicas||'';$('ot-cost-rep').oninput=$('ot-cost-mo').oninput=()=>{$('ot-cost-total').textContent='$'+((+$('ot-cost-rep').value||0)+(+$('ot-cost-mo').value||0)).toLocaleString('es-AR')}}
+async function saveOTDiag(){if(!curOT)return;await db.from('rep_ordenes').update({estado:'presupuesto_enviado',tecnico_diagnostico:$('ot-tec-diag').value,falla_confirmada:$('ot-falla-conf').value,requiere_repuesto:$('ot-req-rep').checked,repuesto_necesario:$('ot-repuesto').value||null}).eq('id',curOT.id);toast('Diagnóstico guardado');showOT(curOT.id)}
+async function approveOT(){if(!curOT)return;const total=(+$('ot-cost-rep').value||0)+(+$('ot-cost-mo').value||0);await db.from('rep_ordenes').update({estado:'en_reparacion',estado_presupuesto:'aprobado',costo_repuestos:+$('ot-cost-rep').value||0,costo_mano_obra:+$('ot-cost-mo').value||0,costo_total:total,fecha_presupuesto:new Date().toISOString(),fecha_inicio_rep:new Date().toISOString()}).eq('id',curOT.id);toast('Aprobado → En reparación');showOT(curOT.id)}
+async function rejectOT(){if(!curOT||!confirm('¿Rechazar presupuesto?'))return;await db.from('rep_ordenes').update({estado:'rechazado',estado_presupuesto:'rechazado',fecha_presupuesto:new Date().toISOString()}).eq('id',curOT.id);toast('Rechazado');showOT(curOT.id)}
+async function completeRepair(){if(!curOT)return;const total=(+curOT.costo_repuestos||0)+(+curOT.costo_mano_obra||0)-(+curOT.costo_diagnostico||0);await db.from('rep_ordenes').update({estado:'listo_retirar',tecnico_reparacion:$('ot-tec-rep').value,observaciones_tecnicas:$('ot-obs-tec').value||null,resultado_calidad:$('ot-calidad').value,forma_pago:$('ot-pago').value,fecha_fin_rep:new Date().toISOString(),total_facturado:Math.max(0,total)}).eq('id',curOT.id);toast('Listo para retirar');showOT(curOT.id)}
+async function deliverOT(){if(!curOT||!confirm('¿Marcar como entregado?'))return;const now=new Date();const gFin=new Date(now.getTime()+(curOT.dias_garantia_repuesto||90)*86400000);await db.from('rep_ordenes').update({estado:'entregado',estado_pago:'pagado',fecha_entrega:now.toISOString(),fecha_garantia_fin:gFin.toISOString()}).eq('id',curOT.id);toast('Entregado · Garantía hasta '+gFin.toLocaleDateString('es-AR'));showOT(curOT.id)}
+function printOT(){if(!curOT)return;const cli=curOT.rep_clientes||{};const h='<div style="border:2px solid #000;padding:20px;margin-bottom:20px;page-break-after:always"><div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:10px"><div style="font-size:22px;font-weight:bold">⚡ ELECTRO PARQUE</div><div style="font-size:11px">Service Técnico · Orden de Trabajo</div></div><table style="width:100%;font-size:13px;border-collapse:collapse"><tr><td style="padding:4px;border:1px solid #ccc"><b>OT N°:</b> '+curOT.id+'</td><td style="padding:4px;border:1px solid #ccc"><b>Fecha:</b> '+new Date(curOT.fecha_ingreso).toLocaleDateString('es-AR')+'</td></tr><tr><td style="padding:4px;border:1px solid #ccc"><b>Cliente:</b> '+cli.nombre+'</td><td style="padding:4px;border:1px solid #ccc"><b>Tel:</b> '+cli.telefono+'</td></tr>'+(cli.dni_cuit?'<tr><td colspan="2" style="padding:4px;border:1px solid #ccc"><b>DNI/CUIT:</b> '+cli.dni_cuit+'</td></tr>':'')+'<tr><td style="padding:4px;border:1px solid #ccc"><b>Equipo:</b> '+(curOT.tipo_equipo||'')+' '+(curOT.marca||'')+' '+(curOT.modelo||'')+'</td><td style="padding:4px;border:1px solid #ccc"><b>S/N:</b> '+(curOT.numero_serie||'—')+'</td></tr><tr><td colspan="2" style="padding:4px;border:1px solid #ccc"><b>Accesorios:</b> '+(curOT.accesorios||'Ninguno')+'</td></tr><tr><td colspan="2" style="padding:4px;border:1px solid #ccc"><b>Estado físico:</b> '+(curOT.observaciones_fisico||'Normal')+'</td></tr><tr><td colspan="2" style="padding:4px;border:1px solid #ccc"><b>Falla:</b> '+(curOT.falla_cliente||'—')+'</td></tr><tr><td style="padding:4px;border:1px solid #ccc"><b>Diagnóstico $:</b> '+(curOT.costo_diagnostico||0)+'</td><td style="padding:4px;border:1px solid #ccc"><b>Recibió:</b> '+(curOT.recibido_por||'—')+'</td></tr></table><div style="margin-top:20px;display:flex;justify-content:space-between"><div style="border-top:1px solid #000;width:40%;text-align:center;padding-top:4px;font-size:11px">Firma Cliente</div><div style="border-top:1px solid #000;width:40%;text-align:center;padding-top:4px;font-size:11px">Firma Técnico</div></div></div>';$('print-content').innerHTML=h+h;$('print-ot').style.display='block';setTimeout(()=>{window.print();$('print-ot').style.display='none'},300)}
 
 /* PIZARRA */
 const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
