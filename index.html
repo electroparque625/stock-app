@@ -615,17 +615,18 @@ async function loadMonChart(){
   if(!monProd)return;
   const days=parseInt($('mon-period').value)||30;
   const since=new Date(Date.now()-days*86400000).toISOString();
-  // Find sales matching this product by MLA IDs or article name
-  const mlas=[monProd.ml_id_1,monProd.ml_id_2,monProd.ml_id_3].filter(Boolean);
+  // Find sales matching this product by MLA IDs
   let ventas=[];
   try{
-    // Search by article name partial match and by MLA
-    const{data:byArt}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+(monProd.articulo||'').substring(0,20)+'%').order('created_at',{ascending:false});
-    ventas=byArt||[];
-    // Also search by MLA IDs
-    for(const mla of mlas){
-      const{data:byMla}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+mla+'%');
-      if(byMla)ventas=ventas.concat(byMla.filter(v=>!ventas.find(x=>x.id===v.id)));
+    const mlas=[monProd.ml_id_1,monProd.ml_id_2,monProd.ml_id_3].filter(Boolean);
+    if(mlas.length){
+      for(const mla of mlas){
+        const{data:byMla}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+mla+'%');
+        if(byMla)ventas=ventas.concat(byMla.filter(v=>!ventas.find(x=>x.id===v.id)));
+      }
+    }else{
+      const{data:byArt}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+(monProd.articulo||'')+'%').order('created_at',{ascending:false});
+      ventas=byArt||[];
     }
   }catch(e){console.warn(e)}
 
