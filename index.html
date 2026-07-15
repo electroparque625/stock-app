@@ -180,6 +180,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="fb" onclick="setTab('importados',this)" style="white-space:nowrap;flex-shrink:0">📦 Importados</button>
 <button class="fb" onclick="setTab('todos',this)" style="white-space:nowrap;flex-shrink:0">📋 Todos</button>
 <button class="fb" onclick="setTab('pausados',this)" style="white-space:nowrap;flex-shrink:0">⏸ Pausados</button>
+<button class="fb" onclick="exportExcel('inventario')" style="white-space:nowrap;flex-shrink:0;background:var(--ok-l);color:var(--ok)">📥 Excel</button>
 </div>
 <div id="pl"><div class="ld"><div class="sp"></div>Cargando...</div></div></div>
 
@@ -248,9 +249,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="f"><label>Link ML 3</label><input type="url" id="flk3"/></div><div class="fr3"><div class="f"><label>ML ID 1</label><input type="text" id="fm1"/></div><div class="f"><label>ML ID 2</label><input type="text" id="fm2"/></div><div class="f"><label>ML ID 3</label><input type="text" id="fm3"/></div></div></div>
 <button class="b bp" id="bsv" onclick="saveNew()">Guardar producto</button><div style="height:12px"></div></div>
 
-<!-- SCANNER --><div class="sc" id="s-scan"><div class="scb"><div class="sf"><div class="cn c1"></div><div class="cn c2"></div><div class="cn c3"></div><div class="cn c4"></div><div class="sli"></div></div><p style="font-size:12px;color:var(--tx3);margin-bottom:10px">Ingresá el código</p><div class="f" style="margin-bottom:8px"><input type="text" id="scq" placeholder="SKU, código o ID" style="text-align:center;font-family:monospace;letter-spacing:2px" onkeydown="if(event.key==='Enter')doScan()"/></div><button class="b bp" onclick="doScan()">Buscar</button></div><div id="scr" style="display:none"></div><div class="emp" id="scnf" style="display:none">No encontrado</div></div>
+<!-- SCANNER --><div class="sc" id="s-scan"><div class="scb">
+<div class="sf" id="scan-frame"><video id="scan-video" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rad);display:none" autoplay playsinline></video><canvas id="scan-canvas" style="display:none"></canvas><div class="cn c1"></div><div class="cn c2"></div><div class="cn c3"></div><div class="cn c4"></div><div class="sli"></div></div>
+<div style="display:flex;gap:6px;margin-top:10px"><button class="b bp" onclick="startCamera()" style="flex:1">📷 Usar cámara</button><button class="b bs" onclick="stopCamera()" style="width:auto;padding:12px">✕</button></div>
+<p style="font-size:12px;color:var(--tx3);margin:10px 0 6px">O escribí manualmente:</p>
+<div class="f" style="margin-bottom:8px"><input type="text" id="scq" placeholder="SKU, código, MLA o ID" style="text-align:center;font-family:monospace;letter-spacing:2px" onkeydown="if(event.key==='Enter')doScan()"/></div>
+<button class="b bp" onclick="doScan()">Buscar</button>
+</div><div id="scr" style="display:none"></div><div class="emp" id="scnf" style="display:none">No encontrado</div></div>
 
-<!-- MOV --><div class="sc" id="s-mov"><div id="mvl"><div class="ld"><div class="sp"></div>Cargando...</div></div></div>
+<!-- MOV --><div class="sc" id="s-mov"><div style="text-align:right;margin-bottom:8px"><button class="b bs" onclick="exportExcel('movimientos')" style="width:auto;padding:8px 12px;font-size:11px">📥 Exportar Excel</button></div><div id="mvl"><div class="ld"><div class="sp"></div>Cargando...</div></div></div>
 
 <!-- REPARACIONES --><div class="sc" id="s-rep">
 <div class="dg">
@@ -263,6 +270,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="b bp" onclick="$('s-rep-new').style.display='block';$('s-rep-new').scrollIntoView()" style="flex:1">+ Nueva OT</button>
 <button class="b bs" onclick="loadRep()" style="width:auto;padding:12px 16px">🔄</button>
 </div>
+<div class="f" style="margin-bottom:8px"><input type="text" id="rep-search" placeholder="Buscar por cliente, teléfono, marca, modelo, N° serie..." oninput="filterRep()"/></div>
 <div style="display:flex;gap:4px;margin-bottom:10px;overflow-x:auto" id="rep-tabs">
 <button class="fb a" onclick="setRepTab('activas',this)">Activas</button>
 <button class="fb" onclick="setRepTab('ingresado',this)">Ingresados</button>
@@ -300,6 +308,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="bk" onclick="go('rep')">‹ Volver</button>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
 <div><div style="font-size:20px;font-weight:800;color:var(--pri)" id="ot-num">OT #—</div><div style="font-size:11px;color:var(--tx3)" id="ot-fecha">—</div></div>
+<div style="display:flex;gap:6px">
+<button class="b bo" onclick="sendWhatsApp()" style="width:auto;padding:8px 12px;font-size:11px">📲 WhatsApp</button>
+</div></div>
 <div style="display:flex;gap:6px;flex-wrap:wrap">
 <button class="b bs" onclick="printDoc('remito')" style="width:auto;padding:8px 12px;font-size:11px">🖨 Remito</button>
 <button class="b bs" onclick="printDoc('ot')" style="width:auto;padding:8px 12px;font-size:11px">🖨 Orden Trabajo</button>
@@ -896,7 +907,73 @@ function genSKU(art,marca,modelo,id){const c=(art||'').toLowerCase();let cat='GE
 async function saveNew(){const art=$('fa').value.trim();if(!art){toast('Artículo obligatorio');return}if(!nId){toast('Esperando ID');return}const b=$('bsv');b.disabled=true;b.textContent='Guardando...';const marca=$('fmr').value,modelo=$('fmo').value,sku=genSKU(art,marca,modelo,nId),cant=+$('fc').value||0,now=new Date().toLocaleDateString('es-AR');const prod={sku,articulo:art,cod_barra:$('fbar').value||null,marca:marca||null,modelo:modelo||null,cantidades:cant,fecha:now,caja:$('fcj').value||null,estanteria:$('fes').value||null,estado:cant>0?'STOCK':'SIN STOCK',link:$('flk').value||null,link_2:$('flk2').value||null,link_3:$('flk3').value||null,precio_al_costo:+$('fco').value||0,margen_ganancia:+$('fmg').value||0,precio_venta:+$('fve').value||0,precio_mayorista:+$('fmy').value||0,stock_minimo:+$('fmi').value||0,ultimo_movimiento:now,observaciones:$('fob').value||null,ml_id_1:$('fm1').value||null,ml_id_2:$('fm2').value||null,ml_id_3:$('fm3').value||null,importacion_avion:$('fav').checked,importacion_barco:$('fba').checked,pre_alerta_avion:+$('fpav')?.value||0,minimo_avion:+$('fmav')?.value||0,pre_alerta_barco:+$('fpba')?.value||0,minimo_barco:+$('fmba')?.value||0,monitorear:$('fmn').checked,importado:$('f-imp').checked};try{const{data,error}=await db.from('stock').insert(prod).select().single();if(error)throw error;if(newPhotoFile){try{const purl=await uploadToStorage(newPhotoFile,data.id);await db.from('stock').update({imagen:purl}).eq('id',data.id)}catch(pe){console.warn('Foto:',pe)}newPhotoFile=null;$('f-photo-prev').style.display='none'}syncS('agregar',{id:data.id,sku,...prod});if(cant>0)await db.from('movimientos').insert({fecha:now,hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:art,sku,tipo:'ingreso',cantidad:cant,stock_anterior:0,stock_nuevo:cant,canal:'ingreso',monto:0});toast('#'+data.id+' guardado · SKU: '+sku);['fa','fbar','fmr','fmo','fc','fmi','fcj','fes','fco','fmg','fve','fmy','fob','flk','fm1','fm2','fm3','fsku','flk2','flk3'].forEach(id=>{const el=$(id);if(el)el.value=''});['fav','fba','fmn','f-imp'].forEach(id=>{const el=$(id);if(el)el.checked=false});$('fav-f').style.display='none';$('fba-f').style.display='none';$('f-imp-detail').style.display='none';nId=null;loadData();loadNID()}catch(e){toast('Error: '+e.message)}b.disabled=false;b.textContent='Guardar producto'}
 
 /* SCANNER */
-function doScan(){const c=$('scq').value.trim();if(!c)return;const p=ALL.find(x=>String(x.cod_barra)===c||String(x.sku).toLowerCase()===c.toLowerCase()||String(x.id)===c);$('scr').style.display='none';$('scnf').style.display='none';if(p){$('scr').style.display='block';$('scr').innerHTML='<div class="ar" onclick="showDet(ALL.find(x=>x.id==='+p.id+'))"><div class="ae">'+(p.emoji||ico(p.articulo))+'</div><div class="ai"><div class="an">'+p.articulo+'</div><div class="am">'+(p.sku||'')+' · Stock: '+(p.cantidades||0)+'</div></div><div class="as c-'+sC(p)+'">'+(p.cantidades||0)+'</div></div>'}else $('scnf').style.display='block'}
+let camStream=null,camInterval=null;
+async function startCamera(){
+  try{
+    const video=$('scan-video');
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    video.srcObject=camStream;video.style.display='block';
+    // Use BarcodeDetector if available
+    if('BarcodeDetector' in window){
+      const detector=new BarcodeDetector({formats:['ean_13','ean_8','code_128','qr_code','code_39']});
+      camInterval=setInterval(async()=>{
+        try{const codes=await detector.detect(video);if(codes.length){stopCamera();$('scq').value=codes[0].rawValue;doScan()}}catch(e){}
+      },500);
+    }else{toast('Tu navegador no soporta detección de códigos. Usá Chrome.')}
+  }catch(e){toast('No se pudo acceder a la cámara')}
+}
+function stopCamera(){if(camStream){camStream.getTracks().forEach(t=>t.stop());$('scan-video').style.display='none';camStream=null}if(camInterval){clearInterval(camInterval);camInterval=null}}
+function doScan(){const c=$('scq').value.trim();if(!c)return;const p=ALL.find(x=>String(x.cod_barra)===c||String(x.sku).toLowerCase()===c.toLowerCase()||String(x.id)===c||x.ml_id_1===c||x.ml_id_2===c||x.ml_id_3===c);$('scr').style.display='none';$('scnf').style.display='none';if(p){$('scr').style.display='block';$('scr').innerHTML='<div class="ar" onclick="showDet(ALL.find(x=>x.id==='+p.id+'))"><div class="ae">'+(p.emoji||ico(p.articulo))+'</div><div class="ai"><div class="an">'+p.articulo+'</div><div class="am">'+(p.sku||'')+' · Stock: '+(p.cantidades||0)+'</div></div><div class="as c-'+sC(p)+'">'+(p.cantidades||0)+'</div></div>'}else $('scnf').style.display='block'}
+
+/* WHATSAPP */
+function sendWhatsApp(){
+  if(!curOT||!curOT.rep_clientes)return;
+  const cli=curOT.rep_clientes;
+  const tel=cli.telefono.replace(/\D/g,'');
+  const telFull=tel.startsWith('54')?tel:'54'+tel;
+  const st=OT_STATES[curOT.estado]||{lbl:curOT.estado};
+  let msg='Hola '+cli.nombre+', le informamos desde *Electro Parque* sobre su equipo '+(curOT.marca||'')+' '+(curOT.modelo||'')+' (OT #'+curOT.id+'):\n\n';
+  if(curOT.estado==='listo_retirar')msg+='✅ Su equipo está *listo para retirar*.\n\nLo esperamos en nuestro local. ¡Gracias!';
+  else if(curOT.estado==='presupuesto_enviado')msg+='El presupuesto de reparación es de *$'+((+curOT.costo_repuestos||0)+(+curOT.costo_mano_obra||0)).toLocaleString('es-AR')+'*.\n\n¿Desea aprobar la reparación?';
+  else if(curOT.estado==='en_reparacion')msg+='Su equipo se encuentra *en reparación*. Le avisaremos cuando esté listo.';
+  else if(curOT.estado==='entregado')msg+='Su equipo fue entregado. Recuerde que tiene garantía hasta el '+(curOT.fecha_garantia_fin?new Date(curOT.fecha_garantia_fin).toLocaleDateString('es-AR'):'—')+'. ¡Gracias por confiar en nosotros!';
+  else msg+='Estado actual: *'+st.lbl+'*. Ante cualquier consulta no dude en comunicarse.';
+  window.open('https://wa.me/'+telFull+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+/* REPAIR SEARCH */
+function filterRep(){
+  const q=($('rep-search').value||'').toLowerCase();
+  if(!q){renderRepList();return}
+  const list=allOTs.filter(o=>{
+    const cli=o.rep_clientes||{};
+    const h=((cli.nombre||'')+' '+(cli.telefono||'')+' '+(o.marca||'')+' '+(o.modelo||'')+' '+(o.numero_serie||'')+' '+(o.falla_cliente||'')+' OT '+o.id).toLowerCase();
+    return h.includes(q);
+  });
+  $('rep-list').innerHTML=list.length?list.map(o=>{const st=OT_STATES[o.estado]||{lbl:o.estado,color:'var(--tx3)',ico:'📋'};const cli=o.rep_clientes;return'<div class="ar" onclick="showOT('+o.id+')"><div class="ae">'+st.ico+'</div><div class="ai"><div class="an">OT #'+o.id+' · '+(o.marca||'')+' '+(o.modelo||'')+'</div><div class="am">'+(cli?cli.nombre:'?')+' · '+(o.falla_cliente||'').substring(0,40)+'</div></div><span class="ab" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:'+st.color+'">'+st.lbl+'</span></div>'}).join(''):'<div class="emp">Sin resultados</div>';
+}
+
+/* EXCEL EXPORT */
+function exportExcel(tipo){
+  let data=[],filename='';
+  if(tipo==='inventario'){
+    filename='Inventario_ElectroParque_'+new Date().toLocaleDateString('es-AR').replace(/\//g,'-')+'.xlsx';
+    data=ALL.map(p=>({ID:p.id,SKU:p.sku,Artículo:p.articulo,Marca:p.marca,Modelo:p.modelo,Cantidad:p.cantidades,Estado:p.estado,'P.Costo':p.precio_al_costo,'P.Venta':p.precio_venta,'P.Mayorista':p.precio_mayorista,'Stock Mín':p.stock_minimo,Caja:p.caja,Estantería:p.estanteria,MLA1:p.ml_id_1,MLA2:p.ml_id_2,MLA3:p.ml_id_3,Observaciones:p.observaciones}));
+  }else if(tipo==='movimientos'){
+    filename='Movimientos_ElectroParque_'+new Date().toLocaleDateString('es-AR').replace(/\//g,'-')+'.xlsx';
+    const el=$('mvl');
+    // Fetch fresh
+    db.from('movimientos').select('*').order('created_at',{ascending:false}).limit(500).then(({data:movs})=>{
+      const d=(movs||[]).map(m=>({Fecha:m.fecha,Hora:m.hora,Usuario:m.usuario,Artículo:m.articulo,SKU:m.sku,Tipo:m.tipo,Cantidad:m.cantidad,'Stock Ant':m.stock_anterior,'Stock Nuevo':m.stock_nuevo,Canal:m.canal,Monto:m.monto}));
+      doExport(d,'Movimientos_EP_'+new Date().toLocaleDateString('es-AR').replace(/\//g,'-')+'.xlsx');
+    });return;
+  }
+  doExport(data,filename);
+}
+function doExport(data,filename){
+  if(!data.length){toast('Sin datos para exportar');return}
+  const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Datos');XLSX.writeFile(wb,filename);toast('Excel descargado');
+}
 
 /* MOV */
 async function loadMov(){const el=$('mvl');el.innerHTML='<div class="ld"><div class="sp"></div></div>';try{const{data}=await db.from('movimientos').select('*').order('created_at',{ascending:false}).limit(100);if(!data||!data.length){el.innerHTML='<div class="emp">Sin movimientos</div>';return}const chI={mercadolibre:'🛒',tiendanube:'🏪',mostrador:'🏬',ingreso:'📥',ajuste:'🔧'};el.innerHTML=data.map(m=>{const t=(m.tipo||'').toLowerCase(),tc=t.includes('venta')?'mv':t.includes('ingreso')?'mi2':'mj',tl=t.includes('venta')?'Venta':t.includes('ingreso')?'Ingreso':'Ajuste',ch=m.canal||'';return'<div class="mr"><div class="mt"><div class="ma">'+(m.articulo||'—')+'</div><span class="mg '+tc+'">'+tl+(ch&&chI[ch]?' '+chI[ch]:'')+'</span></div><div class="mm"><span>📅 '+(m.fecha||'')+' '+(m.hora||'')+'</span><span>👤 '+(m.usuario||'—')+'</span><span>'+(t.includes('venta')?'−':'+')+Math.abs(m.cantidad||0)+' u.</span>'+(m.monto?'<span>$'+m.monto.toLocaleString('es-AR')+'</span>':'')+'</div></div>'}).join('')}catch(e){el.innerHTML='<div class="emp">Error</div>'}}
@@ -979,9 +1056,10 @@ function printDoc(tipo){
     html='<div class="p-copy">'+header+'<div class="p-section">CERTIFICADO DE GARANTÍA · OT #'+curOT.id+'</div>'+clienteTbl+equipoTbl+'<div class="p-section">COBERTURA</div><table class="p-tbl"><tr><td><b>Fecha entrega:</b> '+(curOT.fecha_entrega?new Date(curOT.fecha_entrega).toLocaleDateString('es-AR'):'—')+'</td><td><b>Válido hasta:</b> '+gFin+'</td></tr><tr><td><b>Garantía mano de obra:</b> '+(curOT.dias_garantia_mo||30)+' días</td><td><b>Garantía repuestos:</b> '+(curOT.dias_garantia_repuesto||90)+' días</td></tr><tr><td colspan="2"><b>Trabajo realizado:</b> '+(curOT.falla_confirmada||curOT.falla_cliente||'—')+'</td></tr><tr><td colspan="2"><b>Técnico:</b> '+(curOT.tecnico_reparacion||'—')+'</td></tr></table><div class="p-garantia"><b>Condiciones:</b> La garantía cubre defectos en la reparación realizada y repuestos instalados. No cubre: daños por golpes, caídas, líquidos, uso indebido, manipulación por terceros, o fallas no relacionadas con la reparación original. Para hacer uso de la garantía, presente este certificado junto con el equipo.</div>'+firmas+'</div>';
   }
 
-  $('print-content').innerHTML=html;
-  $('print-ot').style.display='block';
-  setTimeout(()=>{window.print();setTimeout(()=>{$('print-ot').style.display='none'},500)},300);
+  const printWin=window.open('','_blank','width=800,height=600');
+  printWin.document.write('<html><head><title>Electro Parque - '+tipo.toUpperCase()+'</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#000;margin:20px}table{width:100%;border-collapse:collapse;margin-bottom:12px}td{padding:5px 8px;border:1px solid #ccc;font-size:12px;vertical-align:top}b{font-weight:700}.p-header{text-align:center;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:12px}.p-logo{font-size:22px;font-weight:bold}.p-sub{font-size:10px;color:#555}.p-section{font-size:13px;font-weight:700;background:#f0f0f0;padding:4px 8px;margin:10px 0 6px;border-left:3px solid #333}.p-firma{margin-top:24px;display:flex;justify-content:space-between}.p-firma div{border-top:1px solid #000;width:38%;text-align:center;padding-top:4px;font-size:10px}.p-copy{border:2px solid #000;padding:20px;margin-bottom:20px;page-break-after:always}.p-garantia{border:1px dashed #666;padding:10px;margin-top:12px;font-size:10px}</style></head><body>'+html+'</body></html>');
+  printWin.document.close();
+  printWin.onload=function(){printWin.print()};
 }
 
 /* PIZARRA */
