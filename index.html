@@ -1025,7 +1025,7 @@ async function completeRepair(){if(!curOT)return;
 
 function printDoc(tipo){
   if(!curOT)return;const cli=curOT.rep_clientes||{};const fecha=new Date(curOT.fecha_ingreso).toLocaleDateString('es-AR');
-  const header='<div class="p-header"><div class="p-logo">⚡ ELECTRO PARQUE</div><div class="p-sub">Service Técnico Especializado · Morón, Buenos Aires</div></div>';
+  const header='<div class="p-header"><div class="p-logo">⚡ ELECTRO PARQUE</div><div class="p-sub">Service Técnico Especializado · Lomas de Zamora, Buenos Aires</div></div>';
   const clienteTbl='<table class="p-tbl"><tr><td><b>Cliente:</b> '+cli.nombre+'</td><td><b>Tel:</b> '+cli.telefono+'</td></tr>'+(cli.dni_cuit?'<tr><td colspan="2"><b>DNI/CUIT:</b> '+cli.dni_cuit+'</td></tr>':'')+(cli.email?'<tr><td colspan="2"><b>Email:</b> '+cli.email+'</td></tr>':'')+'</table>';
   const equipoTbl='<table class="p-tbl"><tr><td><b>Equipo:</b> '+(curOT.tipo_equipo||'')+' '+(curOT.marca||'')+' '+(curOT.modelo||'')+'</td><td><b>S/N:</b> '+(curOT.numero_serie||'—')+'</td></tr><tr><td><b>Accesorios:</b> '+(curOT.accesorios||'Ninguno')+'</td><td><b>Estado:</b> '+(curOT.observaciones_fisico||'Normal')+'</td></tr><tr><td colspan="2"><b>Falla reportada:</b> '+(curOT.falla_cliente||'—')+'</td></tr></table>';
   const firmas='<div class="p-firma"><div>Firma Cliente</div><div>Firma Técnico</div></div>';
