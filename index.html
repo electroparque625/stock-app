@@ -474,7 +474,12 @@ function showStockAlerts(){
   $('notif-overlay').style.display='flex';
 }
 function updM(){$('m-t').textContent=ALL.length;$('m-u').textContent=ALL.reduce((s,p)=>s+(p.cantidades||0),0).toLocaleString('es-AR');$('m-l').textContent=ALL.filter(p=>p.cantidades>0&&p.stock_minimo>0&&p.cantidades<p.stock_minimo).length;$('m-z').textContent=ALL.filter(p=>!p.cantidades).length}
-function syncS(a,p){fetch(SYNC+'?accion='+a+'&'+new URLSearchParams(p),{mode:'no-cors'}).catch(()=>{})}
+function syncS(a,p){
+  const url=SYNC+'?accion='+a+'&'+new URLSearchParams(p);
+  fetch(url,{mode:'no-cors'}).catch(()=>{});
+  // Retry after 2 seconds in case first attempt failed
+  setTimeout(()=>fetch(url,{mode:'no-cors'}).catch(()=>{}),2000);
+}
 function ico(a){a=(a||'').toLowerCase();if(/joystick|gamepad|dualsense|dualshock|control (xbox|ps)/.test(a))return'🎮';if(/carplay.*moto|moto.*carplay/.test(a))return'🏍️';if(/carplay|android auto|estereo|pantalla.*auto/.test(a))return'🚗';if(/televisor|tv |smart tv/.test(a))return'📺';if(/placa|mainboard|fuente tv/.test(a))return'🔧';if(/control remoto|remoto|mando/.test(a))return'📡';if(/auricular|headset/.test(a))return'🎧';if(/cable|hdmi|usb|adaptador/.test(a))return'🔌';if(/bateria|cargador/.test(a))return'🔋';if(/parlante|speaker/.test(a))return'🔊';return'📦'}
 function aB(p){const a=p.estado_alerta||'OK';if(a==='SIN STOCK')return['🔴 SIN STOCK','b-sin'];if(a.includes('CRITICO AVION'))return['🔴 CRÍTICO ✈️','b-crit'];if(a.includes('CRITICO BARCO'))return['🔴 CRÍTICO 🚢','b-crit'];if(a.includes('PRE ALERTA AVION'))return['🟡 PRE-ALERTA ✈️','b-pre'];if(a.includes('PRE ALERTA BARCO'))return['🟡 PRE-ALERTA 🚢','b-pre'];return['🟢 OK','b-ok']}
 function sC(p){if(!p.cantidades)return'e';if(p.stock_minimo&&p.cantidades<p.stock_minimo)return'w';return'o'}
@@ -1013,9 +1018,13 @@ let repUsedParts=[];
 function searchRepStock(){
   const q=($('ot-rep-search').value||'').toLowerCase();
   if(q.length<2){$('ot-rep-stock-results').style.display='none';return}
-  const results=ALL.filter(p=>p.cantidades>0&&(((p.articulo||'')+' '+(p.sku||'')+' '+(p.observaciones||'')).toLowerCase().includes(q))).slice(0,8);
+  const words=q.split(/\s+/).filter(w=>w.length>0);
+  const results=ALL.filter(p=>p.cantidades>0&&(()=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')+' '+(p.observaciones||'')+' '+(p.cod_barra||'')).toLowerCase();return words.every(w=>h.includes(w))})()).slice(0,10);
   $('ot-rep-stock-results').style.display='block';
-  $('ot-rep-stock-results').innerHTML=results.length?results.map(p=>'<div style="padding:8px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:6px" onclick="addRepPart('+p.id+')"><span>'+(p.emoji||ico(p.articulo))+'</span><span style="flex:1">'+p.articulo+'</span><span style="color:var(--tx3);font-size:11px">Stock: '+p.cantidades+'</span></div>').join(''):'<div style="padding:8px 10px;font-size:11px;color:var(--tx3)">Sin resultados</div>';
+  $('ot-rep-stock-results').innerHTML=results.length?results.map(p=>'<div style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--brd)" onclick="addRepPart('+p.id+')">'
+    +'<div style="font-size:12px;font-weight:600">'+(p.emoji||ico(p.articulo))+' '+p.articulo+'</div>'
+    +'<div style="font-size:10px;color:var(--tx3);margin-top:2px">SKU: '+p.sku+' · '+(p.marca||'—')+' '+(p.modelo||'')+' · Stock: <b>'+p.cantidades+'</b>'+(p.caja?' · Caja '+p.caja:'')+(p.observaciones?' · '+p.observaciones.substring(0,30):'')+'</div>'
+    +'</div>').join(''):'<div style="padding:8px 10px;font-size:11px;color:var(--tx3)">Sin resultados para "'+q+'"</div>';
 }
 function addRepPart(id){
   const p=ALL.find(x=>x.id===id);if(!p)return;
