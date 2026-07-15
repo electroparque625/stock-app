@@ -319,7 +319,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="b bs" onclick="printDoc('factura')" style="width:auto;padding:8px 12px;font-size:11px">🖨 Factura</button>
 <button class="b bs" onclick="printDoc('garantia')" style="width:auto;padding:8px 12px;font-size:11px">🖨 Garantía</button>
 </div>
-</div>
 <div class="cd" id="ot-status-card"></div>
 <div class="cd"><div class="fst">👤 Cliente</div><div id="ot-cliente-info"></div></div>
 <div class="cd"><div class="fst">📺 Equipo</div><div id="ot-equipo-info"></div></div>
@@ -353,6 +352,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="cd" id="ot-entrega-section"><div class="fst">📦 Entrega</div>
 <button class="b bo" onclick="deliverOT()">Marcar como entregado</button>
 </div>
+<div style="margin-top:10px"><button class="b be" onclick="deleteOT()">🗑 Eliminar esta OT</button></div>
 </div>
 
 <!-- PRINT TEMPLATE --><div id="print-ot" class="print-area">
@@ -992,6 +992,8 @@ async function approveOT(){if(!curOT)return;const total=(+$('ot-cost-rep').value
 async function rejectOT(){if(!curOT||!confirm('¿Rechazar presupuesto?'))return;await db.from('rep_ordenes').update({estado:'rechazado',estado_presupuesto:'rechazado',fecha_presupuesto:new Date().toISOString()}).eq('id',curOT.id);toast('Rechazado');showOT(curOT.id)}
 async function completeRepair(){if(!curOT)return;const total=(+curOT.costo_repuestos||0)+(+curOT.costo_mano_obra||0)-(+curOT.costo_diagnostico||0);await db.from('rep_ordenes').update({estado:'listo_retirar',tecnico_reparacion:$('ot-tec-rep').value,observaciones_tecnicas:$('ot-obs-tec').value||null,resultado_calidad:$('ot-calidad').value,forma_pago:$('ot-pago').value,fecha_fin_rep:new Date().toISOString(),total_facturado:Math.max(0,total)}).eq('id',curOT.id);toast('Listo para retirar');showOT(curOT.id)}
 async function deliverOT(){if(!curOT||!confirm('¿Marcar como entregado?'))return;const now=new Date();const gFin=new Date(now.getTime()+(curOT.dias_garantia_repuesto||90)*86400000);await db.from('rep_ordenes').update({estado:'entregado',estado_pago:'pagado',fecha_entrega:now.toISOString(),fecha_garantia_fin:gFin.toISOString()}).eq('id',curOT.id);toast('Entregado · Garantía hasta '+gFin.toLocaleDateString('es-AR'));showOT(curOT.id)}
+
+async function deleteOT(){if(!curOT||!confirm('¿Eliminar OT #'+curOT.id+'? Esta acción no se puede deshacer.'))return;await db.from('rep_ordenes').delete().eq('id',curOT.id);toast('OT eliminada');curOT=null;go('rep')}
 let repUsedParts=[];
 function searchRepStock(){
   const q=($('ot-rep-search').value||'').toLowerCase();
