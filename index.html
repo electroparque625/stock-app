@@ -300,7 +300,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="bk" onclick="go('rep')">‹ Volver</button>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
 <div><div style="font-size:20px;font-weight:800;color:var(--pri)" id="ot-num">OT #—</div><div style="font-size:11px;color:var(--tx3)" id="ot-fecha">—</div></div>
-<button class="b bs" onclick="printOT()" style="width:auto;padding:8px 14px;font-size:12px">🖨 Imprimir OT</button>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<button class="b bs" onclick="printDoc('remito')" style="width:auto;padding:8px 12px;font-size:11px">🖨 Remito</button>
+<button class="b bs" onclick="printDoc('ot')" style="width:auto;padding:8px 12px;font-size:11px">🖨 Orden Trabajo</button>
+<button class="b bs" onclick="printDoc('diagnostico')" style="width:auto;padding:8px 12px;font-size:11px">🖨 Diagnóstico</button>
+<button class="b bs" onclick="printDoc('presupuesto')" style="width:auto;padding:8px 12px;font-size:11px">🖨 Presupuesto</button>
+<button class="b bs" onclick="printDoc('factura')" style="width:auto;padding:8px 12px;font-size:11px">🖨 Factura</button>
+<button class="b bs" onclick="printDoc('garantia')" style="width:auto;padding:8px 12px;font-size:11px">🖨 Garantía</button>
+</div>
 </div>
 <div class="cd" id="ot-status-card"></div>
 <div class="cd"><div class="fst">👤 Cliente</div><div id="ot-cliente-info"></div></div>
@@ -308,17 +315,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="cd" id="ot-diag-section"><div class="fst">🔍 Diagnóstico</div>
 <div class="f"><label>Técnico</label><input type="text" id="ot-tec-diag"/></div>
 <div class="f"><label>Falla confirmada</label><input type="text" id="ot-falla-conf"/></div>
-<div class="tg-row"><span class="tg-lbl">Requiere repuesto</span><label class="tg"><input type="checkbox" id="ot-req-rep"/><span class="tg-tr"></span><span class="tg-th"></span></label></div>
-<div class="f"><label>Repuesto necesario</label><input type="text" id="ot-repuesto"/></div>
+<div class="tg-row"><span class="tg-lbl">Requiere repuesto</span><label class="tg"><input type="checkbox" id="ot-req-rep" onchange="$('ot-rep-stock').style.display=this.checked?'block':'none'"/><span class="tg-tr"></span><span class="tg-th"></span></label></div>
+<div id="ot-rep-stock" style="display:none">
+<div class="f"><label>Buscar repuesto en stock</label><input type="text" id="ot-rep-search" placeholder="Nombre, SKU o marca..." oninput="searchRepuesto()"/></div>
+<div id="ot-rep-results" style="max-height:150px;overflow-y:auto;margin-bottom:8px"></div>
+<div id="ot-rep-selected" style="margin-bottom:8px"></div>
+<div class="f"><label>Repuesto manual (si no está en stock)</label><input type="text" id="ot-repuesto"/></div>
+</div>
 <button class="b bp" onclick="saveOTDiag()" style="margin-top:6px">Guardar diagnóstico</button>
 </div>
 <div class="cd" id="ot-presu-section"><div class="fst">💰 Presupuesto</div>
 <div class="fr"><div class="f"><label>Repuestos $</label><input type="number" id="ot-cost-rep" min="0"/></div><div class="f"><label>Mano de obra $</label><input type="number" id="ot-cost-mo" min="0"/></div></div>
-<div class="f"><label>Total</label><div class="idb" id="ot-cost-total">$0</div></div>
-<div style="display:flex;gap:8px;margin-top:8px"><button class="b bo" onclick="approveOT()">✅ Aprobado</button><button class="b be" onclick="rejectOT()">❌ Rechazado</button></div>
+<div class="f"><label>Total presupuesto</label><div class="idb" id="ot-cost-total">$0</div></div>
+<div style="display:flex;gap:8px;margin-top:8px"><button class="b bo" onclick="approveOT()">✅ Cliente aprueba</button><button class="b be" onclick="rejectOT()">❌ Cliente rechaza</button></div>
+<button class="b bs" onclick="printDoc('presupuesto')" style="margin-top:8px">🖨 Imprimir presupuesto</button>
 </div>
 <div class="cd" id="ot-rep-section"><div class="fst">🔧 Reparación</div>
 <div class="f"><label>Técnico reparación</label><input type="text" id="ot-tec-rep"/></div>
+<div class="f"><label>Repuesto del stock (buscar)</label><input type="text" id="ot-rep-search" placeholder="Buscar artículo del inventario..." oninput="searchRepStock()"/></div>
+<div id="ot-rep-stock-results" style="display:none;max-height:120px;overflow-y:auto;border:1px solid var(--brd);border-radius:var(--rs);margin-bottom:8px"></div>
+<div id="ot-rep-used" style="margin-bottom:8px"></div>
 <div class="f"><label>Observaciones técnicas</label><input type="text" id="ot-obs-tec"/></div>
 <div class="fr"><div class="f"><label>Resultado calidad</label><select id="ot-calidad"><option value="aprobado">Aprobado</option><option value="reprobado">Reprobado</option></select></div><div class="f"><label>Forma de pago</label><select id="ot-pago"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>MercadoPago</option></select></div></div>
 <button class="b bp" onclick="completeRepair()" style="margin-top:6px">Completar reparación</button>
@@ -328,10 +344,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 </div>
 
-<!-- PRINT TEMPLATE --><div id="print-ot" style="display:none">
-<style>@media print{body>*{display:none!important}#print-ot{display:block!important;font-family:Arial,sans-serif;font-size:12px;color:#000}}</style>
+<!-- PRINT TEMPLATE --><div id="print-ot" class="print-area">
 <div id="print-content"></div>
 </div>
+<style>
+@media print{body>*:not(.print-area){display:none!important}.print-area{display:block!important;position:absolute;top:0;left:0;width:100%;font-family:Arial,sans-serif;font-size:12px;color:#000;background:#fff}.print-area *{color:#000!important}
+.p-header{text-align:center;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:12px}.p-logo{font-size:20px;font-weight:bold}.p-sub{font-size:10px;color:#555}
+.p-tbl{width:100%;border-collapse:collapse;margin-bottom:12px}.p-tbl td{padding:5px 8px;border:1px solid #ccc;font-size:12px;vertical-align:top}.p-tbl b{font-weight:700}
+.p-firma{margin-top:24px;display:flex;justify-content:space-between}.p-firma div{border-top:1px solid #000;width:38%;text-align:center;padding-top:4px;font-size:10px}
+.p-section{font-size:13px;font-weight:700;background:#f0f0f0;padding:4px 8px;margin:10px 0 6px;border-left:3px solid #333}
+.p-copy{page-break-after:always;border:2px solid #000;padding:20px;margin-bottom:20px}
+.p-garantia{border:1px dashed #666;padding:10px;margin-top:12px;font-size:10px}
+}
+.print-area{display:none}
+</style>
 
 <!-- PIZARRA --><div class="sc" id="s-pizarra">
 <div style="display:flex;gap:4px;margin-bottom:12px;overflow-x:auto" id="piz-days"></div>
@@ -889,7 +915,74 @@ async function approveOT(){if(!curOT)return;const total=(+$('ot-cost-rep').value
 async function rejectOT(){if(!curOT||!confirm('¿Rechazar presupuesto?'))return;await db.from('rep_ordenes').update({estado:'rechazado',estado_presupuesto:'rechazado',fecha_presupuesto:new Date().toISOString()}).eq('id',curOT.id);toast('Rechazado');showOT(curOT.id)}
 async function completeRepair(){if(!curOT)return;const total=(+curOT.costo_repuestos||0)+(+curOT.costo_mano_obra||0)-(+curOT.costo_diagnostico||0);await db.from('rep_ordenes').update({estado:'listo_retirar',tecnico_reparacion:$('ot-tec-rep').value,observaciones_tecnicas:$('ot-obs-tec').value||null,resultado_calidad:$('ot-calidad').value,forma_pago:$('ot-pago').value,fecha_fin_rep:new Date().toISOString(),total_facturado:Math.max(0,total)}).eq('id',curOT.id);toast('Listo para retirar');showOT(curOT.id)}
 async function deliverOT(){if(!curOT||!confirm('¿Marcar como entregado?'))return;const now=new Date();const gFin=new Date(now.getTime()+(curOT.dias_garantia_repuesto||90)*86400000);await db.from('rep_ordenes').update({estado:'entregado',estado_pago:'pagado',fecha_entrega:now.toISOString(),fecha_garantia_fin:gFin.toISOString()}).eq('id',curOT.id);toast('Entregado · Garantía hasta '+gFin.toLocaleDateString('es-AR'));showOT(curOT.id)}
-function printOT(){if(!curOT)return;const cli=curOT.rep_clientes||{};const h='<div style="border:2px solid #000;padding:20px;margin-bottom:20px;page-break-after:always"><div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:10px"><div style="font-size:22px;font-weight:bold">⚡ ELECTRO PARQUE</div><div style="font-size:11px">Service Técnico · Orden de Trabajo</div></div><table style="width:100%;font-size:13px;border-collapse:collapse"><tr><td style="padding:4px;border:1px solid #ccc"><b>OT N°:</b> '+curOT.id+'</td><td style="padding:4px;border:1px solid #ccc"><b>Fecha:</b> '+new Date(curOT.fecha_ingreso).toLocaleDateString('es-AR')+'</td></tr><tr><td style="padding:4px;border:1px solid #ccc"><b>Cliente:</b> '+cli.nombre+'</td><td style="padding:4px;border:1px solid #ccc"><b>Tel:</b> '+cli.telefono+'</td></tr>'+(cli.dni_cuit?'<tr><td colspan="2" style="padding:4px;border:1px solid #ccc"><b>DNI/CUIT:</b> '+cli.dni_cuit+'</td></tr>':'')+'<tr><td style="padding:4px;border:1px solid #ccc"><b>Equipo:</b> '+(curOT.tipo_equipo||'')+' '+(curOT.marca||'')+' '+(curOT.modelo||'')+'</td><td style="padding:4px;border:1px solid #ccc"><b>S/N:</b> '+(curOT.numero_serie||'—')+'</td></tr><tr><td colspan="2" style="padding:4px;border:1px solid #ccc"><b>Accesorios:</b> '+(curOT.accesorios||'Ninguno')+'</td></tr><tr><td colspan="2" style="padding:4px;border:1px solid #ccc"><b>Estado físico:</b> '+(curOT.observaciones_fisico||'Normal')+'</td></tr><tr><td colspan="2" style="padding:4px;border:1px solid #ccc"><b>Falla:</b> '+(curOT.falla_cliente||'—')+'</td></tr><tr><td style="padding:4px;border:1px solid #ccc"><b>Diagnóstico $:</b> '+(curOT.costo_diagnostico||0)+'</td><td style="padding:4px;border:1px solid #ccc"><b>Recibió:</b> '+(curOT.recibido_por||'—')+'</td></tr></table><div style="margin-top:20px;display:flex;justify-content:space-between"><div style="border-top:1px solid #000;width:40%;text-align:center;padding-top:4px;font-size:11px">Firma Cliente</div><div style="border-top:1px solid #000;width:40%;text-align:center;padding-top:4px;font-size:11px">Firma Técnico</div></div></div>';$('print-content').innerHTML=h+h;$('print-ot').style.display='block';setTimeout(()=>{window.print();$('print-ot').style.display='none'},300)}
+let repUsedParts=[];
+function searchRepStock(){
+  const q=($('ot-rep-search').value||'').toLowerCase();
+  if(q.length<2){$('ot-rep-stock-results').style.display='none';return}
+  const results=ALL.filter(p=>p.cantidades>0&&(((p.articulo||'')+' '+(p.sku||'')+' '+(p.observaciones||'')).toLowerCase().includes(q))).slice(0,5);
+  $('ot-rep-stock-results').style.display='block';
+  $('ot-rep-stock-results').innerHTML=results.length?results.map(p=>'<div style="padding:6px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--brd)" onclick="addRepPart('+p.id+')">'+(p.emoji||ico(p.articulo))+' '+p.articulo+' <span style="color:var(--tx3)">· Stock: '+p.cantidades+'</span></div>').join(''):'<div style="padding:6px 10px;font-size:11px;color:var(--tx3)">Sin resultados</div>';
+}
+function addRepPart(id){
+  const p=ALL.find(x=>x.id===id);if(!p||repUsedParts.find(x=>x.id===id))return;
+  repUsedParts.push({id:p.id,articulo:p.articulo,sku:p.sku,precio:p.precio_al_costo||0});
+  renderUsedParts();$('ot-rep-search').value='';$('ot-rep-stock-results').style.display='none';
+}
+function removeRepPart(id){repUsedParts=repUsedParts.filter(x=>x.id!==id);renderUsedParts()}
+function renderUsedParts(){
+  $('ot-rep-used').innerHTML=repUsedParts.length?'<div style="font-size:11px;font-weight:600;margin-bottom:4px">Repuestos del stock:</div>'+repUsedParts.map(p=>'<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg);border-radius:var(--rs);margin-bottom:3px;font-size:12px"><span style="flex:1">'+p.articulo+' · $'+(p.precio||0).toLocaleString('es-AR')+'</span><button onclick="removeRepPart('+p.id+')" style="background:none;border:none;cursor:pointer;color:var(--err)">✕</button></div>').join(''):'';
+}
+async function completeRepair(){if(!curOT)return;
+  // Deduct used parts from stock
+  for(const part of repUsedParts){
+    const prod=ALL.find(x=>x.id===part.id);if(!prod)continue;
+    const nv=Math.max(0,prod.cantidades-1);
+    await db.from('stock').update({cantidades:nv,estado:nv>0?'STOCK':'SIN STOCK'}).eq('id',part.id);
+    await db.from('movimientos').insert({fecha:new Date().toLocaleDateString('es-AR'),hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:part.articulo,sku:part.sku,tipo:'ajuste',cantidad:1,stock_anterior:prod.cantidades,stock_nuevo:nv,canal:'reparacion',monto:0});
+    prod.cantidades=nv;
+  }
+  const total=(+curOT.costo_repuestos||0)+(+curOT.costo_mano_obra||0);
+  const repUsedStr=repUsedParts.map(p=>p.articulo).join(', ');
+  await db.from('rep_ordenes').update({estado:'listo_retirar',tecnico_reparacion:$('ot-tec-rep').value,observaciones_tecnicas:($('ot-obs-tec').value||'')+(repUsedStr?' · Repuestos: '+repUsedStr:''),resultado_calidad:$('ot-calidad').value,forma_pago:$('ot-pago').value,fecha_fin_rep:new Date().toISOString(),total_facturado:Math.max(0,total)}).eq('id',curOT.id);
+  repUsedParts=[];toast('Reparación completa');showOT(curOT.id)}
+
+function printDoc(tipo){
+  if(!curOT)return;const cli=curOT.rep_clientes||{};const fecha=new Date(curOT.fecha_ingreso).toLocaleDateString('es-AR');
+  const header='<div class="p-header"><div class="p-logo">⚡ ELECTRO PARQUE</div><div class="p-sub">Service Técnico Especializado · Morón, Buenos Aires</div></div>';
+  const clienteTbl='<table class="p-tbl"><tr><td><b>Cliente:</b> '+cli.nombre+'</td><td><b>Tel:</b> '+cli.telefono+'</td></tr>'+(cli.dni_cuit?'<tr><td colspan="2"><b>DNI/CUIT:</b> '+cli.dni_cuit+'</td></tr>':'')+(cli.email?'<tr><td colspan="2"><b>Email:</b> '+cli.email+'</td></tr>':'')+'</table>';
+  const equipoTbl='<table class="p-tbl"><tr><td><b>Equipo:</b> '+(curOT.tipo_equipo||'')+' '+(curOT.marca||'')+' '+(curOT.modelo||'')+'</td><td><b>S/N:</b> '+(curOT.numero_serie||'—')+'</td></tr><tr><td><b>Accesorios:</b> '+(curOT.accesorios||'Ninguno')+'</td><td><b>Estado:</b> '+(curOT.observaciones_fisico||'Normal')+'</td></tr><tr><td colspan="2"><b>Falla reportada:</b> '+(curOT.falla_cliente||'—')+'</td></tr></table>';
+  const firmas='<div class="p-firma"><div>Firma Cliente</div><div>Firma Técnico</div></div>';
+  let html='';
+
+  if(tipo==='remito'){
+    html='<div class="p-copy"><div style="text-align:right;font-size:10px;color:#888">COPIA CLIENTE</div>'+header+'<div class="p-section">REMITO DE INGRESO · OT #'+curOT.id+'</div><table class="p-tbl"><tr><td><b>Fecha ingreso:</b> '+fecha+'</td><td><b>Recibió:</b> '+(curOT.recibido_por||'—')+'</td></tr></table>'+clienteTbl+equipoTbl+'<table class="p-tbl"><tr><td><b>Diagnóstico:</b> $'+(curOT.costo_diagnostico||0).toLocaleString('es-AR')+'</td><td><b>Plazo estimado:</b> A confirmar</td></tr></table><div style="font-size:9px;margin-top:8px;color:#555">El equipo ingresado será diagnosticado. El presupuesto de reparación se informará por teléfono. Los equipos no retirados en 60 días quedan a disposición del taller.</div>'+firmas+'</div>'
+    +'<div class="p-copy"><div style="text-align:right;font-size:10px;color:#888">COPIA TALLER</div>'+header+'<div class="p-section">REMITO DE INGRESO · OT #'+curOT.id+'</div><table class="p-tbl"><tr><td><b>Fecha:</b> '+fecha+'</td><td><b>Recibió:</b> '+(curOT.recibido_por||'—')+'</td></tr></table>'+clienteTbl+equipoTbl+firmas+'</div>';
+  }
+  else if(tipo==='ot'){
+    html='<div class="p-copy">'+header+'<div class="p-section">ORDEN DE TRABAJO #'+curOT.id+'</div><table class="p-tbl"><tr><td><b>Fecha:</b> '+fecha+'</td><td><b>Estado:</b> '+(curOT.estado||'—')+'</td></tr></table>'+clienteTbl+equipoTbl
+    +(curOT.falla_confirmada?'<div class="p-section">DIAGNÓSTICO</div><table class="p-tbl"><tr><td><b>Técnico:</b> '+(curOT.tecnico_diagnostico||'—')+'</td><td><b>Falla:</b> '+(curOT.falla_confirmada||'—')+'</td></tr><tr><td colspan="2"><b>Repuesto:</b> '+(curOT.repuesto_necesario||'No requiere')+'</td></tr></table>':'')
+    +firmas+'</div>';
+  }
+  else if(tipo==='diagnostico'){
+    html='<div class="p-copy">'+header+'<div class="p-section">INFORME DE DIAGNÓSTICO · OT #'+curOT.id+'</div>'+clienteTbl+equipoTbl+'<div class="p-section">RESULTADO DEL DIAGNÓSTICO</div><table class="p-tbl"><tr><td><b>Técnico:</b> '+(curOT.tecnico_diagnostico||'—')+'</td><td><b>Fecha:</b> '+(curOT.fecha_presupuesto?new Date(curOT.fecha_presupuesto).toLocaleDateString('es-AR'):'—')+'</td></tr><tr><td colspan="2"><b>Falla confirmada:</b> '+(curOT.falla_confirmada||'Pendiente')+'</td></tr><tr><td><b>Requiere repuesto:</b> '+(curOT.requiere_repuesto?'Sí — '+curOT.repuesto_necesario:'No')+'</td><td><b>Diagnóstico $:</b> $'+(curOT.costo_diagnostico||0).toLocaleString('es-AR')+'</td></tr></table>'+firmas+'</div>';
+  }
+  else if(tipo==='presupuesto'){
+    const total=(+curOT.costo_repuestos||0)+(+curOT.costo_mano_obra||0);
+    html='<div class="p-copy">'+header+'<div class="p-section">PRESUPUESTO · OT #'+curOT.id+'</div>'+clienteTbl+equipoTbl+'<div class="p-section">DETALLE DE COSTOS</div><table class="p-tbl"><tr><td><b>Diagnóstico:</b></td><td style="text-align:right">$'+(curOT.costo_diagnostico||0).toLocaleString('es-AR')+'</td></tr><tr><td><b>Repuestos:</b> '+(curOT.repuesto_necesario||'—')+'</td><td style="text-align:right">$'+(curOT.costo_repuestos||0).toLocaleString('es-AR')+'</td></tr><tr><td><b>Mano de obra:</b></td><td style="text-align:right">$'+(curOT.costo_mano_obra||0).toLocaleString('es-AR')+'</td></tr><tr><td><b style="font-size:14px">TOTAL:</b></td><td style="text-align:right;font-size:14px;font-weight:bold">$'+total.toLocaleString('es-AR')+'</td></tr></table><div style="font-size:9px;color:#555;margin-top:8px">Presupuesto válido por 15 días. El diagnóstico se cobra independientemente de la aprobación.</div>'+firmas+'</div>';
+  }
+  else if(tipo==='factura'){
+    const total=+curOT.total_facturado||((+curOT.costo_repuestos||0)+(+curOT.costo_mano_obra||0));
+    html='<div class="p-copy">'+header+'<div class="p-section">COMPROBANTE DE SERVICIO · OT #'+curOT.id+'</div><table class="p-tbl"><tr><td><b>Fecha:</b> '+(curOT.fecha_fin_rep?new Date(curOT.fecha_fin_rep).toLocaleDateString('es-AR'):fecha)+'</td><td><b>Forma de pago:</b> '+(curOT.forma_pago||'—')+'</td></tr></table>'+clienteTbl+'<div class="p-section">DETALLE</div><table class="p-tbl"><tr><td><b>Equipo:</b> '+(curOT.tipo_equipo||'')+' '+(curOT.marca||'')+' '+(curOT.modelo||'')+'</td></tr><tr><td><b>Trabajo realizado:</b> '+(curOT.falla_confirmada||curOT.falla_cliente||'—')+'</td></tr><tr><td><b>Repuestos:</b> $'+(curOT.costo_repuestos||0).toLocaleString('es-AR')+' · <b>Mano de obra:</b> $'+(curOT.costo_mano_obra||0).toLocaleString('es-AR')+'</td></tr><tr><td style="font-size:16px;font-weight:bold;text-align:center;padding:10px">TOTAL: $'+total.toLocaleString('es-AR')+'</td></tr></table><div style="font-size:9px;color:#555">Comprobante no válido como factura fiscal.</div>'+firmas+'</div>';
+  }
+  else if(tipo==='garantia'){
+    const gFin=curOT.fecha_garantia_fin?new Date(curOT.fecha_garantia_fin).toLocaleDateString('es-AR'):'—';
+    html='<div class="p-copy">'+header+'<div class="p-section">CERTIFICADO DE GARANTÍA · OT #'+curOT.id+'</div>'+clienteTbl+equipoTbl+'<div class="p-section">COBERTURA</div><table class="p-tbl"><tr><td><b>Fecha entrega:</b> '+(curOT.fecha_entrega?new Date(curOT.fecha_entrega).toLocaleDateString('es-AR'):'—')+'</td><td><b>Válido hasta:</b> '+gFin+'</td></tr><tr><td><b>Garantía mano de obra:</b> '+(curOT.dias_garantia_mo||30)+' días</td><td><b>Garantía repuestos:</b> '+(curOT.dias_garantia_repuesto||90)+' días</td></tr><tr><td colspan="2"><b>Trabajo realizado:</b> '+(curOT.falla_confirmada||curOT.falla_cliente||'—')+'</td></tr><tr><td colspan="2"><b>Técnico:</b> '+(curOT.tecnico_reparacion||'—')+'</td></tr></table><div class="p-garantia"><b>Condiciones:</b> La garantía cubre defectos en la reparación realizada y repuestos instalados. No cubre: daños por golpes, caídas, líquidos, uso indebido, manipulación por terceros, o fallas no relacionadas con la reparación original. Para hacer uso de la garantía, presente este certificado junto con el equipo.</div>'+firmas+'</div>';
+  }
+
+  $('print-content').innerHTML=html;
+  $('print-ot').style.display='block';
+  setTimeout(()=>{window.print();setTimeout(()=>{$('print-ot').style.display='none'},500)},300);
+}
 
 /* PIZARRA */
 const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
