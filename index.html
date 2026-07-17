@@ -217,6 +217,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <!-- DETAIL --><div class="sc" id="s-det">
 <button class="bk" onclick="go('home')">‹ Volver</button>
 <div class="dh"><div class="di" id="d-ic" onclick="if(cur&&cur.imagen){$('img-viewer-src').src=cur.imagen;$('img-viewer').style.display='flex'}else{$('photo-input').click()}" style="cursor:pointer;width:90px;height:90px"><img id="d-img" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:var(--rad)"/><span id="d-em" style="font-size:36px">📦</span><div style="position:absolute;bottom:0;left:0;right:0;display:flex"><div onclick="event.stopPropagation();$('photo-input').click()" style="flex:1;background:rgba(0,0,0,.5);color:#fff;font-size:7px;text-align:center;padding:2px 0;cursor:pointer;border-radius:0 0 0 var(--rad)">📷</div><div onclick="event.stopPropagation();editEmoji()" style="flex:1;background:rgba(0,0,0,.5);color:#fff;font-size:7px;text-align:center;padding:2px 0;cursor:pointer;border-radius:0 0 var(--rad) 0">😀</div></div></div><input type="file" id="photo-input" accept="image/*" style="display:none" onchange="uploadPhoto(this)"/><div style="flex:1;min-width:0"><div class="db b-ok" id="d-bg">OK</div><div class="dt" id="d-nm">—</div><div class="dk" id="d-sk">—</div><button class="b bs" style="width:auto;padding:4px 10px;font-size:10px;margin-top:6px" onclick="$('photo-input').click()">📷 Cambiar foto</button></div></div>
+<div class="admin-only" style="display:none;margin-bottom:8px"><button class="b be" onclick="openIncident()" style="width:100%;font-size:12px">⚠️ Generar incidencia</button></div>
 <div class="cd" id="d-ac" style="display:none"><div style="display:flex;align-items:center;gap:8px"><span id="d-ai" style="font-size:20px">🔴</span><div><div id="d-at" style="font-size:13px;font-weight:600">—</div><div id="d-as2" style="font-size:11px;color:var(--tx3)">—</div></div></div></div>
 <div class="cd"><div class="sn" id="d-stk">—</div><div class="sl">unidades en stock</div>
 <div class="st"><button class="sb2" onclick="chQ(-1)">−</button><input type="number" class="sq" id="d-q" value="1" min="1"/><button class="sb2" onclick="chQ(1)">+</button></div>
@@ -246,9 +247,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 <div class="tg-row"><span class="tg-lbl">⭐ Monitorear</span><label class="tg"><input type="checkbox" id="fmn"/><span class="tg-tr"></span><span class="tg-th"></span></label></div></div>
 <div class="fs"><div class="fst">Precios</div><div class="fr price-restricted" style="display:none"><div class="f"><label>Costo</label><input type="number" id="fco" min="0"/></div><div class="f"><label>Margen %</label><input type="number" id="fmg" min="0"/></div></div><div class="fr"><div class="f"><label>P. venta</label><input type="number" id="fve" min="0"/></div><div class="f price-restricted" style="display:none"><label>P. mayorista</label><input type="number" id="fmy" min="0"/></div></div></div>
-<div class="fs"><div class="fst">Extra</div><div class="f"><label>Observaciones</label><input type="text" id="fob"/></div><div class="f"><label>Link ML Ivan</label><input type="url" id="flk" placeholder="https://articulo.mercadolibre.com.ar/..."/></div>
-<div class="f"><label>Link ML Gustavo</label><input type="url" id="flk2"/></div>
-<div class="f"><label>Link ML Mauro</label><input type="url" id="flk3"/></div><div class="fr3"><div class="f"><label>ML ID 1</label><input type="text" id="fm1"/></div><div class="f"><label>ML ID 2</label><input type="text" id="fm2"/></div><div class="f"><label>ML ID 3</label><input type="text" id="fm3"/></div></div></div>
+<div class="fs"><div class="fst">Extra</div><div class="f"><label>Observaciones</label><input type="text" id="fob"/></div><div class="f"><label>ML Electroparque-OK</label><input type="url" id="flk" placeholder="https://articulo.mercadolibre.com.ar/..."/></div>
+<div class="f"><label>ML DOMITECH</label><input type="url" id="flk2"/></div>
+<div class="f"><label>ML MAUROMAURO</label><input type="url" id="flk3"/></div><div class="fr3"><div class="f"><label>ML ID 1</label><input type="text" id="fm1"/></div><div class="f"><label>ML ID 2</label><input type="text" id="fm2"/></div><div class="f"><label>ML ID 3</label><input type="text" id="fm3"/></div></div></div>
 <button class="b bp" id="bsv" onclick="saveNew()">Guardar producto</button><div style="height:12px"></div></div>
 
 <!-- SCANNER --><div class="sc" id="s-scan"><div class="scb">
@@ -390,11 +391,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- TAREAS --><div class="sc" id="s-tasks">
 <div class="admin-only" style="display:none">
-<div class="fs"><div class="fst">Nueva tarea</div>
-<div class="f"><label>Título</label><input type="text" id="t-titulo" placeholder="Ej: Revisar stock de joysticks"/></div>
-<div class="f"><label>Descripción</label><input type="text" id="t-desc" placeholder="Detalles opcionales"/></div>
+<div class="fs"><div class="fst">Asignar tareas</div>
 <div class="f"><label>Asignar a</label><select id="t-asignar"><option value="">Seleccionar usuario...</option></select></div>
-<button class="b bp" onclick="createTask()" style="margin-top:4px">Asignar tarea</button>
+<div id="t-multi-list"></div>
+<div style="display:flex;gap:6px;margin-bottom:8px">
+<input type="text" id="t-titulo" placeholder="Escribir tarea..." style="flex:1;padding:8px 10px;border:1px solid var(--brd);border-radius:var(--rs);font-size:13px;background:var(--bg);color:var(--tx)"/>
+<button class="b bs" onclick="addTaskToList()" style="width:auto;padding:8px 14px">+ Agregar</button>
+</div>
+<div class="f"><label>Foto (opcional)</label><input type="file" id="t-foto" accept="image/*" style="padding:4px"/></div>
+<button class="b bp" onclick="createMultiTasks()" style="margin-top:4px">Asignar todas las tareas</button>
 </div></div>
 <div class="stit" id="tasks-title">Mis tareas</div>
 <div id="tasks-progress" style="background:var(--brd);border-radius:4px;height:8px;margin-bottom:12px;overflow:hidden"><div id="tasks-bar" style="height:100%;background:var(--ok);border-radius:4px;transition:width .3s;width:0%"></div></div>
@@ -426,9 +431,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="tg-row"><span class="tg-lbl">📦 Es importado</span><label class="tg"><input type="checkbox" id="e-imp"/><span class="tg-tr"></span><span class="tg-th"></span></label></div><div class="tg-row"><span class="tg-lbl">✈️ Avión</span><label class="tg"><input type="checkbox" id="eav"/><span class="tg-tr"></span><span class="tg-th"></span></label></div><div class="fr"><div class="f"><label>Pre-alerta</label><input type="number" id="epav" min="0"/></div><div class="f"><label>Mínimo</label><input type="number" id="emav" min="0"/></div></div><div class="tg-row"><span class="tg-lbl">🚢 Barco</span><label class="tg"><input type="checkbox" id="eba"/><span class="tg-tr"></span><span class="tg-th"></span></label></div><div class="fr"><div class="f"><label>Pre-alerta</label><input type="number" id="epba" min="0"/></div><div class="f"><label>Mínimo</label><input type="number" id="emba" min="0"/></div></div><div class="tg-row"><span class="tg-lbl">⭐ Monitorear</span><label class="tg"><input type="checkbox" id="emn"/><span class="tg-tr"></span><span class="tg-th"></span></label></div></div>
 <div class="es2"><div class="es2t">Precios</div><div class="fr price-restricted" style="display:none"><div class="f"><label>Costo</label><input type="number" id="eco" min="0"/></div><div class="f"><label>Margen %</label><input type="number" id="emg" min="0"/></div></div><div class="fr"><div class="f"><label>P. venta</label><input type="number" id="eve" min="0"/></div><div class="f price-restricted" style="display:none"><label>P. mayorista</label><input type="number" id="emy" min="0"/></div></div></div>
 <div class="es2"><div class="es2t">Foto</div><div style="display:flex;align-items:center;gap:10px"><img id="e-photo-prev" style="width:60px;height:60px;object-fit:cover;border-radius:var(--rs);border:1px solid var(--brd);display:none" alt=""/><button class="b bs" style="flex:1" onclick="$('e-photo').click()">📷 Cambiar foto</button><input type="file" id="e-photo" accept="image/*" style="display:none" onchange="previewEditPhoto(this)"/></div></div>
-<div class="es2"><div class="es2t">Extra</div><div class="f"><label>Obs.</label><input type="text" id="eob"/></div><div class="f"><label>Link ML 1</label><input type="url" id="elk"/></div>
-<div class="f"><label>Link ML 2</label><input type="url" id="elk2"/></div>
-<div class="f"><label>Link ML 3</label><input type="url" id="elk3"/></div><div class="fr3"><div class="f"><label>ML 1</label><input type="text" id="em1"/></div><div class="f"><label>ML 2</label><input type="text" id="em2"/></div><div class="f"><label>ML 3</label><input type="text" id="em3"/></div></div></div>
+<div class="es2"><div class="es2t">Extra</div><div class="f"><label>Obs.</label><input type="text" id="eob"/></div><div class="f"><label>ML Electroparque-OK</label><input type="url" id="elk"/></div>
+<div class="f"><label>ML DOMITECH</label><input type="url" id="elk2"/></div>
+<div class="f"><label>ML MAUROMAURO</label><input type="url" id="elk3"/></div><div class="fr3"><div class="f"><label>ML 1</label><input type="text" id="em1"/></div><div class="f"><label>ML 2</label><input type="text" id="em2"/></div><div class="f"><label>ML 3</label><input type="text" id="em3"/></div></div></div>
 <div class="macts"><button class="b bs" onclick="closeEd()">Cancelar</button><button class="b bp" id="bes" onclick="saveEd()">Guardar</button></div></div></div>
 
 <div class="toast" id="toast"></div>
@@ -1149,6 +1154,7 @@ async function loadPizarraTasks(fecha){
       return'<div style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px;opacity:'+(isDone?'.5':'1')+'">'
         +'<input type="checkbox" '+(isDone?'checked':'')+' onchange="togglePiz('+t.id+',this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--ok);flex-shrink:0"/>'
         +'<div style="flex:1;font-size:13px;font-weight:500;'+(isDone?'text-decoration:line-through;color:var(--tx3)':'')+'">'+t.titulo+'</div>'
+        +(isSA()?'<button onclick="editPiz('+t.id+',\''+t.titulo.replace(/'/g,"\\'")+'\')" style="background:none;border:none;cursor:pointer;font-size:12px" title="Editar">✏</button>':'')
         +(isSA()?'<button class="b be" style="width:auto;padding:4px 8px;font-size:10px" onclick="delPiz('+t.id+')">✕</button>':'')
         +'</div>'
     }).join('');
@@ -1169,6 +1175,13 @@ async function togglePiz(id,done){
 
 async function delPiz(id){
   await db.from('pizarra').delete().eq('id',id);
+  loadPizarraTasks(new Date().toISOString().split('T')[0]);
+}
+
+async function editPiz(id,current){
+  const nuevo=prompt('Editar tarea:',current);
+  if(nuevo===null||!nuevo.trim())return;
+  await db.from('pizarra').update({titulo:nuevo.trim()}).eq('id',id);
   loadPizarraTasks(new Date().toISOString().split('T')[0]);
 }
 
@@ -1218,19 +1231,55 @@ async function loadTasks(){
       +'<input type="checkbox" '+(isDone?'checked':'')+' onchange="toggleTask('+t.id+',this.checked)" style="margin-top:2px;width:18px;height:18px;cursor:pointer;flex-shrink:0;accent-color:var(--ok)"/>'
       +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;'+(isDone?'text-decoration:line-through;color:var(--tx3)':'')+'">'+t.titulo+statusTag+'</div>'
       +(t.descripcion?'<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+t.descripcion+'</div>':'')
+      +(t.foto?'<img src="'+t.foto+'" style="max-width:100%;max-height:120px;border-radius:var(--rs);margin-top:6px;cursor:pointer" onclick="$(\'img-viewer-src\').src=\''+t.foto+'\';$(\'img-viewer\').style.display=\'flex\'"/>':'')
       +'<div style="font-size:10px;color:var(--tx3);margin-top:3px">'+new Date(t.created_at).toLocaleDateString('es-AR')+asig+'</div></div>'
-      +(isAdmin?'<button class="b be" style="width:auto;padding:4px 8px;font-size:10px" onclick="deleteTask('+t.id+')">✕</button>':'')
-      +'</div>'
+      +'<div style="display:flex;gap:4px">'
+      +(isAdmin?'<button style="background:none;border:none;cursor:pointer;font-size:14px" onclick="editTask('+t.id+')" title="Editar">✏</button>':'')
+      +(isAdmin?'<button style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--err)" onclick="deleteTask('+t.id+')" title="Eliminar">✕</button>':'')
+      +'</div></div>'
   }).join('');
+  window._allTasks=tasks;
   updateTaskBadge();
 }
 
 async function createTask(){
-  const titulo=$('t-titulo').value.trim(),desc=$('t-desc').value.trim(),asig=$('t-asignar').value;
+  const titulo=$('t-titulo').value.trim(),asig=$('t-asignar').value;
   if(!titulo||!asig){toast('Completá título y asignar a');return}
-  await db.from('tareas').insert({titulo,descripcion:desc||null,asignado_a:asig,creado_por:ses?.usuario||'admin'});
-  $('t-titulo').value='';$('t-desc').value='';$('t-asignar').value='';
-  toast('Tarea asignada');loadTasks();
+  await db.from('tareas').insert({titulo,asignado_a:asig,creado_por:ses?.usuario||'admin'});
+  $('t-titulo').value='';toast('Tarea asignada');loadTasks();
+}
+
+let taskBatch=[];
+function addTaskToList(){
+  const t=$('t-titulo').value.trim();if(!t)return;
+  taskBatch.push(t);$('t-titulo').value='';$('t-titulo').focus();
+  renderTaskBatch();
+}
+function removeFromBatch(i){taskBatch.splice(i,1);renderTaskBatch()}
+function renderTaskBatch(){
+  $('t-multi-list').innerHTML=taskBatch.length?taskBatch.map((t,i)=>'<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg);border-radius:var(--rs);margin-bottom:3px;font-size:12px"><span style="flex:1">'+t+'</span><button onclick="removeFromBatch('+i+')" style="background:none;border:none;cursor:pointer;color:var(--err)">✕</button></div>').join('')+'<div style="font-size:10px;color:var(--tx3);margin-bottom:6px">'+taskBatch.length+' tarea'+(taskBatch.length>1?'s':'')+'</div>':'';
+}
+
+async function createMultiTasks(){
+  const asig=$('t-asignar').value;
+  // Add current input if not empty
+  const cur=$('t-titulo').value.trim();if(cur){taskBatch.push(cur);$('t-titulo').value=''}
+  if(!taskBatch.length){toast('Agregá al menos una tarea');return}
+  if(!asig){toast('Seleccioná un usuario');return}
+  // Upload photo if present
+  let fotoUrl=null;
+  const fotoFile=$('t-foto').files[0];
+  if(fotoFile){
+    try{const path='tareas/'+Date.now()+'.'+fotoFile.name.split('.').pop();
+    await db.storage.from('product-photos').upload(path,fotoFile,{upsert:true,contentType:fotoFile.type});
+    const{data:u}=db.storage.from('product-photos').getPublicUrl(path);
+    fotoUrl=u.publicUrl}catch(e){console.warn('Foto tarea:',e)}
+  }
+  for(const titulo of taskBatch){
+    await db.from('tareas').insert({titulo,asignado_a:asig,creado_por:ses?.usuario||'admin',foto:fotoUrl});
+  }
+  toast(taskBatch.length+' tareas asignadas a '+asig);
+  taskBatch=[];renderTaskBatch();$('t-foto').value='';loadTasks();
 }
 
 async function toggleTask(id,done){
@@ -1238,8 +1287,33 @@ async function toggleTask(id,done){
   loadTasks();
 }
 
+async function editTask(id){
+  const tarea=window._allTasks?.find(t=>t.id===id);if(!tarea)return;
+  const nuevo=prompt('Editar tarea:',tarea.titulo);
+  if(nuevo===null||!nuevo.trim())return;
+  await db.from('tareas').update({titulo:nuevo.trim()}).eq('id',id);
+  toast('Tarea editada');loadTasks();
+}
+
 async function deleteTask(id){
   await db.from('tareas').delete().eq('id',id);loadTasks();
+}
+
+/* INCIDENT ALERT */
+async function openIncident(){
+  if(!cur)return;
+  const desc=prompt('⚠️ Describí la incidencia para '+cur.articulo+':');
+  if(!desc)return;
+  // Get users for assignment
+  const{data:users}=await db.from('usuarios').select('usuario,nombre').order('nombre');
+  if(!users||!users.length){toast('No hay usuarios para asignar');return}
+  const userList=users.map((u,i)=>(i+1)+'. '+u.nombre).join('\n');
+  const pick=prompt('Asignar a:\n'+userList+'\n\nEscribí el número:');
+  if(!pick)return;
+  const idx=parseInt(pick)-1;
+  if(idx<0||idx>=users.length){toast('Número inválido');return}
+  await db.from('tareas').insert({titulo:'⚠️ INCIDENCIA: '+cur.articulo+' ['+cur.sku+']',descripcion:desc,asignado_a:users[idx].usuario,creado_por:ses?.usuario||'admin'});
+  toast('Incidencia asignada a '+users[idx].nombre);
 }
 
 /* USERS */
