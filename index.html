@@ -827,7 +827,7 @@ const infoRows=[['ID',p.id],['Estado',(p.estado||'').toUpperCase()==='PAUSADA'?'
   if([p.ml_id_1,p.ml_id_2,p.ml_id_3].filter(Boolean).length)infoRows.push(['ML IDs',[p.ml_id_1,p.ml_id_2,p.ml_id_3].filter(Boolean).join(' / ')]);
   $('d-inf').innerHTML=infoRows.map(r=>'<div class="ir"><span class="ik">'+r[0]+'</span><span class="iv">'+r[1]+'</span></div>').join('');
 const hasLinks=p.link||p.link_2||p.link_3;$('d-mlw').style.display=hasLinks?'block':'none';
-  if(hasLinks){let mh='';if(p.link)mh+='<a href="'+p.link+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 Cta 1</a>';if(p.link_2)mh+='<a href="'+p.link_2+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 Cta 2</a>';if(p.link_3)mh+='<a href="'+p.link_3+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 Cta 3</a>';$('d-mll').innerHTML=mh}}
+  if(hasLinks){let mh='';if(p.link)mh+='<a href="'+p.link+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 Electroparque-OK</a>';if(p.link_2)mh+='<a href="'+p.link_2+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 DOMITECH</a>';if(p.link_3)mh+='<a href="'+p.link_3+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 MAUROMAURO</a>';$('d-mll').innerHTML=mh}}
 
 function chQ(d){cQty=Math.max(1,cQty+d);$('d-q').value=cQty}
 function selCh(el){document.querySelectorAll('.ch-opt').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');selCanal=el.dataset.ch}
@@ -1228,7 +1228,7 @@ async function loadTasks(){
       else statusTag='<span style="font-size:9px;background:var(--warn-l);color:var(--warn);padding:2px 6px;border-radius:10px;font-weight:600;margin-left:6px">⏳ No visto</span>';
     }
     const asig=isAdmin?' · 👤 '+t.asignado_a:'';
-    return'<div style="background:var(--card);border-radius:var(--rad);border:1px solid '+(isDone?'var(--brd)':t.visto?'var(--pri)':'var(--warn)')+';padding:12px 14px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px;opacity:'+(isDone?'.5':'1')+'">'
+    return'<div data-task-id="'+t.id+'" style="background:var(--card);border-radius:var(--rad);border:1px solid '+(isDone?'var(--brd)':t.visto?'var(--pri)':'var(--warn)')+';padding:12px 14px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px;opacity:'+(isDone?'.5':'1')+'">'
       +'<input type="checkbox" '+(isDone?'checked':'')+' onchange="toggleTask('+t.id+',this.checked)" style="margin-top:2px;width:18px;height:18px;cursor:pointer;flex-shrink:0;accent-color:var(--ok)"/>'
       +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;'+(isDone?'text-decoration:line-through;color:var(--tx3)':'')+'">'+t.titulo+statusTag+'</div>'
       +(t.descripcion?'<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+t.descripcion+'</div>':'')
@@ -1284,17 +1284,29 @@ async function createMultiTasks(){
 }
 
 async function toggleTask(id,done){
-  await db.from('tareas').update({estado:done?'completada':'pendiente',completado_at:done?new Date().toISOString():null}).eq('id',id);
+  if(done){
+    const comment=prompt('Resolución/comentario (opcional):','');
+    const upd={estado:'completada',completado_at:new Date().toISOString()};
+    if(comment)upd.descripcion=(window._allTasks?.find(t=>t.id===id)?.descripcion||'')+(comment?'\n✅ '+comment:'');
+    await db.from('tareas').update(upd).eq('id',id);
+  }else{
+    await db.from('tareas').update({estado:'pendiente',completado_at:null}).eq('id',id);
+  }
   loadTasks();
 }
 
 async function editTask(id){
   const tarea=window._allTasks?.find(t=>t.id===id);if(!tarea)return;
-  const titulo=prompt('Título de la tarea:',tarea.titulo);
-  if(titulo===null)return;
-  const desc=prompt('Descripción (dejar vacío para sin descripción):',tarea.descripcion||'');
-  if(desc===null)return;
-  await db.from('tareas').update({titulo:titulo.trim()||tarea.titulo,descripcion:desc.trim()||null}).eq('id',id);
+  // Show inline edit form
+  const card=document.querySelector('[data-task-id="'+id+'"]');if(!card)return;
+  card.innerHTML='<div style="flex:1"><div class="f" style="margin-bottom:6px"><label>Título</label><input type="text" id="te-titulo-'+id+'" value="'+(tarea.titulo||'').replace(/"/g,'&quot;')+'"/></div><div class="f" style="margin-bottom:6px"><label>Descripción</label><textarea id="te-desc-'+id+'" rows="2" style="width:100%;padding:8px;border:1px solid var(--brd);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--tx);resize:vertical">'+(tarea.descripcion||'')+'</textarea></div><div style="display:flex;gap:6px"><button class="b bp" onclick="saveTaskEdit('+id+')" style="flex:1;padding:6px">Guardar</button><button class="b bs" onclick="loadTasks()" style="width:auto;padding:6px 12px">Cancelar</button></div></div>';
+}
+
+async function saveTaskEdit(id){
+  const titulo=$('te-titulo-'+id).value.trim();
+  const desc=$('te-desc-'+id).value.trim();
+  if(!titulo){toast('El título no puede estar vacío');return}
+  await db.from('tareas').update({titulo,descripcion:desc||null}).eq('id',id);
   toast('Tarea editada');loadTasks();
 }
 
@@ -1309,17 +1321,18 @@ async function openIncident(){
   if(!desc)return;
   const{data:users}=await db.from('usuarios').select('usuario,nombre').eq('activo',true).order('nombre');
   if(!users||!users.length){toast('No hay usuarios');return}
-  // Create temporary select overlay
-  const div=document.createElement('div');
+  const old=$('incident-overlay');if(old)old.remove();
+  const div=document.createElement('div');div.id='incident-overlay';
   div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
   div.innerHTML='<div style="background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:360px"><div style="font-size:14px;font-weight:700;margin-bottom:12px">Asignar incidencia a:</div>'
-    +users.map(u=>'<div style="padding:10px 14px;cursor:pointer;border-radius:var(--rs);margin-bottom:4px;border:1px solid var(--brd);font-size:13px" onclick="assignIncident(\''+u.usuario+'\',\''+desc.replace(/'/g,"\\'")+'\');this.closest(\'div[style]\').remove()">👤 '+u.nombre+' ('+u.usuario+')</div>').join('')
-    +'<button onclick="this.closest(\'div[style]\').remove()" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:var(--rs);background:var(--brd);cursor:pointer">Cancelar</button></div>';
+    +users.map(u=>'<div style="padding:10px 14px;cursor:pointer;border-radius:var(--rs);margin-bottom:4px;border:1px solid var(--brd);font-size:13px" onclick="assignIncident(\''+u.usuario+'\',\''+desc.replace(/'/g,"").replace(/\n/g," ")+'\')">👤 '+u.nombre+'</div>').join('')
+    +'<button onclick="$(\'incident-overlay\').remove()" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:var(--rs);background:var(--brd);cursor:pointer">Cancelar</button></div>';
   document.body.appendChild(div);
 }
 async function assignIncident(usuario,desc){
   if(!cur)return;
   await db.from('tareas').insert({titulo:'⚠️ INCIDENCIA: '+cur.articulo+' ['+cur.sku+']',descripcion:desc,asignado_a:usuario,creado_por:ses?.usuario||'admin'});
+  const el=$('incident-overlay');if(el)el.remove();
   toast('Incidencia asignada a '+usuario);
 }
 
