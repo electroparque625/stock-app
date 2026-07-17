@@ -460,7 +460,7 @@ function clearSes(){ses=null;try{localStorage.removeItem('ep4')}catch(e){}}
 
 async function doLogin(){const u=$('l-u').value.trim(),p=$('l-p').value,b=$('l-b'),e=$('l-e');if(!u||!p){e.textContent='Completá ambos campos';e.classList.add('show');return}b.disabled=true;b.textContent='Verificando...';e.classList.remove('show');try{if(u===SA.usuario){if(H(p)!==SA_H)throw 1;b.disabled=false;b.textContent='Ingresar';startApp({...SA});return}const{data,error}=await db.from('usuarios').select('*').eq('usuario',u).eq('activo',true).single();if(error||!data||data.pass_hash!==H(p))throw 1;b.disabled=false;b.textContent='Ingresar';if(data.primer_login){ses=data;$('scr-login').style.display='none';$('scr-cp').style.display='flex'}else startApp({usuario:data.usuario,nombre:data.nombre,rol:data.rol})}catch(x){e.textContent='Credenciales incorrectas';e.classList.add('show');b.disabled=false;b.textContent='Ingresar'}}
 async function doCP(){const a=$('np1').value,b=$('np2').value,e=$('cp-e');if(a.length<4){e.textContent='Mínimo 4';e.classList.add('show');return}if(a!==b){e.textContent='No coinciden';e.classList.add('show');return}await db.from('usuarios').update({pass_hash:H(a),primer_login:false}).eq('usuario',ses.usuario);$('scr-cp').style.display='none';startApp({usuario:ses.usuario,nombre:ses.nombre,rol:ses.rol||'usuario'})}
-function startApp(u){saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');loadData();updateTaskBadge();setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)}}
+function startApp(u){saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');loadData();updateTaskBadge();if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)}}
 function doLogout(){if(!confirm('¿Cerrar sesión?'))return;clearSes();$('app').style.display='none';$('scr-login').style.display='flex';$('l-u').value='';$('l-p').value='';$('l-e').classList.remove('show')}
 
 async function loadData(){const t0=performance.now();try{let a=[],p=0;while(true){const{data,error}=await db.from('stock').select('*').order('id',{ascending:true}).range(p*1000,p*1000+999);if(error)throw error;if(!data||!data.length)break;a=a.concat(data);if(data.length<1000)break;p++}ALL=a;updM();filtrar();fillL();$('t-sub').textContent=ALL.length+' productos · '+Math.round(performance.now()-t0)+'ms'}catch(e){$('pl').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
@@ -502,7 +502,8 @@ function ico(a){a=(a||'').toLowerCase();if(/joystick|gamepad|dualsense|dualshock
 function aB(p){const a=p.estado_alerta||'OK';if(a==='SIN STOCK')return['🔴 SIN STOCK','b-sin'];if(a.includes('CRITICO AVION'))return['🔴 CRÍTICO ✈️','b-crit'];if(a.includes('CRITICO BARCO'))return['🔴 CRÍTICO 🚢','b-crit'];if(a.includes('PRE ALERTA AVION'))return['🟡 PRE-ALERTA ✈️','b-pre'];if(a.includes('PRE ALERTA BARCO'))return['🟡 PRE-ALERTA 🚢','b-pre'];return['🟢 OK','b-ok']}
 function sC(p){if(!p.cantidades)return'e';if(p.stock_minimo&&p.cantidades<p.stock_minimo)return'w';return'o'}
 
-function go(s){document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='rep')loadRep();if(s==='usr')loadUsr()}
+function go(s){document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='rep')loadRep();if(s==='usr')loadUsr();window.location.hash=s}
+window.addEventListener('hashchange',()=>{const h=location.hash.replace('#','');if(h&&$('s-'+h)&&ses)go(h)})
 let invTab='stock';
 function setTab(t,btn){invTab=t;document.querySelectorAll('#inv-tabs .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');filtrar()}
 function setF(f,btn){filt=f;document.querySelectorAll('#f-d .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');const t=$('f-t');t.classList.toggle('a',f!=='todos');t.textContent=f==='todos'?'Filtrar ▾':btn.textContent+' ▾';$('f-d').classList.remove('open');filtrar()}
@@ -1252,31 +1253,31 @@ async function createTask(){
 let taskBatch=[];
 function addTaskToList(){
   const t=$('t-titulo').value.trim();if(!t)return;
-  taskBatch.push(t);$('t-titulo').value='';$('t-titulo').focus();
+  const fotoFile=$('t-foto').files[0]||null;
+  taskBatch.push({titulo:t,foto:fotoFile});
+  $('t-titulo').value='';$('t-foto').value='';$('t-titulo').focus();
   renderTaskBatch();
 }
 function removeFromBatch(i){taskBatch.splice(i,1);renderTaskBatch()}
 function renderTaskBatch(){
-  $('t-multi-list').innerHTML=taskBatch.length?taskBatch.map((t,i)=>'<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg);border-radius:var(--rs);margin-bottom:3px;font-size:12px"><span style="flex:1">'+t+'</span><button onclick="removeFromBatch('+i+')" style="background:none;border:none;cursor:pointer;color:var(--err)">✕</button></div>').join('')+'<div style="font-size:10px;color:var(--tx3);margin-bottom:6px">'+taskBatch.length+' tarea'+(taskBatch.length>1?'s':'')+'</div>':'';
+  $('t-multi-list').innerHTML=taskBatch.length?taskBatch.map((t,i)=>'<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg);border-radius:var(--rs);margin-bottom:3px;font-size:12px"><span style="flex:1">'+t.titulo+(t.foto?' 📷':'')+'</span><button onclick="removeFromBatch('+i+')" style="background:none;border:none;cursor:pointer;color:var(--err)">✕</button></div>').join('')+'<div style="font-size:10px;color:var(--tx3);margin-bottom:6px">'+taskBatch.length+' tarea'+(taskBatch.length>1?'s':'')+'</div>':'';
 }
 
 async function createMultiTasks(){
   const asig=$('t-asignar').value;
-  // Add current input if not empty
-  const cur=$('t-titulo').value.trim();if(cur){taskBatch.push(cur);$('t-titulo').value=''}
+  const cur=$('t-titulo').value.trim();
+  if(cur){taskBatch.push({titulo:cur,foto:$('t-foto').files[0]||null});$('t-titulo').value=''}
   if(!taskBatch.length){toast('Agregá al menos una tarea');return}
   if(!asig){toast('Seleccioná un usuario');return}
-  // Upload photo if present
-  let fotoUrl=null;
-  const fotoFile=$('t-foto').files[0];
-  if(fotoFile){
-    try{const path='tareas/'+Date.now()+'.'+fotoFile.name.split('.').pop();
-    await db.storage.from('product-photos').upload(path,fotoFile,{upsert:true,contentType:fotoFile.type});
-    const{data:u}=db.storage.from('product-photos').getPublicUrl(path);
-    fotoUrl=u.publicUrl}catch(e){console.warn('Foto tarea:',e)}
-  }
-  for(const titulo of taskBatch){
-    await db.from('tareas').insert({titulo,asignado_a:asig,creado_por:ses?.usuario||'admin',foto:fotoUrl});
+  for(const task of taskBatch){
+    let fotoUrl=null;
+    if(task.foto){
+      try{const path='tareas/'+Date.now()+'_'+Math.random().toString(36).substr(2,4)+'.'+task.foto.name.split('.').pop();
+      await db.storage.from('product-photos').upload(path,task.foto,{upsert:true,contentType:task.foto.type});
+      const{data:u}=db.storage.from('product-photos').getPublicUrl(path);
+      fotoUrl=u.publicUrl}catch(e){console.warn('Foto:',e)}
+    }
+    await db.from('tareas').insert({titulo:task.titulo,asignado_a:asig,creado_por:ses?.usuario||'admin',foto:fotoUrl});
   }
   toast(taskBatch.length+' tareas asignadas a '+asig);
   taskBatch=[];renderTaskBatch();$('t-foto').value='';loadTasks();
@@ -1289,9 +1290,11 @@ async function toggleTask(id,done){
 
 async function editTask(id){
   const tarea=window._allTasks?.find(t=>t.id===id);if(!tarea)return;
-  const nuevo=prompt('Editar tarea:',tarea.titulo);
-  if(nuevo===null||!nuevo.trim())return;
-  await db.from('tareas').update({titulo:nuevo.trim()}).eq('id',id);
+  const titulo=prompt('Título de la tarea:',tarea.titulo);
+  if(titulo===null)return;
+  const desc=prompt('Descripción (dejar vacío para sin descripción):',tarea.descripcion||'');
+  if(desc===null)return;
+  await db.from('tareas').update({titulo:titulo.trim()||tarea.titulo,descripcion:desc.trim()||null}).eq('id',id);
   toast('Tarea editada');loadTasks();
 }
 
@@ -1304,16 +1307,20 @@ async function openIncident(){
   if(!cur)return;
   const desc=prompt('⚠️ Describí la incidencia para '+cur.articulo+':');
   if(!desc)return;
-  // Get users for assignment
-  const{data:users}=await db.from('usuarios').select('usuario,nombre').order('nombre');
-  if(!users||!users.length){toast('No hay usuarios para asignar');return}
-  const userList=users.map((u,i)=>(i+1)+'. '+u.nombre).join('\n');
-  const pick=prompt('Asignar a:\n'+userList+'\n\nEscribí el número:');
-  if(!pick)return;
-  const idx=parseInt(pick)-1;
-  if(idx<0||idx>=users.length){toast('Número inválido');return}
-  await db.from('tareas').insert({titulo:'⚠️ INCIDENCIA: '+cur.articulo+' ['+cur.sku+']',descripcion:desc,asignado_a:users[idx].usuario,creado_por:ses?.usuario||'admin'});
-  toast('Incidencia asignada a '+users[idx].nombre);
+  const{data:users}=await db.from('usuarios').select('usuario,nombre').eq('activo',true).order('nombre');
+  if(!users||!users.length){toast('No hay usuarios');return}
+  // Create temporary select overlay
+  const div=document.createElement('div');
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
+  div.innerHTML='<div style="background:var(--card);border-radius:16px;padding:20px;width:100%;max-width:360px"><div style="font-size:14px;font-weight:700;margin-bottom:12px">Asignar incidencia a:</div>'
+    +users.map(u=>'<div style="padding:10px 14px;cursor:pointer;border-radius:var(--rs);margin-bottom:4px;border:1px solid var(--brd);font-size:13px" onclick="assignIncident(\''+u.usuario+'\',\''+desc.replace(/'/g,"\\'")+'\');this.closest(\'div[style]\').remove()">👤 '+u.nombre+' ('+u.usuario+')</div>').join('')
+    +'<button onclick="this.closest(\'div[style]\').remove()" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:var(--rs);background:var(--brd);cursor:pointer">Cancelar</button></div>';
+  document.body.appendChild(div);
+}
+async function assignIncident(usuario,desc){
+  if(!cur)return;
+  await db.from('tareas').insert({titulo:'⚠️ INCIDENCIA: '+cur.articulo+' ['+cur.sku+']',descripcion:desc,asignado_a:usuario,creado_por:ses?.usuario||'admin'});
+  toast('Incidencia asignada a '+usuario);
 }
 
 /* USERS */
