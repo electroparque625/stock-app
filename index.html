@@ -762,19 +762,19 @@ async function loadMonChart(){
   if(!monProd)return;
   const days=parseInt($('mon-period').value)||30;
   const since=new Date(Date.now()-days*86400000).toISOString();
-  // Find sales matching this product ONLY by MLA IDs
+  // Find sales from LOGS (movimientos) by exact MLA only
   let ventas=[];
   try{
     const mlas=[monProd.ml_id_1,monProd.ml_id_2,monProd.ml_id_3].filter(Boolean);
     if(mlas.length){
       for(const mla of mlas){
-        const{data:byMla}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+mla+'%');
-        if(byMla)ventas=ventas.concat(byMla.filter(v=>!ventas.find(x=>x.id===v.id)));
+        const{data}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+mla+'%');
+        if(data)ventas=ventas.concat(data.filter(v=>!ventas.find(x=>x.id===v.id)));
       }
+      // Deduplicate by order number (sku field)
+      const seen=new Set();
+      ventas=ventas.filter(v=>{const key=v.sku||v.id;if(seen.has(key))return false;seen.add(key);return true});
     }
-    // Deduplicate by created_at (same timestamp = same sale imported twice)
-    const seen=new Set();
-    ventas=ventas.filter(v=>{const key=v.created_at+'_'+(v.cantidad||0);if(seen.has(key))return false;seen.add(key);return true});
   }catch(e){console.warn(e)}
 
   const totalUnits=ventas.reduce((s,v)=>s+(v.cantidad||0),0);
@@ -811,7 +811,8 @@ async function loadMonChart(){
   $('mon-proj').innerHTML=projHtml;
 
   // Sales list
-  $('mon-sales').innerHTML=ventas.length?ventas.slice(0,30).map(v=>{const ch=v.canal||'';const chN={ml_ivan:'🛒 Ivan',ml_gustavo:'🛒 Gustavo',ml_mauro:'🛒 Mauro',mostrador:'🏬 Mostrador',tiendanube:'🏪 TN'};return'<div class="mr"><div class="mt"><div class="ma">'+(v.articulo||'—')+'</div><span class="mg mv">'+(chN[ch]||ch||'Venta')+'</span></div><div class="mm"><span>📅 '+(v.fecha||'')+' '+(v.hora||'')+'</span><span>−'+(v.cantidad||0)+' u.</span></div></div>'}).join(''):'<div class="emp">Sin ventas en este período</div>';
+  const chN={ml_ivan:'🛒 Ivan',ml_gustavo:'🛒 Gustavo',ml_mauro:'🛒 Mauro',mostrador:'🏬 Mostrador',tiendanube:'🏪 TN'};
+  $('mon-sales').innerHTML=ventas.length?ventas.map(v=>{return'<div class="mr"><div class="mt"><div class="ma">'+(v.articulo||'—')+'</div><span class="mg mv">'+(chN[v.canal]||v.canal||'Venta')+'</span></div><div class="mm"><span>📅 '+(v.fecha||'')+' '+(v.hora||'')+'</span><span>−'+(v.cantidad||0)+' u.</span></div></div>'}).join(''):'<div class="emp">Sin ventas de este MLA en el período</div>';
 }
 
 /* DETAIL */
