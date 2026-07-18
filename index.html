@@ -762,21 +762,19 @@ async function loadMonChart(){
   if(!monProd)return;
   const days=parseInt($('mon-period').value)||30;
   const since=new Date(Date.now()-days*86400000).toISOString();
-  // Find sales matching this product by MLA IDs
+  // Find sales matching this product ONLY by MLA IDs
   let ventas=[];
   try{
     const mlas=[monProd.ml_id_1,monProd.ml_id_2,monProd.ml_id_3].filter(Boolean);
     if(mlas.length){
       for(const mla of mlas){
-        const{data:byArt}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+mla+'%');
-        if(byArt)ventas=ventas.concat(byArt.filter(v=>!ventas.find(x=>x.id===v.id)));
-        const{data:bySku}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).eq('sku',mla);
-        if(bySku)ventas=ventas.concat(bySku.filter(v=>!ventas.find(x=>x.id===v.id)));
+        const{data:byMla}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+mla+'%');
+        if(byMla)ventas=ventas.concat(byMla.filter(v=>!ventas.find(x=>x.id===v.id)));
       }
-    }else{
-      const{data:byArt}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+(monProd.articulo||'')+'%').order('created_at',{ascending:false});
-      ventas=byArt||[];
     }
+    // Deduplicate by created_at (same timestamp = same sale imported twice)
+    const seen=new Set();
+    ventas=ventas.filter(v=>{const key=v.created_at+'_'+(v.cantidad||0);if(seen.has(key))return false;seen.add(key);return true});
   }catch(e){console.warn(e)}
 
   const totalUnits=ventas.reduce((s,v)=>s+(v.cantidad||0),0);
