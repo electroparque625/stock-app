@@ -460,11 +460,11 @@ function clearSes(){ses=null;try{localStorage.removeItem('ep4')}catch(e){}}
 
 async function doLogin(){const u=$('l-u').value.trim(),p=$('l-p').value,b=$('l-b'),e=$('l-e');if(!u||!p){e.textContent='Completá ambos campos';e.classList.add('show');return}b.disabled=true;b.textContent='Verificando...';e.classList.remove('show');try{if(u===SA.usuario){if(H(p)!==SA_H)throw 1;b.disabled=false;b.textContent='Ingresar';startApp({...SA});return}const{data,error}=await db.from('usuarios').select('*').eq('usuario',u).eq('activo',true).single();if(error||!data||data.pass_hash!==H(p))throw 1;b.disabled=false;b.textContent='Ingresar';if(data.primer_login){ses=data;$('scr-login').style.display='none';$('scr-cp').style.display='flex'}else startApp({usuario:data.usuario,nombre:data.nombre,rol:data.rol})}catch(x){e.textContent='Credenciales incorrectas';e.classList.add('show');b.disabled=false;b.textContent='Ingresar'}}
 async function doCP(){const a=$('np1').value,b=$('np2').value,e=$('cp-e');if(a.length<4){e.textContent='Mínimo 4';e.classList.add('show');return}if(a!==b){e.textContent='No coinciden';e.classList.add('show');return}await db.from('usuarios').update({pass_hash:H(a),primer_login:false}).eq('usuario',ses.usuario);$('scr-cp').style.display='none';startApp({usuario:ses.usuario,nombre:ses.nombre,rol:ses.rol||'usuario'})}
-function startApp(u){saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');loadData();updateTaskBadge();if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)}}
+function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');loadData();updateTaskBadge();if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)};setTimeout(()=>syncSheetToSupabase(),8000);setInterval(()=>syncSheetToSupabase(),120000)}
 function doLogout(){if(!confirm('¿Cerrar sesión?'))return;clearSes();$('app').style.display='none';$('scr-login').style.display='flex';$('l-u').value='';$('l-p').value='';$('l-e').classList.remove('show')}
 
 async function loadData(){const t0=performance.now();try{let a=[],p=0;while(true){const{data,error}=await db.from('stock').select('*').order('id',{ascending:true}).range(p*1000,p*1000+999);if(error)throw error;if(!data||!data.length)break;a=a.concat(data);if(data.length<1000)break;p++}ALL=a;updM();filtrar();fillL();$('t-sub').textContent=ALL.length+' productos · '+Math.round(performance.now()-t0)+'ms'}catch(e){$('pl').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
-function fillL(){const m=[...new Set(ALL.map(p=>p.marca).filter(Boolean))].sort(),o=[...new Set(ALL.map(p=>p.modelo).filter(Boolean))].sort();$('dlm').innerHTML=m.map(x=>'<option value="'+x+'">').join('');$('dlo').innerHTML=o.map(x=>'<option value="'+x+'">').join('');fillCajaEst();if(!window._alertShown){showStockAlerts();window._alertShown=true}updateNotifBadge();calcVentas60d()}
+function fillL(){const m=[...new Set(ALL.map(p=>p.marca).filter(Boolean))].sort(),o=[...new Set(ALL.map(p=>p.modelo).filter(Boolean))].sort();$('dlm').innerHTML=m.map(x=>'<option value="'+x+'">').join('');$('dlo').innerHTML=o.map(x=>'<option value="'+x+'">').join('');fillCajaEst();if(!sessionStorage.getItem('alertShown')){showStockAlerts();sessionStorage.setItem('alertShown','1')}updateNotifBadge();calcVentas60d()}
 
 function fillCajaEst(){
   const cajas=[...new Set(ALL.map(p=>p.caja).filter(Boolean))].sort();
@@ -1388,6 +1388,31 @@ async function syncMLLinks(){
     toast('Links actualizados: '+updated+' | Sin cambios: '+skipped);
     loadData();
   }catch(e){toast('Error: '+e.message)}
+}
+
+/* SYNC SHEET → SUPABASE (pull changes from Sheet) */
+async function syncSheetToSupabase(){
+  try{
+    const res=await fetch(SYNC+'?accion=obtener');
+    const data=await res.json();
+    if(!data||data.length<2)return;
+    const rows=data.slice(1).filter(f=>f[0]!=null&&f[0]!=='');
+    let updated=0;
+    for(const row of rows){
+      const sku=String(row[1]||'').trim();
+      if(!sku)continue;
+      const sheetQty=+row[5]||0;
+      const prod=ALL.find(p=>p.sku===sku);
+      if(!prod||prod.cantidades===sheetQty)continue;
+      // Sheet has different qty - update Supabase
+      await db.from('stock').update({cantidades:sheetQty,estado:sheetQty>0?'STOCK':'SIN STOCK'}).eq('id',prod.id);
+      prod.cantidades=sheetQty;
+      const idx=ALL.findIndex(x=>x.id===prod.id);
+      if(idx>-1)ALL[idx].cantidades=sheetQty;
+      updated++;
+    }
+    if(updated>0){console.log('Sheet→Supabase: '+updated+' productos actualizados');updM();filtrar()}
+  }catch(e){console.warn('Sheet sync:',e)}
 }
 
 /* SYNC LOGS - SILENT (background auto-sync) */
