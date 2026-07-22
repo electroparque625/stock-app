@@ -1134,16 +1134,26 @@ function printDoc(tipo){
 
 /* PIZARRA */
 const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+let pizDia=null;
 function loadPizarra(){
-  const hoy=new Date();const diaIdx=hoy.getDay();const fechaHoy=hoy.toISOString().split('T')[0];
-  // Render day tabs - only today is active
+  const hoy=new Date();const diaIdx=hoy.getDay();
+  if(!pizDia)pizDia=hoy.toISOString().split('T')[0];
+  // Render day tabs - superadmin can click any day, others only today
+  const lunes=new Date(hoy);lunes.setDate(hoy.getDate()-((diaIdx+6)%7));
   $('piz-days').innerHTML=DIAS.map((d,i)=>{
+    const fecha=new Date(lunes);fecha.setDate(lunes.getDate()+((i+6)%7));
+    const fStr=fecha.toISOString().split('T')[0];
     const isToday=i===diaIdx;
-    return'<div style="padding:8px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;text-align:center;min-width:60px;flex-shrink:0;'+(isToday?'background:var(--ok);color:#fff':'background:var(--brd);color:var(--tx3)')+'">'+d+'</div>'
+    const isSelected=fStr===pizDia;
+    const canClick=isSA();
+    return'<div style="padding:8px 14px;border-radius:var(--rs);font-size:12px;font-weight:600;text-align:center;min-width:60px;flex-shrink:0;cursor:'+(canClick?'pointer':'default')+';'+(isSelected?'background:var(--ok);color:#fff':isToday?'background:var(--pri-l);color:var(--pri)':'background:var(--brd);color:var(--tx3)')+'" '+(canClick?'onclick="selectPizDay(\''+fStr+'\',\''+d+'\')"':'')+'>'+d+(isToday?' •':'')+'</div>'
   }).join('');
-  $('piz-title').textContent='📋 Pizarra — '+DIAS[diaIdx]+' '+hoy.toLocaleDateString('es-AR');
-  loadPizarraTasks(fechaHoy);
+  const selDate=new Date(pizDia+'T12:00:00');
+  $('piz-title').textContent='📋 Pizarra — '+DIAS[selDate.getDay()]+' '+selDate.toLocaleDateString('es-AR');
+  loadPizarraTasks(pizDia);
 }
+
+function selectPizDay(fecha,dia){pizDia=fecha;loadPizarra()}
 
 async function loadPizarraTasks(fecha){
   const el=$('piz-list');
@@ -1164,9 +1174,9 @@ async function loadPizarraTasks(fecha){
 
 async function addPizarra(){
   const titulo=$('piz-titulo').value.trim();if(!titulo){toast('Escribí la tarea');return}
-  const fecha=new Date().toISOString().split('T')[0];
+  const fecha=pizDia||new Date().toISOString().split('T')[0];
   await db.from('pizarra').insert({titulo,fecha,creado_por:ses?.usuario||'admin'});
-  $('piz-titulo').value='';toast('Tarea agregada a la pizarra');loadPizarraTasks(fecha);
+  $('piz-titulo').value='';toast('Tarea agregada');loadPizarraTasks(fecha);
 }
 
 async function togglePiz(id,done){
