@@ -1205,11 +1205,12 @@ function searchPresuItem(){
   const words=q.split(/\s+/).filter(w=>w.length>0);
   const results=ALL.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')).toLowerCase();return words.every(w=>h.includes(w))}).slice(0,8);
   $('pf-item-results').style.display='block';
-  $('pf-item-results').innerHTML=results.length?results.map(p=>'<div style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--brd);font-size:12px" onclick="selectPresuItem('+p.id+')"><b>'+p.articulo+'</b><span style="color:var(--tx3)"> · $'+(p.precio_venta||0).toLocaleString('es-AR')+' · Stock: '+p.cantidades+'</span></div>').join(''):'<div style="padding:8px;font-size:11px;color:var(--tx3)">Sin resultados</div>';
+  $('pf-item-results').innerHTML=results.length?results.map(p=>'<div style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--brd);font-size:12px" onclick="selectPresuItem('+p.id+')"><b>'+p.articulo+'</b><div style="font-size:10px;color:var(--tx3)">'+(p.marca||'')+' '+(p.modelo||'')+' · SKU: '+(p.sku||'')+' · $'+(p.precio_venta||0).toLocaleString('es-AR')+' · Stock: '+p.cantidades+'</div></div>').join(''):'<div style="padding:8px;font-size:11px;color:var(--tx3)">Sin resultados</div>';
 }
 function selectPresuItem(id){
   const p=ALL.find(x=>x.id===id);if(!p)return;
-  $('pf-item-name').value=p.articulo;$('pf-item-price').value=p.precio_venta||0;$('pf-item-qty').value=1;
+  const desc=p.articulo+(p.marca?' · '+p.marca:'')+(p.modelo?' '+p.modelo:'');
+  $('pf-item-name').value=desc;$('pf-item-price').value=p.precio_venta||0;$('pf-item-qty').value=1;
   $('pf-item-results').style.display='none';$('pf-item-q').value='';
 }
 function addPresuItem(){
