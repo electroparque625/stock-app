@@ -410,9 +410,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 <div class="fs"><div class="fst">Condiciones</div>
 <div class="fr"><div class="f"><label>Validez (días)</label><input type="number" id="pf-validez" value="15" min="1"/></div><div class="f"><label>Descuento $</label><input type="number" id="pf-desc" value="0" min="0" oninput="renderPresuTotals()"/></div></div>
+<div class="fr"><div class="f"><label>Forma de pago</label><select id="pf-pago"><option value="">Sin definir</option><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>MercadoPago</option><option>Cheque</option></select></div><div class="f"><label>Tipo comprobante</label><select id="pf-tipo"><option value="X">Factura X</option><option value="A">Factura A</option><option value="B">Factura B</option><option value="C">Factura C</option><option value="remito">Remito</option></select></div></div>
 <div class="f"><label>Observaciones</label><input type="text" id="pf-obs" placeholder="Notas, condiciones de pago, etc."/></div>
 </div>
-<div style="display:flex;gap:8px"><button class="b bp" onclick="savePresu()" style="flex:1">Guardar presupuesto</button><button class="b bs" onclick="printPresu()" style="width:auto;padding:12px 16px">🖨</button></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="b bp" onclick="savePresu()" style="flex:1">Guardar</button><button class="b bs" onclick="printPresu()" style="width:auto;padding:12px 16px">🖨 Presupuesto</button><button class="b bo" onclick="printFactura()" style="width:auto;padding:12px 16px">🧾 Factura</button></div>
 </div>
 
 <!-- PIZARRA --><div class="sc" id="s-pizarra">
@@ -1261,6 +1262,28 @@ function printPresu(){
     +'<div style="display:flex;justify-content:space-between;margin-top:24px"><div style="border-top:1px solid #000;width:38%;text-align:center;padding-top:4px;font-size:10px">Firma Cliente</div><div style="border-top:1px solid #000;width:38%;text-align:center;padding-top:4px;font-size:10px">Firma Electro Parque</div></div></div>';
   const w=window.open('','_blank','width=800,height=600');
   w.document.write('<html><head><title>Presupuesto '+num+'</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#000;margin:20px}</style></head><body>'+html+'</body></html>');
+  w.document.close();w.onload=function(){w.print()};
+}
+function printFactura(){
+  const nombre=$('pf-nombre').value.trim();if(!nombre||!presuItems.length){toast('Guardá primero');return}
+  const sub=presuItems.reduce((s,it)=>s+(it.subtotal||0),0);
+  const desc=+$('pf-desc').value||0;const total=Math.max(0,sub-desc);
+  const num=curPresuId?'F-'+String(curPresuId).padStart(4,'0'):'BORRADOR';
+  const fecha=new Date().toLocaleDateString('es-AR');
+  const pago=$('pf-pago').value||'Sin definir';
+  const tipo=$('pf-tipo').value||'X';
+  const itemsHtml=presuItems.map((it,i)=>'<tr><td style="padding:6px 8px;border:1px solid #ccc">'+(i+1)+'</td><td style="padding:6px 8px;border:1px solid #ccc">'+it.descripcion+'</td><td style="padding:6px 8px;border:1px solid #ccc;text-align:center">'+it.cantidad+'</td><td style="padding:6px 8px;border:1px solid #ccc;text-align:right">$'+it.precio_unitario.toLocaleString('es-AR')+'</td><td style="padding:6px 8px;border:1px solid #ccc;text-align:right;font-weight:600">$'+it.subtotal.toLocaleString('es-AR')+'</td></tr>').join('');
+  const html='<div style="border:2px solid #000;padding:24px;max-width:700px;margin:auto">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:14px"><div><div style="font-size:22px;font-weight:bold">⚡ ELECTRO PARQUE</div><div style="font-size:11px">Lomas de Zamora, Buenos Aires</div><div style="font-size:11px">Service Técnico & Electrónica</div></div><div style="text-align:right;border:2px solid #000;padding:8px 16px"><div style="font-size:20px;font-weight:bold">'+tipo+'</div><div style="font-size:10px">COMPROBANTE</div></div></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:14px"><div style="font-size:14px;font-weight:bold">FACTURA '+num+'</div><div style="font-size:12px">Fecha: '+fecha+'</div></div>'
+    +'<table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tr><td style="padding:5px 8px;border:1px solid #ccc"><b>Cliente:</b> '+nombre+'</td><td style="padding:5px 8px;border:1px solid #ccc"><b>Tel:</b> '+($('pf-tel').value||'—')+'</td></tr>'+(($('pf-email').value)?'<tr><td colspan="2" style="padding:5px 8px;border:1px solid #ccc"><b>Email:</b> '+$('pf-email').value+'</td></tr>':'')+'<tr><td style="padding:5px 8px;border:1px solid #ccc"><b>Forma de pago:</b> '+pago+'</td><td style="padding:5px 8px;border:1px solid #ccc"><b>Comprobante:</b> Factura '+tipo+'</td></tr></table>'
+    +'<table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tr style="background:#f0f0f0"><th style="padding:6px 8px;border:1px solid #ccc;text-align:left">#</th><th style="padding:6px 8px;border:1px solid #ccc;text-align:left">Descripción</th><th style="padding:6px 8px;border:1px solid #ccc;text-align:center">Cant.</th><th style="padding:6px 8px;border:1px solid #ccc;text-align:right">P. Unit.</th><th style="padding:6px 8px;border:1px solid #ccc;text-align:right">Subtotal</th></tr>'+itemsHtml+'</table>'
+    +'<div style="text-align:right;margin-bottom:10px"><div style="font-size:12px">Subtotal: $'+sub.toLocaleString('es-AR')+'</div>'+(desc>0?'<div style="font-size:12px;color:red">Descuento: -$'+desc.toLocaleString('es-AR')+'</div>':'')+'<div style="font-size:18px;font-weight:bold;border-top:2px solid #000;padding-top:6px;margin-top:4px">TOTAL: $'+total.toLocaleString('es-AR')+'</div></div>'
+    +($('pf-obs').value?'<div style="font-size:11px;border:1px dashed #999;padding:8px;margin-bottom:10px"><b>Observaciones:</b> '+$('pf-obs').value+'</div>':'')
+    +'<div style="font-size:9px;color:#555;margin-bottom:16px">Documento no fiscal. Válido como comprobante de operación comercial.</div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:24px"><div style="border-top:1px solid #000;width:38%;text-align:center;padding-top:4px;font-size:10px">Recibí conforme</div><div style="border-top:1px solid #000;width:38%;text-align:center;padding-top:4px;font-size:10px">Electro Parque</div></div></div>';
+  const w=window.open('','_blank','width=800,height=600');
+  w.document.write('<html><head><title>Factura '+num+'</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#000;margin:20px}</style></head><body>'+html+'</body></html>');
   w.document.close();w.onload=function(){w.print()};
 }
 
