@@ -153,6 +153,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="nb" data-s="tasks" onclick="go('tasks')"><svg viewBox="0 0 22 22"><rect x="3" y="3" width="16" height="16" rx="2"/><line x1="7" y1="8" x2="15" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg><span>Tareas</span><div class="notif-badge" id="task-badge-s"></div></button>
 <button class="nb" data-s="pizarra" onclick="go('pizarra')"><svg viewBox="0 0 22 22"><rect x="2" y="4" width="18" height="14" rx="2"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="2" y1="9" x2="20" y2="9"/></svg><span>Pizarra</span></button>
 <button class="nb" data-s="rep" onclick="go('rep')"><svg viewBox="0 0 22 22"><path d="M14.7 6.3a1 1 0 000 1.4l0 0a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg><span>Reparaciones</span></button>
+<button class="nb" data-s="presu" onclick="go('presu')"><svg viewBox="0 0 22 22"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg><span>Presupuestos</span></button>
 <button class="nb admin-only" data-s="usr" onclick="go('usr')" style="display:none"><svg viewBox="0 0 22 22"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><line x1="16" y1="11" x2="22" y2="11"/><line x1="19" y1="8" x2="19" y2="14"/></svg><span>Usuarios</span></button>
 </nav>
 <div class="tb-r"><button id="notif-btn" onclick="toggleNotifPanel()" style="position:relative;background:none;border:none;cursor:pointer;font-size:20px;padding:4px">🔔<div class="notif-badge" id="notif-bell-badge"></div></button><span class="ch ch-g" id="t-sp">⚡</span><button class="ch ch-p" id="t-usr" onclick="doLogout()">Salir</button></div></div>
@@ -378,6 +379,42 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .print-area{display:none}
 </style>
 
+<!-- PRESUPUESTOS --><div class="sc" id="s-presu">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div class="stit" style="margin:0">Presupuestos</div>
+<button class="b bp" onclick="newPresu()" style="width:auto;padding:8px 16px">+ Nuevo</button>
+</div>
+<div id="presu-list"><div class="emp">Sin presupuestos</div></div>
+</div>
+
+<!-- PRESUPUESTO FORM --><div class="sc" id="s-presu-form">
+<button class="bk" onclick="go('presu')">‹ Volver</button>
+<div style="font-size:18px;font-weight:800;color:var(--pri);margin-bottom:10px" id="pf-title">Nuevo Presupuesto</div>
+<div class="fs"><div class="fst">👤 Cliente</div>
+<div class="f"><label>Nombre / Razón social</label><input type="text" id="pf-nombre"/></div>
+<div class="fr"><div class="f"><label>Teléfono</label><input type="tel" id="pf-tel"/></div><div class="f"><label>Email</label><input type="email" id="pf-email"/></div></div>
+</div>
+<div class="fs"><div class="fst">📦 Items</div>
+<div style="display:flex;gap:6px;margin-bottom:8px">
+<input type="text" id="pf-item-q" placeholder="Buscar en inventario o escribir..." style="flex:1;padding:8px 10px;border:1px solid var(--brd);border-radius:var(--rs);font-size:13px;background:var(--bg);color:var(--tx)" oninput="searchPresuItem()"/>
+</div>
+<div id="pf-item-results" style="display:none;max-height:150px;overflow-y:auto;border:1px solid var(--brd);border-radius:var(--rs);margin-bottom:8px;background:var(--card)"></div>
+<div style="display:flex;gap:6px;margin-bottom:8px">
+<input type="text" id="pf-item-name" placeholder="Descripción" style="flex:2;padding:8px;border:1px solid var(--brd);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--tx)"/>
+<input type="number" id="pf-item-qty" placeholder="Cant" min="1" value="1" style="width:60px;padding:8px;border:1px solid var(--brd);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--tx)"/>
+<input type="number" id="pf-item-price" placeholder="$ Unit" min="0" style="width:80px;padding:8px;border:1px solid var(--brd);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--tx)"/>
+<button class="b bp" onclick="addPresuItem()" style="width:auto;padding:8px 12px">+</button>
+</div>
+<div id="pf-items-list"></div>
+<div id="pf-totals" style="text-align:right;margin-top:8px"></div>
+</div>
+<div class="fs"><div class="fst">Condiciones</div>
+<div class="fr"><div class="f"><label>Validez (días)</label><input type="number" id="pf-validez" value="15" min="1"/></div><div class="f"><label>Descuento $</label><input type="number" id="pf-desc" value="0" min="0" oninput="renderPresuTotals()"/></div></div>
+<div class="f"><label>Observaciones</label><input type="text" id="pf-obs" placeholder="Notas, condiciones de pago, etc."/></div>
+</div>
+<div style="display:flex;gap:8px"><button class="b bp" onclick="savePresu()" style="flex:1">Guardar presupuesto</button><button class="b bs" onclick="printPresu()" style="width:auto;padding:12px 16px">🖨</button></div>
+</div>
+
 <!-- PIZARRA --><div class="sc" id="s-pizarra">
 <div style="display:flex;gap:4px;margin-bottom:12px;overflow-x:auto" id="piz-days"></div>
 <div class="admin-only" style="display:none;margin-bottom:10px">
@@ -422,6 +459,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="nb" data-s="tasks" onclick="go('tasks')"><svg viewBox="0 0 22 22"><rect x="3" y="3" width="16" height="16" rx="2"/><line x1="7" y1="8" x2="15" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg><span>Tareas</span><div class="notif-badge" id="task-badge-b"></div></button>
 <button class="nb" data-s="pizarra" onclick="go('pizarra')"><svg viewBox="0 0 22 22"><rect x="2" y="4" width="18" height="14" rx="2"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="2" y1="9" x2="20" y2="9"/></svg><span>Pizarra</span></button>
 <button class="nb" data-s="rep" onclick="go('rep')"><svg viewBox="0 0 22 22"><path d="M14.7 6.3a1 1 0 000 1.4l0 0a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg><span>Reparaciones</span></button>
+<button class="nb" data-s="presu" onclick="go('presu')"><svg viewBox="0 0 22 22"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg><span>Presupuestos</span></button>
 </div></div>
 
 <!-- MODAL EDIT --><div class="mo" id="med"><div class="ml"><div class="mb"></div><div class="mti">Editar producto</div>
@@ -503,7 +541,7 @@ function ico(a){a=(a||'').toLowerCase();if(/joystick|gamepad|dualsense|dualshock
 function aB(p){const a=p.estado_alerta||'OK';if(a==='SIN STOCK')return['🔴 SIN STOCK','b-sin'];if(a.includes('CRITICO AVION'))return['🔴 CRÍTICO ✈️','b-crit'];if(a.includes('CRITICO BARCO'))return['🔴 CRÍTICO 🚢','b-crit'];if(a.includes('PRE ALERTA AVION'))return['🟡 PRE-ALERTA ✈️','b-pre'];if(a.includes('PRE ALERTA BARCO'))return['🟡 PRE-ALERTA 🚢','b-pre'];return['🟢 OK','b-ok']}
 function sC(p){if(!p.cantidades)return'e';if(p.stock_minimo&&p.cantidades<p.stock_minimo)return'w';return'o'}
 
-function go(s){document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='rep')loadRep();if(s==='usr')loadUsr();window.location.hash=s}
+function go(s){document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='rep')loadRep();if(s==='presu')loadPresus();if(s==='usr')loadUsr();window.location.hash=s}
 window.addEventListener('hashchange',()=>{const h=location.hash.replace('#','');if(h&&$('s-'+h)&&ses)go(h)})
 let invTab='stock';
 function setTab(t,btn){invTab=t;document.querySelectorAll('#inv-tabs .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');filtrar()}
@@ -1132,6 +1170,99 @@ function printDoc(tipo){
   printWin.onload=function(){printWin.print()};
 }
 
+/* PRESUPUESTOS */
+let presuItems=[],curPresuId=null;
+async function loadPresus(){
+  const{data}=await db.from('presupuestos').select('*').order('created_at',{ascending:false});
+  const list=data||[];
+  const stColors={pendiente:'var(--warn)',aceptado:'var(--ok)',rechazado:'var(--err)'};
+  $('presu-list').innerHTML=list.length?list.map(p=>{
+    const items=typeof p.items==='string'?JSON.parse(p.items):p.items||[];
+    return'<div class="ar" onclick="editPresu('+p.id+')"><div class="ae">📄</div><div class="ai"><div class="an">P-'+String(p.id).padStart(4,'0')+' · '+p.cliente_nombre+'</div><div class="am">'+items.length+' items · $'+Math.round(p.total||0).toLocaleString('es-AR')+' · '+new Date(p.created_at).toLocaleDateString('es-AR')+'</div></div><span class="ab" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:'+(stColors[p.estado]||'var(--tx3)')+'">'+p.estado+'</span></div>'
+  }).join(''):'<div class="emp">Sin presupuestos</div>';
+}
+function newPresu(){
+  curPresuId=null;presuItems=[];
+  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('a'));$('s-presu-form').classList.add('a');$('sbar').classList.remove('v');
+  $('pf-title').textContent='Nuevo Presupuesto';
+  ['pf-nombre','pf-tel','pf-email','pf-obs','pf-item-name','pf-item-q'].forEach(id=>$(id).value='');
+  $('pf-validez').value='15';$('pf-desc').value='0';$('pf-item-qty').value='1';$('pf-item-price').value='';
+  renderPresuItems();
+}
+async function editPresu(id){
+  const{data:p}=await db.from('presupuestos').select('*').eq('id',id).single();
+  if(!p)return;curPresuId=p.id;
+  presuItems=typeof p.items==='string'?JSON.parse(p.items):p.items||[];
+  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('a'));$('s-presu-form').classList.add('a');$('sbar').classList.remove('v');
+  $('pf-title').textContent='Presupuesto P-'+String(p.id).padStart(4,'0');
+  $('pf-nombre').value=p.cliente_nombre||'';$('pf-tel').value=p.cliente_telefono||'';$('pf-email').value=p.cliente_email||'';
+  $('pf-validez').value=p.validez_dias||15;$('pf-desc').value=p.descuento||0;$('pf-obs').value=p.observaciones||'';
+  renderPresuItems();
+}
+function searchPresuItem(){
+  const q=($('pf-item-q').value||'').toLowerCase();
+  if(q.length<2){$('pf-item-results').style.display='none';return}
+  const words=q.split(/\s+/).filter(w=>w.length>0);
+  const results=ALL.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')).toLowerCase();return words.every(w=>h.includes(w))}).slice(0,8);
+  $('pf-item-results').style.display='block';
+  $('pf-item-results').innerHTML=results.length?results.map(p=>'<div style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--brd);font-size:12px" onclick="selectPresuItem('+p.id+')"><b>'+p.articulo+'</b><span style="color:var(--tx3)"> · $'+(p.precio_venta||0).toLocaleString('es-AR')+' · Stock: '+p.cantidades+'</span></div>').join(''):'<div style="padding:8px;font-size:11px;color:var(--tx3)">Sin resultados</div>';
+}
+function selectPresuItem(id){
+  const p=ALL.find(x=>x.id===id);if(!p)return;
+  $('pf-item-name').value=p.articulo;$('pf-item-price').value=p.precio_venta||0;$('pf-item-qty').value=1;
+  $('pf-item-results').style.display='none';$('pf-item-q').value='';
+}
+function addPresuItem(){
+  const name=$('pf-item-name').value.trim();const qty=+$('pf-item-qty').value||1;const price=+$('pf-item-price').value||0;
+  if(!name){toast('Escribí la descripción');return}
+  presuItems.push({descripcion:name,cantidad:qty,precio_unitario:price,subtotal:qty*price});
+  $('pf-item-name').value='';$('pf-item-qty').value='1';$('pf-item-price').value='';
+  renderPresuItems();
+}
+function removePresuItem(i){presuItems.splice(i,1);renderPresuItems()}
+function renderPresuItems(){
+  $('pf-items-list').innerHTML=presuItems.length?presuItems.map((it,i)=>'<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg);border-radius:var(--rs);margin-bottom:4px;font-size:12px"><span style="flex:1;font-weight:500">'+it.descripcion+'</span><span style="color:var(--tx3)">×'+it.cantidad+'</span><span style="font-weight:600;min-width:70px;text-align:right">$'+(it.subtotal||0).toLocaleString('es-AR')+'</span><button onclick="removePresuItem('+i+')" style="background:none;border:none;cursor:pointer;color:var(--err)">✕</button></div>').join(''):'<div style="font-size:12px;color:var(--tx3);padding:8px">Agregá items desde el inventario o manualmente</div>';
+  renderPresuTotals();
+}
+function renderPresuTotals(){
+  const sub=presuItems.reduce((s,it)=>s+(it.subtotal||0),0);
+  const desc=+($('pf-desc').value)||0;
+  const total=Math.max(0,sub-desc);
+  $('pf-totals').innerHTML='<div style="font-size:12px;color:var(--tx3)">Subtotal: $'+sub.toLocaleString('es-AR')+'</div>'+(desc>0?'<div style="font-size:12px;color:var(--err)">Descuento: -$'+desc.toLocaleString('es-AR')+'</div>':'')+'<div style="font-size:16px;font-weight:800;color:var(--pri);margin-top:4px">TOTAL: $'+total.toLocaleString('es-AR')+'</div>';
+}
+async function savePresu(){
+  const nombre=$('pf-nombre').value.trim();
+  if(!nombre){toast('Completá el nombre del cliente');return}
+  if(!presuItems.length){toast('Agregá al menos un item');return}
+  const sub=presuItems.reduce((s,it)=>s+(it.subtotal||0),0);
+  const desc=+$('pf-desc').value||0;
+  const obj={cliente_nombre:nombre,cliente_telefono:$('pf-tel').value||null,cliente_email:$('pf-email').value||null,items:JSON.stringify(presuItems),subtotal:sub,descuento:desc,total:Math.max(0,sub-desc),validez_dias:+$('pf-validez').value||15,observaciones:$('pf-obs').value||null,creado_por:ses?.usuario||'admin'};
+  if(curPresuId){await db.from('presupuestos').update(obj).eq('id',curPresuId);toast('Presupuesto actualizado')}
+  else{const{data}=await db.from('presupuestos').insert(obj).select().single();if(data)curPresuId=data.id;toast('Presupuesto P-'+String(curPresuId).padStart(4,'0')+' guardado')}
+}
+function printPresu(){
+  const nombre=$('pf-nombre').value.trim();if(!nombre||!presuItems.length){toast('Guardá primero');return}
+  const sub=presuItems.reduce((s,it)=>s+(it.subtotal||0),0);
+  const desc=+$('pf-desc').value||0;const total=Math.max(0,sub-desc);
+  const num=curPresuId?'P-'+String(curPresuId).padStart(4,'0'):'BORRADOR';
+  const fecha=new Date().toLocaleDateString('es-AR');
+  const validez=$('pf-validez').value||15;
+  const vencimiento=new Date(Date.now()+(+validez)*86400000).toLocaleDateString('es-AR');
+  const itemsHtml=presuItems.map((it,i)=>'<tr><td style="padding:6px 8px;border:1px solid #ccc">'+(i+1)+'</td><td style="padding:6px 8px;border:1px solid #ccc">'+it.descripcion+'</td><td style="padding:6px 8px;border:1px solid #ccc;text-align:center">'+it.cantidad+'</td><td style="padding:6px 8px;border:1px solid #ccc;text-align:right">$'+it.precio_unitario.toLocaleString('es-AR')+'</td><td style="padding:6px 8px;border:1px solid #ccc;text-align:right;font-weight:600">$'+it.subtotal.toLocaleString('es-AR')+'</td></tr>').join('');
+  const html='<div style="border:2px solid #000;padding:24px;max-width:700px;margin:auto">'
+    +'<div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:14px"><div style="font-size:22px;font-weight:bold">⚡ ELECTRO PARQUE</div><div style="font-size:11px">Lomas de Zamora, Buenos Aires · Service Técnico & Electrónica</div></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:14px"><div><div style="font-size:16px;font-weight:bold">PRESUPUESTO '+num+'</div><div style="font-size:11px;color:#555">Fecha: '+fecha+' · Válido hasta: '+vencimiento+'</div></div></div>'
+    +'<table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tr><td style="padding:5px 8px;border:1px solid #ccc"><b>Cliente:</b> '+nombre+'</td><td style="padding:5px 8px;border:1px solid #ccc"><b>Tel:</b> '+($('pf-tel').value||'—')+'</td></tr>'+(($('pf-email').value)?'<tr><td colspan="2" style="padding:5px 8px;border:1px solid #ccc"><b>Email:</b> '+$('pf-email').value+'</td></tr>':'')+'</table>'
+    +'<table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tr style="background:#f0f0f0"><th style="padding:6px 8px;border:1px solid #ccc;text-align:left">#</th><th style="padding:6px 8px;border:1px solid #ccc;text-align:left">Descripción</th><th style="padding:6px 8px;border:1px solid #ccc;text-align:center">Cant.</th><th style="padding:6px 8px;border:1px solid #ccc;text-align:right">P. Unit.</th><th style="padding:6px 8px;border:1px solid #ccc;text-align:right">Subtotal</th></tr>'+itemsHtml+'</table>'
+    +'<div style="text-align:right;margin-bottom:10px"><div style="font-size:12px">Subtotal: $'+sub.toLocaleString('es-AR')+'</div>'+(desc>0?'<div style="font-size:12px;color:red">Descuento: -$'+desc.toLocaleString('es-AR')+'</div>':'')+'<div style="font-size:18px;font-weight:bold;border-top:2px solid #000;padding-top:6px;margin-top:4px">TOTAL: $'+total.toLocaleString('es-AR')+'</div></div>'
+    +($('pf-obs').value?'<div style="font-size:11px;border:1px dashed #999;padding:8px;margin-bottom:10px"><b>Observaciones:</b> '+$('pf-obs').value+'</div>':'')
+    +'<div style="font-size:9px;color:#555;margin-bottom:16px">Este presupuesto tiene validez de '+validez+' días a partir de la fecha de emisión. Los precios pueden variar sin previo aviso una vez vencido el plazo. No incluye IVA salvo indicación expresa.</div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:24px"><div style="border-top:1px solid #000;width:38%;text-align:center;padding-top:4px;font-size:10px">Firma Cliente</div><div style="border-top:1px solid #000;width:38%;text-align:center;padding-top:4px;font-size:10px">Firma Electro Parque</div></div></div>';
+  const w=window.open('','_blank','width=800,height=600');
+  w.document.write('<html><head><title>Presupuesto '+num+'</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#000;margin:20px}</style></head><body>'+html+'</body></html>');
+  w.document.close();w.onload=function(){w.print()};
+}
+
 /* PIZARRA */
 const DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 let pizDia=null;
@@ -1583,6 +1714,13 @@ function buildNotifPanel(){
   const items=[];
   // Stock alerts from monitored products
   const stockAlerts=ALL.filter(p=>p.monitorear&&p.estado_alerta&&p.estado_alerta!=='OK');
+  // Inactive ML products (3 months without activity)
+  const now90=Date.now()-90*86400000;
+  const inactivos=ALL.filter(p=>{
+    if(!p.ml_id_1&&!p.ml_id_2&&!p.ml_id_3)return false;
+    const lastDate=p.updated_at?new Date(p.updated_at).getTime():p.created_at?new Date(p.created_at).getTime():0;
+    return lastDate<now90;
+  });
   stockAlerts.forEach(p=>{
     const isUrgent=p.estado_alerta==='SIN STOCK'||p.estado_alerta.includes('CRITICO');
     items.push({type:'stock',urgent:isUrgent,html:'<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:var(--rs);margin-bottom:5px;border-left:3px solid '+(isUrgent?'var(--err)':'var(--warn)')+';cursor:pointer" onclick="showDet(ALL.find(x=>x.id==='+p.id+'));$(\'notif-panel\').style.display=\'none\'">'
