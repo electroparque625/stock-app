@@ -1734,16 +1734,17 @@ function buildNotifPanel(){
     if(pendingTasks>0)items.push({type:'task',urgent:false,html:'<div style="padding:8px 10px;background:var(--pri-l);border-radius:var(--rs);margin-bottom:5px;border-left:3px solid var(--pri);cursor:pointer" onclick="go(\'tasks\');$(\'notif-panel\').style.display=\'none\'"><div style="font-size:12px;font-weight:600;color:var(--pri)">📋 '+pendingTasks+' tarea'+(pendingTasks>1?'s':'')+' pendiente'+(pendingTasks>1?'s':'')+'</div><div style="font-size:10px;color:var(--tx3)">Tocá para ver</div></div>'});
   }
   // Update bell badge
-  const totalNotifs=stockAlerts.length+(ses?.rol!=='superadmin'?(window._pendingTaskCount||0):0);
+  const totalNotifs=stockAlerts.length+inactivos.length+(ses?.rol!=='superadmin'?(window._pendingTaskCount||0):0);
   const badge=$('notif-bell-badge');
   if(badge){badge.textContent=totalNotifs;badge.classList.toggle('show',totalNotifs>0)}
   // Render
   const el=$('notif-panel-list');
-  if(!items.length){el.innerHTML='<div class="emp" style="padding:20px">Sin notificaciones 🎉</div>';return}
+  if(!items.length&&!inactivos.length){el.innerHTML='<div class="emp" style="padding:20px">Sin notificaciones 🎉</div>';return}
   let html='';
   if(stockAlerts.length)html+='<div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin:6px 0 4px">Stock · '+stockAlerts.length+' alertas</div>'+items.filter(i=>i.type==='stock').map(i=>i.html).join('');
   const taskItems=items.filter(i=>i.type==='task');
   if(taskItems.length)html+='<div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin:10px 0 4px">Tareas</div>'+taskItems.map(i=>i.html).join('');
+  if(inactivos.length)html+='<div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin:10px 0 4px">💤 Sin actividad (+90 días) · '+inactivos.length+'</div>'+inactivos.slice(0,10).map(p=>'<div style="padding:6px 10px;background:var(--bg);border-radius:var(--rs);margin-bottom:4px;border-left:3px solid var(--tx3);cursor:pointer;font-size:11px" onclick="showDet(ALL.find(x=>x.id==='+p.id+'));$(\'notif-panel\').style.display=\'none\'"><b>'+p.articulo+'</b><div style="color:var(--tx3);margin-top:1px">'+(p.sku||'')+' · Últ. act: '+(p.updated_at?new Date(p.updated_at).toLocaleDateString('es-AR'):'nunca')+'</div></div>').join('')+(inactivos.length>10?'<div style="font-size:10px;color:var(--tx3);padding:4px 10px">...y '+(inactivos.length-10)+' más</div>':'');
   el.innerHTML=html;
 }
 
