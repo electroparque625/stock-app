@@ -22,6 +22,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .bp{background:var(--pri);color:#fff}.bp:disabled{opacity:.5}.bo{background:var(--ok);color:#fff}.be{background:var(--err-l);color:var(--err);border:1px solid #f09595}.bs{background:var(--bg);color:var(--tx);border:1px solid var(--brd)}.bw{background:var(--warn);color:#fff}
 .le{background:var(--err-l);border:1px solid #f09595;border-radius:var(--rs);padding:10px 14px;font-size:13px;color:var(--err);margin-top:12px;display:none}.le.show{display:block}
 .tg-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0}.tg-lbl{font-size:13px;color:var(--tx2)}
+.imp-frame{display:block;width:100%;height:calc(100vh - 133px);min-height:420px;border:1px solid var(--brd);border-radius:var(--rad);background:var(--card)}
 .tg{position:relative;width:44px;height:24px;cursor:pointer}.tg input{opacity:0;width:0;height:0}.tg-tr{position:absolute;inset:0;background:var(--brd);border-radius:12px;transition:.2s}.tg input:checked+.tg-tr{background:var(--pri)}.tg-th{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}.tg input:checked~.tg-th{left:22px}
 
 .app{min-height:100vh;display:none;flex-direction:column;background:var(--bg)}
@@ -31,6 +32,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ch{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;cursor:pointer;border:none;font-family:inherit}
 .ch-p{background:var(--pri-l);color:var(--pri)}.ch-g{background:var(--ok-l);color:var(--ok)}
 .bnav{background:var(--card);border-top:1px solid var(--brd);display:flex;position:fixed;bottom:0;left:0;right:0;z-index:10}
+.ct{flex:1;padding:14px;padding-bottom:74px}
 .side{display:none}
 @media(min-width:768px){
 .tb{position:fixed;top:0;left:0;width:210px;height:100vh;flex-direction:column;align-items:flex-start;border-right:1px solid var(--brd);border-bottom:none;padding:20px 14px;z-index:20;justify-content:flex-start;gap:0}
@@ -44,6 +46,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ct{margin-left:210px;padding:70px 24px 24px}
 .dg{grid-template-columns:repeat(4,1fr)!important}
 .mo{align-items:center}.ml{max-width:580px;border-radius:16px;margin-bottom:0}
+.imp-frame{height:calc(100vh - 94px)}
 }
 .nb{flex:1;padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;border:none;background:none;font-family:inherit}
 .nb svg{width:20px;height:20px;stroke:var(--tx3);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
@@ -57,7 +60,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .fd{background:var(--card);border:1px solid var(--brd);border-radius:var(--rad);padding:8px;margin-top:8px;display:none}.fd.open{display:block}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:5px}
 .fb{padding:7px 10px;border-radius:var(--rs);border:1px solid var(--brd);background:var(--bg);font-size:12px;font-weight:500;color:var(--tx3);cursor:pointer;text-align:center;font-family:inherit}.fb.a{background:var(--pri);border-color:var(--pri);color:#fff}
-.ct{flex:1;padding:14px;padding-bottom:74px}.sc{display:none}.sc.a{display:block}
+.sc{display:none}.sc.a{display:block}
 .dg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .dc{background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:14px}.dc.full{grid-column:1/-1}
 .dl{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;font-weight:600}
@@ -451,12 +454,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="f"><label>Rol</label><select id="u-rol"><option value="usuario">Usuario (sin precios)</option><option value="admin">Admin (ve precios)</option></select></div><button class="b bp" onclick="createUsr()" style="margin-top:4px">Crear</button></div><div class="stit">Usuarios activos</div><div id="ul"><div class="ld"><div class="sp"></div></div></div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)"><div class="stit">Admin</div><button class="b bp" onclick="syncLogs()" style="margin-bottom:8px">📊 Sincronizar ventas desde LOGS</button>
 <button class="b bp" onclick="syncMLLinks()" style="margin-bottom:8px">🔗 Importar ML Links 2 y 3 del Sheet</button><button class="b bs" onclick="fixOldML()" style="margin-bottom:8px">🔄 Re-asignar cuentas ML</button><button class="b be" onclick="bulkDeleteSinStock()" style="margin-bottom:8px">🗑 Eliminar todos los SIN STOCK</button><button class="b bw" onclick="migSheet()" style="margin-bottom:8px">📥 Importar nuevos del Sheet</button>
 <button class="b be" onclick="fullResync()" style="margin-bottom:8px">🔄 Re-sync COMPLETO (borra y reimporta todo)</button><button class="b bo" onclick="verData()" style="margin-bottom:8px">🔍 Verificar</button><div id="mlog" style="display:none;background:#111;color:#0f0;font-family:monospace;font-size:10px;padding:10px;border-radius:var(--rs);max-height:250px;overflow-y:auto;line-height:1.7;margin-top:8px"></div></div></div>
-</div>
 
 <!-- IMPORTACIONES (solo usuario electroparque) --><div class="sc" id="s-imp">
-<div class="cd"><div class="fst">🛃 Importaciones</div><div style="font-size:12px;color:var(--tx3);margin-bottom:10px">Sistema externo de gestión de importaciones.</div>
-<iframe id="imp-frame" style="width:100%;height:75vh;border:none;border-radius:var(--rs);background:var(--bg)" title="Importaciones"></iframe>
-</div></div>
+<iframe id="imp-frame" class="imp-frame" title="Importaciones"></iframe>
+</div>
+</div>
 
 <div class="bnav">
 <button class="nb a" data-s="home" onclick="go('home')"><svg viewBox="0 0 22 22"><path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M8 20v-8h6v8"/></svg><span>Inicio</span></button>
