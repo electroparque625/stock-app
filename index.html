@@ -408,7 +408,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 <div id="pf-item-results" style="display:none;max-height:150px;overflow-y:auto;border:1px solid var(--brd);border-radius:var(--rs);margin-bottom:8px;background:var(--card)"></div>
 <div style="display:flex;gap:6px;margin-bottom:8px">
-<input type="text" id="pf-item-name" placeholder="Descripción" style="flex:2;padding:8px;border:1px solid var(--brd);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--tx)"/>
+<input type="hidden" id="pf-item-pid"/>
+<input type="text" id="pf-item-name" placeholder="Descripción" oninput="$('pf-item-pid').value=''" style="flex:2;padding:8px;border:1px solid var(--brd);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--tx)"/>
 <input type="number" id="pf-item-qty" placeholder="Cant" min="1" value="1" style="width:60px;padding:8px;border:1px solid var(--brd);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--tx)"/>
 <input type="number" id="pf-item-price" placeholder="$ Unit" min="0" style="width:80px;padding:8px;border:1px solid var(--brd);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--tx)"/>
 <button class="b bp" onclick="addPresuItem()" style="width:auto;padding:8px 12px">+</button>
@@ -1192,30 +1193,30 @@ function printDoc(tipo){
 }
 
 /* PRESUPUESTOS */
-let presuItems=[],curPresuId=null;
+let presuItems=[],curPresuId=null,curPresuFacturado=false;
 async function loadPresus(){
   const{data}=await db.from('presupuestos').select('*').order('created_at',{ascending:false});
   const list=data||[];
   const stColors={pendiente:'var(--warn)',aceptado:'var(--ok)',rechazado:'var(--err)'};
   $('presu-list').innerHTML=list.length?list.map(p=>{
     const items=typeof p.items==='string'?JSON.parse(p.items):p.items||[];
-    return'<div class="ar" onclick="editPresu('+p.id+')"><div class="ae">📄</div><div class="ai"><div class="an">P-'+String(p.id).padStart(4,'0')+' · '+p.cliente_nombre+'</div><div class="am">'+items.length+' items · $'+Math.round(p.total||0).toLocaleString('es-AR')+' · '+new Date(p.created_at).toLocaleDateString('es-AR')+'</div></div><span class="ab" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:'+(stColors[p.estado]||'var(--tx3)')+'">'+p.estado+'</span></div>'
+    return'<div class="ar" onclick="editPresu('+p.id+')"><div class="ae">'+(p.facturado?'🧾':'📄')+'</div><div class="ai"><div class="an">P-'+String(p.id).padStart(4,'0')+' · '+p.cliente_nombre+'</div><div class="am">'+items.length+' items · $'+Math.round(p.total||0).toLocaleString('es-AR')+' · '+new Date(p.created_at).toLocaleDateString('es-AR')+(p.facturado?' · Facturado':'')+'</div></div><span class="ab" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:'+(stColors[p.estado]||'var(--tx3)')+'">'+p.estado+'</span></div>'
   }).join(''):'<div class="emp">Sin presupuestos</div>';
 }
 function newPresu(){
-  curPresuId=null;presuItems=[];
+  curPresuId=null;curPresuFacturado=false;presuItems=[];
   document.querySelectorAll('.sc').forEach(s=>s.classList.remove('a'));$('s-presu-form').classList.add('a');$('sbar').classList.remove('v');
-  $('pf-title').textContent='Nuevo Presupuesto';
-  ['pf-nombre','pf-tel','pf-email','pf-obs','pf-item-name','pf-item-q'].forEach(id=>$(id).value='');
+  $('pf-title').innerHTML='Nuevo Presupuesto';
+  ['pf-nombre','pf-tel','pf-email','pf-obs','pf-item-name','pf-item-q','pf-item-pid'].forEach(id=>$(id).value='');
   $('pf-validez').value='15';$('pf-desc').value='0';$('pf-item-qty').value='1';$('pf-item-price').value='';
   renderPresuItems();
 }
 async function editPresu(id){
   const{data:p}=await db.from('presupuestos').select('*').eq('id',id).single();
-  if(!p)return;curPresuId=p.id;
+  if(!p)return;curPresuId=p.id;curPresuFacturado=!!p.facturado;
   presuItems=typeof p.items==='string'?JSON.parse(p.items):p.items||[];
   document.querySelectorAll('.sc').forEach(s=>s.classList.remove('a'));$('s-presu-form').classList.add('a');$('sbar').classList.remove('v');
-  $('pf-title').textContent='Presupuesto P-'+String(p.id).padStart(4,'0');
+  $('pf-title').innerHTML='Presupuesto P-'+String(p.id).padStart(4,'0')+(curPresuFacturado?' <span style="font-size:10px;font-weight:700;background:var(--ok-l);color:var(--ok);padding:3px 8px;border-radius:20px;vertical-align:middle">🧾 Facturado'+(p.fecha_facturacion?' '+new Date(p.fecha_facturacion).toLocaleDateString('es-AR'):'')+'</span>':'');
   $('pf-nombre').value=p.cliente_nombre||'';$('pf-tel').value=p.cliente_telefono||'';$('pf-email').value=p.cliente_email||'';
   $('pf-validez').value=p.validez_dias||15;$('pf-desc').value=p.descuento||0;$('pf-obs').value=p.observaciones||'';
   renderPresuItems();
@@ -1231,19 +1232,20 @@ function searchPresuItem(){
 function selectPresuItem(id){
   const p=ALL.find(x=>x.id===id);if(!p)return;
   const desc=p.articulo+(p.marca?' · '+p.marca:'')+(p.modelo?' '+p.modelo:'');
-  $('pf-item-name').value=desc;$('pf-item-price').value=p.precio_venta||0;$('pf-item-qty').value=1;
+  $('pf-item-name').value=desc;$('pf-item-price').value=p.precio_venta||0;$('pf-item-qty').value=1;$('pf-item-pid').value=p.id;
   $('pf-item-results').style.display='none';$('pf-item-q').value='';
 }
 function addPresuItem(){
   const name=$('pf-item-name').value.trim();const qty=+$('pf-item-qty').value||1;const price=+$('pf-item-price').value||0;
+  const pid=$('pf-item-pid').value?+$('pf-item-pid').value:null;
   if(!name){toast('Escribí la descripción');return}
-  presuItems.push({descripcion:name,cantidad:qty,precio_unitario:price,subtotal:qty*price});
-  $('pf-item-name').value='';$('pf-item-qty').value='1';$('pf-item-price').value='';
+  presuItems.push({descripcion:name,cantidad:qty,precio_unitario:price,subtotal:qty*price,producto_id:pid});
+  $('pf-item-name').value='';$('pf-item-qty').value='1';$('pf-item-price').value='';$('pf-item-pid').value='';
   renderPresuItems();
 }
 function removePresuItem(i){presuItems.splice(i,1);renderPresuItems()}
 function renderPresuItems(){
-  $('pf-items-list').innerHTML=presuItems.length?presuItems.map((it,i)=>'<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg);border-radius:var(--rs);margin-bottom:4px;font-size:12px"><span style="flex:1;font-weight:500">'+it.descripcion+'</span><span style="color:var(--tx3)">×'+it.cantidad+'</span><span style="font-weight:600;min-width:70px;text-align:right">$'+(it.subtotal||0).toLocaleString('es-AR')+'</span><button onclick="removePresuItem('+i+')" style="background:none;border:none;cursor:pointer;color:var(--err)">✕</button></div>').join(''):'<div style="font-size:12px;color:var(--tx3);padding:8px">Agregá items desde el inventario o manualmente</div>';
+  $('pf-items-list').innerHTML=presuItems.length?presuItems.map((it,i)=>'<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg);border-radius:var(--rs);margin-bottom:4px;font-size:12px"><span title="'+(it.producto_id?'Vinculado al inventario — descuenta stock al facturar':'Ítem manual — no descuenta stock')+'" style="flex-shrink:0">'+(it.producto_id?'📦':'✏️')+'</span><span style="flex:1;font-weight:500">'+it.descripcion+'</span><span style="color:var(--tx3)">×'+it.cantidad+'</span><span style="font-weight:600;min-width:70px;text-align:right">$'+(it.subtotal||0).toLocaleString('es-AR')+'</span><button onclick="removePresuItem('+i+')" style="background:none;border:none;cursor:pointer;color:var(--err)">✕</button></div>').join(''):'<div style="font-size:12px;color:var(--tx3);padding:8px">Agregá items desde el inventario o manualmente</div>';
   renderPresuTotals();
 }
 function renderPresuTotals(){
@@ -1284,8 +1286,25 @@ function printPresu(){
   w.document.write('<html><head><title>Presupuesto '+num+'</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#000;margin:20px}</style></head><body>'+html+'</body></html>');
   w.document.close();w.onload=function(){w.print()};
 }
-function printFactura(){
+async function printFactura(){
   const nombre=$('pf-nombre').value.trim();if(!nombre||!presuItems.length){toast('Guardá primero');return}
+  if(!curPresuId){toast('Guardá el presupuesto antes de facturar');return}
+  const w=window.open('','_blank','width=800,height=600');
+  w.document.write('<html><head><title>Factura</title></head><body style="font-family:Arial,sans-serif;padding:60px;text-align:center;color:#777">Generando factura…</body></html>');
+  if(!curPresuFacturado){
+    let deducidos=0;
+    for(const it of presuItems){
+      if(!it.producto_id)continue;
+      const prod=ALL.find(x=>x.id===it.producto_id);if(!prod)continue;
+      const nv=Math.max(0,(prod.cantidades||0)-it.cantidad);
+      await db.from('stock').update({cantidades:nv,estado:nv>0?'STOCK':'SIN STOCK'}).eq('id',it.producto_id);
+      await db.from('movimientos').insert({fecha:new Date().toLocaleDateString('es-AR'),hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:it.descripcion+' (Presupuesto P-'+String(curPresuId).padStart(4,'0')+')',sku:prod.sku,tipo:'ajuste',cantidad:it.cantidad,stock_anterior:prod.cantidades,stock_nuevo:nv,canal:'presupuesto',monto:0});
+      prod.cantidades=nv;deducidos++;
+    }
+    await db.from('presupuestos').update({facturado:true,fecha_facturacion:new Date().toISOString()}).eq('id',curPresuId);
+    curPresuFacturado=true;
+    toast(deducidos?deducidos+' item(s) descontados de stock':'Facturado (sin items de inventario para descontar)');
+  }
   const sub=presuItems.reduce((s,it)=>s+(it.subtotal||0),0);
   const desc=+$('pf-desc').value||0;const total=Math.max(0,sub-desc);
   const num=curPresuId?'F-'+String(curPresuId).padStart(4,'0'):'BORRADOR';
@@ -1302,7 +1321,7 @@ function printFactura(){
     +($('pf-obs').value?'<div style="font-size:11px;border:1px dashed #999;padding:8px;margin-bottom:10px"><b>Observaciones:</b> '+$('pf-obs').value+'</div>':'')
     +'<div style="font-size:9px;color:#555;margin-bottom:16px">Documento no fiscal. Válido como comprobante de operación comercial.</div>'
     +'<div style="display:flex;justify-content:space-between;margin-top:24px"><div style="border-top:1px solid #000;width:38%;text-align:center;padding-top:4px;font-size:10px">Recibí conforme</div><div style="border-top:1px solid #000;width:38%;text-align:center;padding-top:4px;font-size:10px">Electro Parque</div></div></div>';
-  const w=window.open('','_blank','width=800,height=600');
+  w.document.open();
   w.document.write('<html><head><title>Factura '+num+'</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#000;margin:20px}</style></head><body>'+html+'</body></html>');
   w.document.close();w.onload=function(){w.print()};
 }
