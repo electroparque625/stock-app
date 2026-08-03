@@ -1059,7 +1059,7 @@ async function startCamera(){
 }
 function stopCamera(){if(camStream){camStream.getTracks().forEach(t=>t.stop());$('scan-video').style.display='none';camStream=null}if(camInterval){clearInterval(camInterval);camInterval=null}}
 async function doScan(){const c=$('scq').value.trim();if(!c)return;$('scr').style.display='none';$('scnf').style.display='none';
-const botMatch=c.match(/ELECTROPARQUE-PRODUCTO-(\d+)/);
+const botMatch=c.match(/\/venta\/(\d+)/)||c.match(/ELECTROPARQUE-PRODUCTO-(\d+)/);
 if(botMatch){
   const fila=+botMatch[1];
   let row=impCatData.find(x=>x.fila===fila);
