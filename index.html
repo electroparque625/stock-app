@@ -483,7 +483,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="f"><input type="text" id="vinc-q" placeholder="Buscar en tu inventario..." oninput="searchVincular()"/></div>
 <div id="vinc-results" style="max-height:200px;overflow-y:auto;margin:8px 0"></div>
 <button class="b bo" onclick="crearDesdeImportado()" style="margin-top:4px">➕ Es un producto nuevo — crear</button>
+<button class="b be" id="vinc-unlink-btn" onclick="desvincular()" style="display:none;margin-top:8px">🔓 Desvincular (sin elegir otro)</button>
 <button class="b bs" onclick="closeVincular()" style="margin-top:8px">Cancelar</button>
+</div></div>
+
+<!-- VER QR IMPORTADO --><div class="mo" id="qr-modal"><div class="ml" style="max-width:320px;text-align:center">
+<div class="mb"></div><div class="mti" id="qr-title">QR del producto</div>
+<img id="qr-img" alt="QR" style="width:220px;height:220px;margin:10px auto;display:block;border:1px solid var(--brd);border-radius:var(--rs)"/>
+<div style="font-size:11px;color:var(--tx3);font-family:monospace;margin-bottom:12px" id="qr-code-text"></div>
+<button class="b bs" onclick="$('qr-modal').classList.remove('show')">Cerrar</button>
 </div></div>
 
 <div class="bnav">
@@ -1407,19 +1415,39 @@ function renderImpCat(){
       +(p.cantidad!=null?'<div class="pq ok">'+p.cantidad+' u.</div>':'')
       +(p.en_camino?'<div style="font-size:10px;color:var(--tx3)">+'+p.en_camino+' en camino</div>':'')
       +(p.precio_pesos?'<div style="font-size:11px;color:var(--tx3);margin-top:2px">$'+Math.round(p.precio_pesos).toLocaleString('es-AR')+'</div>':'')
-      +(pend>0&&!p.stock_app_id?'<button class="b bp" style="width:auto;padding:5px 10px;font-size:11px;margin-top:6px;cursor:pointer" onclick="openVincularByFila('+p.fila+')">🔗 Vincular</button>':'')
-      +'</div></div>'
+      +'<div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px">'
+      +(pend>0&&!p.stock_app_id?'<button class="b bp" style="width:auto;padding:5px 10px;font-size:11px;cursor:pointer" onclick="openVincularByFila('+p.fila+')">🔗 Vincular</button>':'')
+      +(p.stock_app_id?'<button class="b bs" style="width:auto;padding:5px 10px;font-size:11px;cursor:pointer" onclick="editarVinculo('+p.fila+')">✏️ Editar</button>':'')
+      +'<button class="b bs" style="width:auto;padding:5px 10px;font-size:11px;cursor:pointer" onclick="verQR('+p.fila+')">🔳 QR</button>'
+      +'</div></div></div>'
   }).join(''):'<div class="emp">Sin datos todavía</div>';
 }
 
-/* Vincular / crear producto desde Importados o desde el escáner */
-let vincRow=null,pendingImportLink=null;
-function openVincularByFila(fila){const row=impCatData.find(x=>x.fila===fila);if(row)openVincular(row)}
+function verQR(fila){
+  const code='ELECTROPARQUE-PRODUCTO-'+fila;
+  $('qr-title').textContent='QR — fila '+fila;
+  $('qr-img').src='https://api.qrserver.com/v1/create-qr-code/?size=250x250&data='+encodeURIComponent(code);
+  $('qr-code-text').textContent=code;
+  $('qr-modal').classList.add('show');
+}
+
+/* Vincular / editar vínculo / crear producto desde Importados o desde el escáner */
+let vincRow=null,vincMode='nuevo',pendingImportLink=null;
+function openVincularByFila(fila){const row=impCatData.find(x=>x.fila===fila);if(row){vincMode='nuevo';openVincular(row)}}
+function editarVinculo(fila){const row=impCatData.find(x=>x.fila===fila);if(row){vincMode='editar';openVincular(row)}}
 function openVincular(row){
   vincRow=row;
-  $('vinc-title').textContent='Vincular: '+(row.titulo||'—');
-  const pend=(row.cantidad||0)-(row.cantidad_aplicada||0);
-  $('vinc-info').textContent='Llegaron '+pend+' unidades. Elegí a qué producto de tu inventario corresponde, o creá uno nuevo.';
+  const linkedProd=row.stock_app_id?ALL.find(x=>x.id===row.stock_app_id):null;
+  if(vincMode==='editar'){
+    $('vinc-title').textContent='Editar vínculo: '+(row.titulo||'—');
+    $('vinc-info').textContent='Vinculado actualmente a: '+(linkedProd?linkedProd.articulo:'—')+'. Elegí el producto correcto, o desvinculá — se corrige el stock que se había movido por error.';
+    $('vinc-unlink-btn').style.display='block';
+  }else{
+    const pend=(row.cantidad||0)-(row.cantidad_aplicada||0);
+    $('vinc-title').textContent='Vincular: '+(row.titulo||'—');
+    $('vinc-info').textContent='Llegaron '+pend+' unidades. Elegí a qué producto de tu inventario corresponde, o creá uno nuevo.';
+    $('vinc-unlink-btn').style.display='none';
+  }
   $('vinc-q').value='';$('vinc-results').innerHTML='';
   $('vinc-modal').classList.add('show');
 }
@@ -1431,9 +1459,22 @@ function searchVincular(){
   const results=ALL.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')).toLowerCase();return words.every(w=>h.includes(w))}).slice(0,8);
   $('vinc-results').innerHTML=results.length?results.map(p=>'<div class="ar" onclick="vincularExistente('+p.id+')"><div class="ae">'+(p.emoji||ico(p.articulo))+'</div><div class="ai"><div class="an">'+p.articulo+'</div><div class="am">'+(p.sku||'')+' · Stock: '+(p.cantidades||0)+'</div></div></div>').join(''):'<div style="padding:8px;font-size:11px;color:var(--tx3)">Sin resultados</div>';
 }
+async function revertirVinculoActual(row){
+  if(!row.stock_app_id||!row.cantidad_aplicada)return;
+  const oldProd=ALL.find(x=>x.id===row.stock_app_id);
+  if(!oldProd)return;
+  const nv=Math.max(0,(oldProd.cantidades||0)-row.cantidad_aplicada);
+  await db.from('stock').update({cantidades:nv,estado:nv>0?'STOCK':'SIN STOCK'}).eq('id',oldProd.id);
+  await db.from('movimientos').insert({fecha:new Date().toLocaleDateString('es-AR'),hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:oldProd.articulo+' (corrección de vínculo: '+row.titulo+')',sku:oldProd.sku,tipo:'ajuste',cantidad:row.cantidad_aplicada,stock_anterior:oldProd.cantidades,stock_nuevo:nv,canal:'correccion',monto:0});
+  syncS('actualizarStock',{sku:oldProd.sku,nuevaCantidad:nv,nuevoEstado:nv>0?'STOCK':'SIN STOCK'});
+  oldProd.cantidades=nv;
+}
 async function vincularExistente(stockId){
   if(!vincRow)return;
-  const row=vincRow,pend=(row.cantidad||0)-(row.cantidad_aplicada||0);
+  const row=vincRow;
+  if(!confirm(vincMode==='editar'?'¿Corregir el vínculo? Se deshace lo aplicado al producto anterior y se aplica todo a este.':'¿Vincular y sumar el stock pendiente?'))return;
+  if(vincMode==='editar')await revertirVinculoActual(row);
+  const pend=vincMode==='editar'?(row.cantidad||0):(row.cantidad||0)-(row.cantidad_aplicada||0);
   const prod=ALL.find(x=>x.id===stockId);if(!prod)return;
   const nv=(prod.cantidades||0)+pend;
   await db.from('stock').update({cantidades:nv,estado:'STOCK'}).eq('id',stockId);
@@ -1446,9 +1487,26 @@ async function vincularExistente(stockId){
   if($('s-importados').classList.contains('a'))renderImpCat();
   if($('s-scan').classList.contains('a'))showDet(prod);
 }
-function crearDesdeImportado(){
+async function desvincular(){
   if(!vincRow)return;
   const row=vincRow;
+  if(!confirm('¿Desvincular? Se deshace el stock que se había sumado al producto anterior, y este ítem queda pendiente de vincular de nuevo.'))return;
+  await revertirVinculoActual(row);
+  await db.from('importados_catalogo').update({stock_app_id:null,cantidad_aplicada:0}).eq('fila',row.fila);
+  row.stock_app_id=null;row.cantidad_aplicada=0;
+  toast('Desvinculado');
+  closeVincular();
+  if($('s-importados').classList.contains('a'))renderImpCat();
+}
+async function crearDesdeImportado(){
+  if(!vincRow)return;
+  const row=vincRow;
+  if(vincMode==='editar'){
+    if(!confirm('¿Corregir creando un producto nuevo? Se deshace lo aplicado al producto anterior.'))return;
+    await revertirVinculoActual(row);
+    await db.from('importados_catalogo').update({stock_app_id:null,cantidad_aplicada:0}).eq('fila',row.fila);
+    row.stock_app_id=null;row.cantidad_aplicada=0;
+  }
   pendingImportLink=row;
   closeVincular();
   go('add');
