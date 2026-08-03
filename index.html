@@ -1179,6 +1179,7 @@ async function completeRepair(){if(!curOT)return;
     const nv=Math.max(0,prod.cantidades-part.qty);
     await db.from('stock').update({cantidades:nv,estado:nv>0?'STOCK':'SIN STOCK'}).eq('id',part.id);
     await db.from('movimientos').insert({fecha:new Date().toLocaleDateString('es-AR'),hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:part.articulo+' (OT #'+curOT.id+')',sku:part.sku,tipo:'ajuste',cantidad:part.qty,stock_anterior:prod.cantidades,stock_nuevo:nv,canal:'reparacion',monto:0});
+    syncS('actualizarStock',{sku:part.sku,nuevaCantidad:nv,nuevoEstado:nv>0?'STOCK':'SIN STOCK'});
     prod.cantidades=nv;
   }
   const total=(+curOT.costo_repuestos||0)+(+curOT.costo_mano_obra||0);
@@ -1332,6 +1333,7 @@ async function printFactura(){
       const nv=Math.max(0,(prod.cantidades||0)-it.cantidad);
       await db.from('stock').update({cantidades:nv,estado:nv>0?'STOCK':'SIN STOCK'}).eq('id',it.producto_id);
       await db.from('movimientos').insert({fecha:new Date().toLocaleDateString('es-AR'),hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:it.descripcion+' (Presupuesto P-'+String(curPresuId).padStart(4,'0')+')',sku:prod.sku,tipo:'ajuste',cantidad:it.cantidad,stock_anterior:prod.cantidades,stock_nuevo:nv,canal:'presupuesto',monto:0});
+      syncS('actualizarStock',{sku:prod.sku,nuevaCantidad:nv,nuevoEstado:nv>0?'STOCK':'SIN STOCK'});
       prod.cantidades=nv;deducidos++;
     }
     await db.from('presupuestos').update({facturado:true,fecha_facturacion:new Date().toISOString()}).eq('id',curPresuId);
@@ -1379,6 +1381,7 @@ async function aplicarPendientesVinculados(){
     const nv=(prod.cantidades||0)+pend;
     await db.from('stock').update({cantidades:nv,estado:'STOCK'}).eq('id',row.stock_app_id);
     await db.from('movimientos').insert({fecha:new Date().toLocaleDateString('es-AR'),hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:prod.articulo+' (Importado: '+row.titulo+')',sku:prod.sku,tipo:'ingreso',cantidad:pend,stock_anterior:prod.cantidades,stock_nuevo:nv,canal:'importacion',monto:0});
+    syncS('actualizarStock',{sku:prod.sku,nuevaCantidad:nv,nuevoEstado:'STOCK'});
     await db.from('importados_catalogo').update({cantidad_aplicada:row.cantidad}).eq('fila',row.fila);
     prod.cantidades=nv;row.cantidad_aplicada=row.cantidad;
   }
@@ -1435,6 +1438,7 @@ async function vincularExistente(stockId){
   const nv=(prod.cantidades||0)+pend;
   await db.from('stock').update({cantidades:nv,estado:'STOCK'}).eq('id',stockId);
   await db.from('movimientos').insert({fecha:new Date().toLocaleDateString('es-AR'),hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:prod.articulo+' (Importado: '+row.titulo+')',sku:prod.sku,tipo:'ingreso',cantidad:pend,stock_anterior:prod.cantidades,stock_nuevo:nv,canal:'importacion',monto:0});
+  syncS('actualizarStock',{sku:prod.sku,nuevaCantidad:nv,nuevoEstado:'STOCK'});
   await db.from('importados_catalogo').update({stock_app_id:stockId,cantidad_aplicada:row.cantidad}).eq('fila',row.fila);
   prod.cantidades=nv;row.stock_app_id=stockId;row.cantidad_aplicada=row.cantidad;
   toast('Vinculado — se sumaron '+pend+' unidades a '+prod.articulo);
