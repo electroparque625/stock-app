@@ -6,6 +6,7 @@
 <title>Electro Parque — Stock</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <style>
 :root{--pri:#1a6dca;--pri-l:#e3f0ff;--ok:#2d8a3e;--ok-l:#e6f4ea;--warn:#b5760a;--warn-l:#fdf0d5;--err:#c23535;--err-l:#fde8e8;--bg:#f4f5f7;--card:#fff;--brd:#e2e4e9;--tx:#1c1c1e;--tx2:#5f6368;--tx3:#9aa0a6;--rad:12px;--rs:8px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -490,7 +491,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <!-- VER QR IMPORTADO --><div class="mo" id="qr-modal"><div class="ml" style="max-width:320px;text-align:center">
 <div class="mb"></div><div class="mti" id="qr-title">QR del producto</div>
 <img id="qr-img" alt="QR" style="width:220px;height:220px;margin:10px auto;display:block;border:1px solid var(--brd);border-radius:var(--rs)"/>
-<div style="font-size:11px;color:var(--tx3);font-family:monospace;margin-bottom:12px" id="qr-code-text"></div>
+<div style="font-size:10px;color:var(--tx3);font-family:monospace;margin-bottom:12px;word-break:break-all" id="qr-code-text"></div>
+<button class="b bp" onclick="imprimirQR()" style="margin-bottom:8px">🖨 Imprimir</button>
 <button class="b bs" onclick="$('qr-modal').classList.remove('show')">Cerrar</button>
 </div></div>
 
@@ -551,7 +553,7 @@ function clearSes(){ses=null;try{localStorage.removeItem('ep4')}catch(e){}}
 
 async function doLogin(){const u=$('l-u').value.trim(),p=$('l-p').value,b=$('l-b'),e=$('l-e');if(!u||!p){e.textContent='Completá ambos campos';e.classList.add('show');return}b.disabled=true;b.textContent='Verificando...';e.classList.remove('show');try{if(u===SA.usuario){if(H(p)!==SA_H)throw 1;b.disabled=false;b.textContent='Ingresar';startApp({...SA});return}const{data,error}=await db.from('usuarios').select('*').eq('usuario',u).eq('activo',true).single();if(error||!data||data.pass_hash!==H(p))throw 1;b.disabled=false;b.textContent='Ingresar';if(data.primer_login){ses=data;$('scr-login').style.display='none';$('scr-cp').style.display='flex'}else startApp({usuario:data.usuario,nombre:data.nombre,rol:data.rol})}catch(x){e.textContent='Credenciales incorrectas';e.classList.add('show');b.disabled=false;b.textContent='Ingresar'}}
 async function doCP(){const a=$('np1').value,b=$('np2').value,e=$('cp-e');if(a.length<4){e.textContent='Mínimo 4';e.classList.add('show');return}if(a!==b){e.textContent='No coinciden';e.classList.add('show');return}await db.from('usuarios').update({pass_hash:H(a),primer_login:false}).eq('usuario',ses.usuario);$('scr-cp').style.display='none';startApp({usuario:ses.usuario,nombre:ses.nombre,rol:ses.rol||'usuario'})}
-function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.owner-only').forEach(el=>el.style.display=String(u.usuario||'').toLowerCase()==='electroparque'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');loadData();updateTaskBadge();if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)};setTimeout(()=>syncSheetToSupabase(),8000);setInterval(()=>syncSheetToSupabase(),120000)}
+function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.owner-only').forEach(el=>el.style.display=String(u.usuario||'').toLowerCase()==='electroparque'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');loadData();updateTaskBadge();const scanParam=new URLSearchParams(location.search).get('scan');if(scanParam){setTimeout(()=>{go('scan');$('scq').value=scanParam;doScan();history.replaceState(null,'',location.pathname+location.hash)},600)}else if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)};setTimeout(()=>syncSheetToSupabase(),8000);setInterval(()=>syncSheetToSupabase(),120000)}
 function doLogout(){if(!confirm('¿Cerrar sesión?'))return;clearSes();$('app').style.display='none';$('scr-login').style.display='flex';$('l-u').value='';$('l-p').value='';$('l-e').classList.remove('show')}
 
 async function loadData(){const t0=performance.now();try{let a=[],p=0;while(true){const{data,error}=await db.from('stock').select('*').order('id',{ascending:true}).range(p*1000,p*1000+999);if(error)throw error;if(!data||!data.length)break;a=a.concat(data);if(data.length<1000)break;p++}ALL=a;updM();filtrar();fillL();$('t-sub').textContent=ALL.length+' productos · '+Math.round(performance.now()-t0)+'ms'}catch(e){$('pl').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
@@ -1037,19 +1039,22 @@ function genSKU(art,marca,modelo,id){const c=(art||'').toLowerCase();let cat='GE
 async function saveNew(){const art=$('fa').value.trim();if(!art){toast('Artículo obligatorio');return}if(!nId){toast('Esperando ID');return}const b=$('bsv');b.disabled=true;b.textContent='Guardando...';const marca=$('fmr').value,modelo=$('fmo').value,sku=genSKU(art,marca,modelo,nId),cant=+$('fc').value||0,now=new Date().toLocaleDateString('es-AR');const prod={id:nId,sku,articulo:art,cod_barra:$('fbar').value||null,marca:marca||null,modelo:modelo||null,cantidades:cant,fecha:now,caja:$('fcj-new').value||$('fcj').value||null,estanteria:$('fes-new').value||$('fes').value||null,estado:cant>0?'STOCK':'SIN STOCK',link:$('flk').value||null,link_2:$('flk2').value||null,link_3:$('flk3').value||null,precio_al_costo:+$('fco').value||0,margen_ganancia:+$('fmg').value||0,precio_venta:+$('fve').value||0,precio_mayorista:+$('fmy').value||0,stock_minimo:+$('fmi').value||0,ultimo_movimiento:now,observaciones:$('fob').value||null,ml_id_1:$('fm1').value||null,ml_id_2:$('fm2').value||null,ml_id_3:$('fm3').value||null,importacion_avion:$('fav').checked,importacion_barco:$('fba').checked,pre_alerta_avion:+$('fpav')?.value||0,minimo_avion:+$('fmav')?.value||0,pre_alerta_barco:+$('fpba')?.value||0,minimo_barco:+$('fmba')?.value||0,monitorear:$('fmn').checked,importado:$('f-imp').checked};try{const{data,error}=await db.from('stock').insert(prod).select().single();if(error)throw error;if(newPhotoFile){try{const purl=await uploadToStorage(newPhotoFile,data.id);await db.from('stock').update({imagen:purl}).eq('id',data.id)}catch(pe){console.warn('Foto:',pe)}newPhotoFile=null;$('f-photo-prev').style.display='none'}syncS('agregar',{id:data.id,sku,...prod});if(cant>0)await db.from('movimientos').insert({fecha:now,hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:art,sku,tipo:'ingreso',cantidad:cant,stock_anterior:0,stock_nuevo:cant,canal:'ingreso',monto:0});if(pendingImportLink){await db.from('importados_catalogo').update({stock_app_id:data.id,cantidad_aplicada:pendingImportLink.cantidad}).eq('fila',pendingImportLink.fila);toast('#'+data.id+' guardado y vinculado a Importados · SKU: '+sku);pendingImportLink=null}else toast('#'+data.id+' guardado · SKU: '+sku);['fa','fbar','fmr','fmo','fc','fmi','fcj','fes','fco','fmg','fve','fmy','fob','flk','fm1','fm2','fm3','fsku','flk2','flk3'].forEach(id=>{const el=$(id);if(el)el.value=''});['fav','fba','fmn','f-imp'].forEach(id=>{const el=$(id);if(el)el.checked=false});$('fav-f').style.display='none';$('fba-f').style.display='none';$('f-imp-detail').style.display='none';nId=null;loadData();loadNID()}catch(e){toast('Error: '+e.message)}b.disabled=false;b.textContent='Guardar producto'}
 
 /* SCANNER */
-let camStream=null,camInterval=null;
+let camStream=null,camInterval=null,barDetector=null;
 async function startCamera(){
   try{
-    const video=$('scan-video');
+    const video=$('scan-video'),canvas=$('scan-canvas'),ctx=canvas.getContext('2d');
     camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
     video.srcObject=camStream;video.style.display='block';
-    // Use BarcodeDetector if available
-    if('BarcodeDetector' in window){
-      const detector=new BarcodeDetector({formats:['ean_13','ean_8','code_128','qr_code','code_39']});
-      camInterval=setInterval(async()=>{
-        try{const codes=await detector.detect(video);if(codes.length){stopCamera();$('scq').value=codes[0].rawValue;doScan()}}catch(e){}
-      },500);
-    }else{toast('Tu navegador no soporta detección de códigos. Usá Chrome.')}
+    if('BarcodeDetector' in window){try{barDetector=new BarcodeDetector({formats:['ean_13','ean_8','code_128','code_39']})}catch(e){barDetector=null}}
+    camInterval=setInterval(async()=>{
+      if(video.readyState<video.HAVE_ENOUGH_DATA)return;
+      canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+      ctx.drawImage(video,0,0,canvas.width,canvas.height);
+      const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const qr=jsQR(img.data,img.width,img.height);
+      if(qr&&qr.data){stopCamera();$('scq').value=qr.data;doScan();return}
+      if(barDetector){try{const codes=await barDetector.detect(video);if(codes.length){stopCamera();$('scq').value=codes[0].rawValue;doScan()}}catch(e){}}
+    },400);
   }catch(e){toast('No se pudo acceder a la cámara')}
 }
 function stopCamera(){if(camStream){camStream.getTracks().forEach(t=>t.stop());$('scan-video').style.display='none';camStream=null}if(camInterval){clearInterval(camInterval);camInterval=null}}
@@ -1425,10 +1430,16 @@ function renderImpCat(){
 
 function verQR(fila){
   const code='ELECTROPARQUE-PRODUCTO-'+fila;
+  const url=location.origin+location.pathname+'?scan='+encodeURIComponent(code);
   $('qr-title').textContent='QR — fila '+fila;
-  $('qr-img').src='https://api.qrserver.com/v1/create-qr-code/?size=250x250&data='+encodeURIComponent(code);
-  $('qr-code-text').textContent=code;
+  $('qr-img').src='https://api.qrserver.com/v1/create-qr-code/?size=250x250&data='+encodeURIComponent(url);
+  $('qr-code-text').textContent=url;
   $('qr-modal').classList.add('show');
+}
+function imprimirQR(){
+  const w=window.open('','_blank','width=400,height=500');
+  w.document.write('<html><head><title>QR</title></head><body style="text-align:center;font-family:Arial;padding:20px"><img src="'+$('qr-img').src+'" style="width:250px"/><div style="font-size:10px;margin-top:10px;word-break:break-all">'+$('qr-code-text').textContent+'</div></body></html>');
+  w.document.close();w.onload=function(){w.print()};
 }
 
 /* Vincular / editar vínculo / crear producto desde Importados o desde el escáner */
