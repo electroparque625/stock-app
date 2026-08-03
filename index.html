@@ -1527,6 +1527,7 @@ async function crearDesdeImportado(){
     $('fmo').value=row.modelo||'';
     $('fc').value=(row.cantidad||0)-(row.cantidad_aplicada||0);
     if(row.venta)$('fve').value=row.venta;
+    if(row.precio_pesos)$('fco').value=Math.round(row.precio_pesos);
   },300);
 }
 function renderImpLot(){
