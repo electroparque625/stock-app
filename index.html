@@ -1843,7 +1843,7 @@ async function syncLogsSilent(){
     const data=await res.json();
     if(!data||data.length<2)return;
     let imported=0;
-    for(const row of data.slice(1)){
+    for(const row of data){
       const col1=String(row[1]||''),col2=String(row[2]||''),txt=col1+' '+col2;
       if(!col1.includes('Venta'))continue;
       const cuentaMatch=col1.match(/Cuenta\s*(\d)/i);
@@ -1856,15 +1856,27 @@ async function syncLogsSilent(){
       const mla=mlaMatch?mlaMatch[1]:'';
       const artMatch=txt.match(/Cant:\s*\d+\s*\|\s*(.+?)\s*\|\s*OK/i);
       const articulo=artMatch?artMatch[1].trim():'Venta ML';
-      const fecha=row[0]?String(row[0]).split(' ')[0]:'';
-      const hora=row[0]?String(row[0]).split(' ')[1]||'':'';
+      const ts=row[0]?new Date(row[0]):null;
+      const fecha=ts?ts.toLocaleDateString('es-AR'):'';
+      const hora=ts?ts.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'';
       // Dedup by order number
       const{data:ex}=await db.from('movimientos').select('id').eq('sku',orden).limit(1);
       if(ex&&ex.length)continue;
       const nombre=ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta;
-      await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:0,stock_nuevo:0,canal:'ml_'+nombre.toLowerCase(),monto:0});
-      // Restar stock en Supabase
-      if(mla){const prod=ALL.find(x=>x.ml_id_1===mla||x.ml_id_2===mla||x.ml_id_3===mla);if(prod&&prod.cantidades>0){const nv=Math.max(0,prod.cantidades-cant);await db.from('stock').update({cantidades:nv,estado:nv>0?'STOCK':'SIN STOCK'}).eq('id',prod.id);prod.cantidades=nv;const idx=ALL.findIndex(x=>x.id===prod.id);if(idx>-1)ALL[idx].cantidades=nv}}
+      // Restar stock en Supabase — se busca el producto directo en la base, no en ALL en memoria
+      let stockAnterior=0,stockNuevo=0;
+      if(mla){
+        const{data:prods}=await db.from('stock').select('id,sku,cantidades').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
+        const prod=prods&&prods[0];
+        if(prod){
+          stockAnterior=prod.cantidades||0;
+          stockNuevo=Math.max(0,stockAnterior-cant);
+          await db.from('stock').update({cantidades:stockNuevo,estado:stockNuevo>0?'STOCK':'SIN STOCK'}).eq('id',prod.id);
+          syncS('actualizarStock',{sku:prod.sku,nuevaCantidad:stockNuevo,nuevoEstado:stockNuevo>0?'STOCK':'SIN STOCK'});
+          const idx=ALL.findIndex(x=>x.id===prod.id);if(idx>-1)ALL[idx].cantidades=stockNuevo;
+        }
+      }
+      await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:stockAnterior,stock_nuevo:stockNuevo,canal:'ml_'+nombre.toLowerCase(),monto:0});
       imported++;
     }
     if(imported>0)console.log('Auto-sync: '+imported+' ventas ML importadas');
@@ -1901,7 +1913,7 @@ async function syncLogs(){
     const data=await res.json();
     if(!data||data.length<2){toast('Sin logs');return}
     let imported=0,skipped=0;
-    for(const row of data.slice(1)){
+    for(const row of data){
       const col1=String(row[1]||''),col2=String(row[2]||''),txt=col1+' '+col2;
       if(!col1.includes('Venta')){skipped++;continue}
       const cuentaMatch=col1.match(/Cuenta\s*(\d)/i);
@@ -1914,14 +1926,26 @@ async function syncLogs(){
       const mla=mlaMatch?mlaMatch[1]:'';
       const artMatch=txt.match(/Cant:\s*\d+\s*\|\s*(.+?)\s*\|\s*OK/i);
       const articulo=artMatch?artMatch[1].trim():'Venta ML';
-      const fecha=row[0]?String(row[0]).split(' ')[0]:'';
-      const hora=row[0]?String(row[0]).split(' ')[1]||'':'';
+      const ts=row[0]?new Date(row[0]):null;
+      const fecha=ts?ts.toLocaleDateString('es-AR'):'';
+      const hora=ts?ts.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'';
       const{data:ex}=await db.from('movimientos').select('id').eq('sku',orden).limit(1);
       if(ex&&ex.length){skipped++;continue}
       const nombre=ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta;
-      await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:0,stock_nuevo:0,canal:'ml_'+nombre.toLowerCase(),monto:0});
-      // Restar stock en Supabase
-      if(mla){const prod=ALL.find(x=>x.ml_id_1===mla||x.ml_id_2===mla||x.ml_id_3===mla);if(prod&&prod.cantidades>0){const nv=Math.max(0,prod.cantidades-cant);await db.from('stock').update({cantidades:nv,estado:nv>0?'STOCK':'SIN STOCK'}).eq('id',prod.id);prod.cantidades=nv;const idx=ALL.findIndex(x=>x.id===prod.id);if(idx>-1)ALL[idx].cantidades=nv}}
+      // Restar stock en Supabase — se busca el producto directo en la base, no en ALL en memoria
+      let stockAnterior=0,stockNuevo=0;
+      if(mla){
+        const{data:prods}=await db.from('stock').select('id,sku,cantidades').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
+        const prod=prods&&prods[0];
+        if(prod){
+          stockAnterior=prod.cantidades||0;
+          stockNuevo=Math.max(0,stockAnterior-cant);
+          await db.from('stock').update({cantidades:stockNuevo,estado:stockNuevo>0?'STOCK':'SIN STOCK'}).eq('id',prod.id);
+          syncS('actualizarStock',{sku:prod.sku,nuevaCantidad:stockNuevo,nuevoEstado:stockNuevo>0?'STOCK':'SIN STOCK'});
+          const idx=ALL.findIndex(x=>x.id===prod.id);if(idx>-1)ALL[idx].cantidades=stockNuevo;
+        }
+      }
+      await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:stockAnterior,stock_nuevo:stockNuevo,canal:'ml_'+nombre.toLowerCase(),monto:0});
       imported++;
     }
     toast('Importados: '+imported+' | Omitidos: '+skipped);
