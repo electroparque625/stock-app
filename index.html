@@ -767,18 +767,27 @@ async function uploadMLReport(){
     let headerRow=-1;
     for(let i=0;i<Math.min(rows.length,15);i++){if(rows[i]&&rows[i].some(c=>String(c).includes('# de venta'))){headerRow=i;break}}
     if(headerRow<0){st.textContent='No encontré headers';return}
+    // Buscar cada columna por su nombre de encabezado, no por posición fija —
+    // distintas cuentas/exportaciones de ML pueden tener columnas de más o de
+    // menos, así que la posición numérica no es confiable entre reportes.
+    const hdr=rows[headerRow].map(h=>String(h||'').trim());
+    const col=name=>{const i=hdr.indexOf(name);return i};
+    const cOrden=col('# de venta'),cFecha=col('Fecha de venta'),cEstado=col('Estado'),cUnidades=col('Unidades');
+    const cBruto=col('Ingresos por productos (ARS)'),cNeto=col('Total (ARS)');
+    const cMla=col('# de publicación'),cTitulo=col('Título de la publicación'),cComprador=col('Comprador'),cEntrega=col('Fecha entregado');
+    if([cOrden,cBruto,cNeto,cMla,cTitulo].some(i=>i<0)){st.textContent='No reconocí alguna columna del reporte — puede que MercadoLibre haya cambiado el formato de nuevo';return}
     st.textContent='Procesando ventas...';
     await db.from('facturacion_ml').delete().eq('cuenta',cuenta);
     const inserts=[];
     for(let i=headerRow+1;i<rows.length;i++){
-      const r=rows[i];const orden=String(r[0]||'');
+      const r=rows[i];const orden=String(r[cOrden]||'');
       if(!orden.startsWith('200'))continue;
-      const bruto=parseFloat(r[7])||0;const neto=parseFloat(r[15])||0;
-      const mla=String(r[20]||'').trim();
-      const titulo=String(r[21]||'').trim();
-      const comprador=String(r[31]||'').trim();
-      const entrega=String(r[41]||'').trim();
-      inserts.push({cuenta,orden,fecha:String(r[1]||''),estado:String(r[2]||''),unidades:parseInt(r[6])||1,bruto,deducciones:bruto-neto,neto,mla,titulo,comprador,entrega});
+      const bruto=parseFloat(r[cBruto])||0;const neto=parseFloat(r[cNeto])||0;
+      const mla=String(r[cMla]||'').trim();
+      const titulo=String(r[cTitulo]||'').trim();
+      const comprador=String(r[cComprador]||'').trim();
+      const entrega=String(r[cEntrega]||'').trim();
+      inserts.push({cuenta,orden,fecha:String(r[cFecha]||''),estado:String(r[cEstado]||''),unidades:parseInt(r[cUnidades])||1,bruto,deducciones:bruto-neto,neto,mla,titulo,comprador,entrega});
     }
     let ok=0;
     for(let i=0;i<inserts.length;i+=100){const batch=inserts.slice(i,i+100);const{error}=await db.from('facturacion_ml').insert(batch);if(!error)ok+=batch.length;else console.warn(error)}
