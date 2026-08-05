@@ -210,7 +210,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 <div class="dg" id="fac-ml-kpi"></div>
 <div id="fac-ml-detail"></div>
-<div class="stit" id="fac-list-title" style="margin-top:14px">Últimas ventas</div><div id="fac-list"></div></div>
+<div class="stit" id="fac-list-title" style="margin-top:14px">Últimas ventas</div><div id="fac-list"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px"><div class="stit" style="margin:0">📋 Log de ventas ML (en vivo)</div><button class="b bs" onclick="loadMLLogs()" style="width:auto;padding:6px 10px;font-size:11px">🔄 Actualizar</button></div>
+<div id="fac-ml-logs"><div class="ld"><div class="sp"></div></div></div>
+</div>
 
 <!-- MONITOR DETAIL --><div class="sc" id="s-mondet">
 <button class="bk" onclick="go('dash')">‹ Volver al Dashboard</button>
@@ -726,6 +729,7 @@ function rDash(){
 
 /* FACTURACIÓN */
 async function rFac(){
+  loadMLLogs();
   try{
     const now=new Date(),d30=new Date(now-30*86400000);
     const{data:movs}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',d30.toISOString()).order('created_at',{ascending:false});
@@ -1883,6 +1887,38 @@ async function syncSheetToSupabase(){
     }
     if(updated>0){console.log('Sheet→Supabase: '+updated+' productos actualizados');updM();filtrar()}
   }catch(e){console.warn('Sheet sync:',e)}
+}
+
+/* LOG DE VENTAS ML (visual, dentro de Facturación) */
+async function loadMLLogs(){
+  const el=$('fac-ml-logs');if(!el)return;
+  el.innerHTML='<div class="ld"><div class="sp"></div></div>';
+  try{
+    const res=await fetch(SYNC+'?accion=obtenerLogs');
+    const data=await res.json();
+    const ventas=(data||[]).filter(row=>String(row[1]||'').includes('Venta'));
+    const parsed=ventas.map(row=>{
+      const col1=String(row[1]||''),col2=String(row[2]||''),txt=col1+' '+col2;
+      const cuentaMatch=col1.match(/Cuenta\s*(\d)/i);
+      const ordenMatch=txt.match(/Orden:\s*(\d+)/i);
+      const cantMatch=txt.match(/Cant:\s*(\d+)/i);
+      const mlaMatch=txt.match(/MLA:\s*(MLA\d+)/i);
+      const artMatch=txt.match(/Cant:\s*\d+\s*\|\s*(.+?)\s*\|\s*OK/i);
+      const ts=row[0]?new Date(row[0]):null;
+      return{
+        ts,orden:ordenMatch?ordenMatch[1]:'',cuenta:cuentaMatch?cuentaMatch[1]:'',
+        cant:cantMatch?cantMatch[1]:'1',mla:mlaMatch?mlaMatch[1]:'',
+        articulo:artMatch?artMatch[1].trim():'Venta ML'
+      };
+    }).filter(v=>v.ts).sort((a,b)=>b.ts-a.ts).slice(0,50);
+    el.innerHTML=parsed.length?parsed.map(v=>{
+      const nombre=ML_CUENTAS[v.cuenta]||('Cuenta '+v.cuenta);
+      return'<div class="pr" style="cursor:default"><div class="pi">🛒</div><div style="flex:1;min-width:0">'
+        +'<div class="pn">'+v.articulo+'</div>'
+        +'<div class="pm">'+nombre+' · '+v.ts.toLocaleDateString('es-AR')+' '+v.ts.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+' · Orden: '+v.orden+(v.mla?' · '+v.mla:'')+'</div>'
+        +'</div><div class="pq ok">−'+v.cant+' u.</div></div>';
+    }).join(''):'<div class="emp">Sin ventas en el log</div>';
+  }catch(e){el.innerHTML='<div class="emp">Error al leer el log: '+e.message+'</div>'}
 }
 
 /* SYNC LOGS - SILENT (background auto-sync) */
