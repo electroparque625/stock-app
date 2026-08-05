@@ -200,9 +200,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
 <div class="stit" style="margin-top:14px">💰 Facturación real MercadoLibre</div>
 <div class="fs admin-only" style="display:none"><div class="fst">Subir reporte de MercadoLibre</div>
-<div class="fr"><div class="f"><label>Cuenta</label><select id="fac-upload-cuenta"><option value="ivan">Ivan (Cuenta 1)</option><option value="gustavo">Gustavo (Cuenta 2)</option><option value="mauro">Mauro (Cuenta 3)</option></select></div><div class="f"><label>Archivo Excel</label><input type="file" id="fac-upload-file" accept=".xlsx,.xls" style="padding:6px"/></div></div>
+<div class="fr"><div class="f"><label>Cuenta</label><select id="fac-upload-cuenta"></select></div><div class="f"><label>Archivo Excel</label><input type="file" id="fac-upload-file" accept=".xlsx,.xls" style="padding:6px"/></div></div>
 <button class="b bp" onclick="uploadMLReport()" style="margin-top:4px">📊 Procesar reporte</button>
 <div id="fac-upload-status" style="font-size:11px;color:var(--tx3);margin-top:6px"></div>
+<div class="stit" style="margin-top:14px">Cuentas de MercadoLibre</div>
+<div id="ml-cuentas-list" style="margin-bottom:8px"></div>
+<div class="fr"><div class="f"><label>Nombre</label><input type="text" id="ml-cuenta-nombre" placeholder="Ej: Franco"/></div><div class="f"><label>N° de cuenta</label><input type="number" id="ml-cuenta-numero" min="1" placeholder="Ej: 3"/></div></div>
+<button class="b bs" onclick="agregarMlCuenta()" style="margin-top:4px">➕ Agregar cuenta</button>
 </div>
 <div class="dg" id="fac-ml-kpi"></div>
 <div id="fac-ml-detail"></div>
@@ -544,7 +548,43 @@ const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
 function canSeePrices(){return ses?.rol==='superadmin'||ses?.rol==='admin'}
-const ML_CUENTAS={'1':'Ivan','2':'Gustavo','3':'Mauro'};
+let ML_CUENTAS={},ML_CUENTAS_SLUG={};
+async function loadMlCuentas(){
+  const{data}=await db.from('ml_cuentas').select('*').order('orden');
+  ML_CUENTAS={};ML_CUENTAS_SLUG={};
+  (data||[]).forEach(c=>{ML_CUENTAS[String(c.numero)]=c.nombre;ML_CUENTAS_SLUG[c.id]=c});
+  renderMlCuentasUI();
+}
+function ctaLabel(cta){const c=ML_CUENTAS_SLUG[cta];return c?c.nombre+' (Cuenta '+c.numero+')':cta}
+const ML_CUENTA_COLORES=['#3498db','#e67e22','#9b59b6','#2ecc71','#e74c3c','#1abc9c','#f39c12'];
+function renderMlCuentasUI(){
+  const sel=$('fac-upload-cuenta');if(sel)sel.innerHTML=Object.values(ML_CUENTAS_SLUG).map(c=>'<option value="'+c.id+'">'+c.nombre+' (Cuenta '+c.numero+')</option>').join('');
+  const list=$('ml-cuentas-list');if(!list)return;
+  const cuentas=Object.values(ML_CUENTAS_SLUG);
+  list.innerHTML=cuentas.length?cuentas.map(c=>'<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg);border-radius:var(--rs);margin-bottom:4px;font-size:12px"><span style="flex:1">'+c.nombre+' (Cuenta '+c.numero+')</span><button onclick="borrarMlCuenta(\''+c.id+'\')" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:14px">🗑</button></div>').join(''):'<div style="font-size:11px;color:var(--tx3)">Sin cuentas cargadas</div>';
+}
+async function agregarMlCuenta(){
+  const nombre=$('ml-cuenta-nombre').value.trim();
+  const numero=+$('ml-cuenta-numero').value;
+  if(!nombre||!numero){toast('Completá nombre y número de cuenta');return}
+  const id=nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'');
+  if(!id){toast('Nombre inválido');return}
+  const color=ML_CUENTA_COLORES[Object.keys(ML_CUENTAS_SLUG).length%ML_CUENTA_COLORES.length];
+  const{error}=await db.from('ml_cuentas').insert({id,numero,nombre,color,orden:Object.keys(ML_CUENTAS_SLUG).length+1});
+  if(error){toast('Error: '+error.message);return}
+  $('ml-cuenta-nombre').value='';$('ml-cuenta-numero').value='';
+  toast('Cuenta agregada');
+  loadMlCuentas();
+}
+async function borrarMlCuenta(id){
+  const c=ML_CUENTAS_SLUG[id];if(!c)return;
+  if(!confirm('¿Borrar la cuenta "'+c.nombre+'" por completo? Se elimina también toda su facturación de MercadoLibre ya cargada. No se puede deshacer.'))return;
+  await db.from('facturacion_ml').delete().eq('cuenta',id);
+  await db.from('ml_cuentas').delete().eq('id',id);
+  toast('Cuenta "'+c.nombre+'" eliminada');
+  loadMlCuentas();
+  if($('s-fac').classList.contains('a'))rFac();
+}
 const SA={usuario:'electroparque',nombre:'Electro Parque',rol:'superadmin'};
 function H(s){let h=0;for(let i=0;i<s.length;i++)h=Math.imul(31,h)+s.charCodeAt(i)|0;return h.toString(36)}
 const SA_H=H('Pipo3110$');let ses=null,ALL=[],cur=null,cQty=1,filt='todos',rend=[],selCanal='mostrador';
@@ -553,7 +593,7 @@ function clearSes(){ses=null;try{localStorage.removeItem('ep4')}catch(e){}}
 
 async function doLogin(){const u=$('l-u').value.trim(),p=$('l-p').value,b=$('l-b'),e=$('l-e');if(!u||!p){e.textContent='Completá ambos campos';e.classList.add('show');return}b.disabled=true;b.textContent='Verificando...';e.classList.remove('show');try{if(u===SA.usuario){if(H(p)!==SA_H)throw 1;b.disabled=false;b.textContent='Ingresar';startApp({...SA});return}const{data,error}=await db.from('usuarios').select('*').eq('usuario',u).eq('activo',true).single();if(error||!data||data.pass_hash!==H(p))throw 1;b.disabled=false;b.textContent='Ingresar';if(data.primer_login){ses=data;$('scr-login').style.display='none';$('scr-cp').style.display='flex'}else startApp({usuario:data.usuario,nombre:data.nombre,rol:data.rol})}catch(x){e.textContent='Credenciales incorrectas';e.classList.add('show');b.disabled=false;b.textContent='Ingresar'}}
 async function doCP(){const a=$('np1').value,b=$('np2').value,e=$('cp-e');if(a.length<4){e.textContent='Mínimo 4';e.classList.add('show');return}if(a!==b){e.textContent='No coinciden';e.classList.add('show');return}await db.from('usuarios').update({pass_hash:H(a),primer_login:false}).eq('usuario',ses.usuario);$('scr-cp').style.display='none';startApp({usuario:ses.usuario,nombre:ses.nombre,rol:ses.rol||'usuario'})}
-function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.owner-only').forEach(el=>el.style.display=String(u.usuario||'').toLowerCase()==='electroparque'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');loadData();updateTaskBadge();const scanParam=new URLSearchParams(location.search).get('scan');if(scanParam){setTimeout(()=>{go('scan');$('scq').value=scanParam;doScan();history.replaceState(null,'',location.pathname+location.hash)},600)}else if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)};setTimeout(()=>syncSheetToSupabase(),8000);setInterval(()=>syncSheetToSupabase(),120000)}
+function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.owner-only').forEach(el=>el.style.display=String(u.usuario||'').toLowerCase()==='electroparque'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');loadData();loadMlCuentas();updateTaskBadge();const scanParam=new URLSearchParams(location.search).get('scan');if(scanParam){setTimeout(()=>{go('scan');$('scq').value=scanParam;doScan();history.replaceState(null,'',location.pathname+location.hash)},600)}else if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)};setTimeout(()=>syncSheetToSupabase(),8000);setInterval(()=>syncSheetToSupabase(),120000)}
 function doLogout(){if(!confirm('¿Cerrar sesión?'))return;clearSes();$('app').style.display='none';$('scr-login').style.display='flex';$('l-u').value='';$('l-p').value='';$('l-e').classList.remove('show')}
 
 async function loadData(){const t0=performance.now();try{let a=[],p=0;while(true){const{data,error}=await db.from('stock').select('*').order('id',{ascending:true}).range(p*1000,p*1000+999);if(error)throw error;if(!data||!data.length)break;a=a.concat(data);if(data.length<1000)break;p++}ALL=a;updM();filtrar();fillL();$('t-sub').textContent=ALL.length+' productos · '+Math.round(performance.now()-t0)+'ms'}catch(e){$('pl').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
@@ -695,7 +735,7 @@ async function rFac(){
     const totalU=Object.values(canales).reduce((s,c)=>s+c.units,0);
     const totalM=Object.values(canales).reduce((s,c)=>s+c.monto,0);
     const totalV=Object.values(canales).reduce((s,c)=>s+c.cnt,0);
-    const mlTotal=(canales.ml_ivan?.units||0)+(canales.ml_gustavo?.units||0)+(canales.ml_mauro?.units||0)+(canales.mercadolibre?.units||0);
+    const mlTotal=Object.entries(canales).filter(([k])=>k.startsWith('ml_')||k==='mercadolibre').reduce((s,[,v])=>s+v.units,0);
     $('fac-kpi').innerHTML='<div class="dc"><div class="dl">Ventas (30d)</div><div class="dv">'+totalV+'</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv">'+totalU+'</div></div><div class="dc"><div class="dl">Facturado</div><div class="dv ok">$'+totalM.toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">ML total</div><div class="dv">'+mlTotal+' u.</div></div>';
     // PIE 1: General - will update after ML reports load
     const g=[{name:'Tienda Nube',val:canales.tiendanube?.units||0,color:'#2ecc71',key:'tiendanube'},{name:'Mostrador',val:canales.mostrador?.units||0,color:'var(--pri)',key:'mostrador'}].filter(d=>d.val>0);
@@ -703,7 +743,8 @@ async function rFac(){
     // PIE 2: ML - will be filled by loadMLBilling
     $('fac-pie-ml-svg').innerHTML='<div class="ld"><div class="sp"></div></div>';
     // Detail cards
-    const chMap={ml_ivan:{ico:'🛒',name:'Ivan (Cuenta 1)'},ml_gustavo:{ico:'🛒',name:'Gustavo (Cuenta 2)'},ml_mauro:{ico:'🛒',name:'Mauro (Cuenta 3)'},mercadolibre:{ico:'🛒',name:'MercadoLibre'},tiendanube:{ico:'🏪',name:'Tienda Nube'},mostrador:{ico:'🏬',name:'Mostrador'}};
+    const chMap={mercadolibre:{ico:'🛒',name:'MercadoLibre'},tiendanube:{ico:'🏪',name:'Tienda Nube'},mostrador:{ico:'🏬',name:'Mostrador'}};
+    Object.values(ML_CUENTAS_SLUG).forEach(c=>{chMap['ml_'+c.id]={ico:'🛒',name:c.nombre+' (Cuenta '+c.numero+')'}});
     $('fac-detail').innerHTML='<div class="fac-card">'+Object.entries(canales).map(([k,v])=>{const c=chMap[k]||{ico:'📦',name:k};return'<div class="fac-row" style="cursor:pointer" onclick="showCanalVentas(\''+k+'\')"><div class="fac-ch"><span class="fac-ico">'+c.ico+'</span><div><div class="fac-name">'+c.name+'</div><div style="font-size:11px;color:var(--tx3)">'+v.cnt+' ventas · '+v.units+' u.</div></div></div><div class="fac-val" style="color:var(--ok)">$'+v.monto.toLocaleString('es-AR')+'</div></div>'}).join('')+'</div>';
     // Default: show all
     window._facVentas=ventas;window._chMap=chMap;
@@ -768,11 +809,10 @@ async function loadMLBilling(){
       +'<div class="dc"><div class="dl">Deducciones ML</div><div class="dv e">-$'+Math.round(totalDed).toLocaleString('es-AR')+'</div></div>'
       +'<div class="dc"><div class="dl">Neto en mano</div><div class="dv ok">$'+Math.round(totalNeto).toLocaleString('es-AR')+'</div></div>'
       +'<div class="dc"><div class="dl">Ventas</div><div class="dv">'+totalVentas+'</div></div>';
-    const ctaNames={ivan:'Ivan (Cuenta 1)',gustavo:'Gustavo (Cuenta 2)',mauro:'Mauro (Cuenta 3)'};
     $('fac-ml-detail').innerHTML='<div class="fac-card">'+Object.entries(byCuenta).map(([cta,d])=>{
       const pctDed=d.bruto>0?Math.round(d.deducciones/d.bruto*100):0;
       return'<div class="fac-row" style="cursor:pointer" onclick="showMLDetalle(\''+cta+'\')">'
-        +'<div class="fac-ch"><span class="fac-ico">🛒</span><div><div class="fac-name">'+(ctaNames[cta]||cta)+'</div>'
+        +'<div class="fac-ch"><span class="fac-ico">🛒</span><div><div class="fac-name">'+ctaLabel(cta)+'</div>'
         +'<div style="font-size:11px;color:var(--tx3)">'+d.cnt+' ventas · Bruto $'+Math.round(d.bruto).toLocaleString('es-AR')+' · ML se lleva '+pctDed+'%</div></div></div>'
         +'<div style="text-align:right"><div class="fac-val" style="color:var(--ok)">$'+Math.round(d.neto).toLocaleString('es-AR')+'</div>'
         +'<div style="font-size:10px;color:var(--err)">-$'+Math.round(d.deducciones).toLocaleString('es-AR')+'</div></div></div>'
@@ -780,7 +820,7 @@ async function loadMLBilling(){
     window._mlByCuenta=byCuenta;window._mlReportNeto=totalNeto;window._mlReportByCuenta=byCuenta;
     // Render ML PIE CHARTS here (after data is loaded)
     const pieMl=$('fac-pie-ml-svg');
-    const mlPie=Object.entries(byCuenta).map(([k,v])=>{const colors={ivan:'#3498db',gustavo:'#e67e22',mauro:'#9b59b6'};const names={ivan:'Ivan',gustavo:'Gustavo',mauro:'Mauro'};return{name:names[k]||k,val:v.cnt,color:colors[k]||'#999',key:k}}).filter(d=>d.val>0);
+    const mlPie=Object.entries(byCuenta).map(([k,v])=>({name:(ML_CUENTAS_SLUG[k]?.nombre)||k,val:v.cnt,color:(ML_CUENTAS_SLUG[k]?.color)||'#999',key:k})).filter(d=>d.val>0);
     if(pieMl)pieMl.innerHTML=mlPie.length?makePie(mlPie):'<div class="emp">Subí reportes ML</div>';
     // Also update general pie with ML + others by sales count
     const gPie=$('fac-pie-svg');
@@ -797,8 +837,7 @@ async function loadMLBilling(){
 function showMLDetalle(cuenta){
   const data=window._mlByCuenta;if(!data||!data[cuenta])return;
   const items=data[cuenta].items;
-  const ctaNames={ivan:'Ivan (Cuenta 1)',gustavo:'Gustavo (Cuenta 2)',mauro:'Mauro (Cuenta 3)'};
-  $('fac-list-title').textContent='💰 '+(ctaNames[cuenta]||cuenta)+' — Detalle';
+  $('fac-list-title').textContent='💰 '+ctaLabel(cuenta)+' — Detalle';
   $('fac-list').innerHTML=items.map((v,i)=>{
     const dedPct=v.bruto>0?Math.round(v.deducciones/v.bruto*100):0;
     const esFull=(v.entrega||'').toLowerCase().includes('full');
@@ -904,7 +943,8 @@ async function loadMonChart(){
   $('mon-proj').innerHTML=projHtml;
 
   // Sales list
-  const chN={ml_ivan:'🛒 Ivan',ml_gustavo:'🛒 Gustavo',ml_mauro:'🛒 Mauro',mostrador:'🏬 Mostrador',tiendanube:'🏪 TN'};
+  const chN={mostrador:'🏬 Mostrador',tiendanube:'🏪 TN'};
+  Object.values(ML_CUENTAS_SLUG).forEach(c=>{chN['ml_'+c.id]='🛒 '+c.nombre});
   $('mon-sales').innerHTML=ventas.length?ventas.map(v=>{return'<div class="mr"><div class="mt"><div class="ma">'+(v.articulo||'—')+'</div><span class="mg mv">'+(chN[v.canal]||v.canal||'Venta')+'</span></div><div class="mm"><span>📅 '+(v.fecha||'')+' '+(v.hora||'')+'</span><span>−'+(v.cantidad||0)+' u.</span></div></div>'}).join(''):'<div class="emp">Sin ventas de este MLA en el período</div>';
 }
 
@@ -1022,7 +1062,7 @@ async function loadProdHistory(){
   for(const mla of mlas){const{data:byMla}=await db.from('movimientos').select('*').ilike('articulo','%'+mla+'%').order('created_at',{ascending:false}).limit(20);if(byMla)movs=movs.concat(byMla.filter(v=>!movs.find(x=>x.id===v.id)));const{data:byS}=await db.from('movimientos').select('*').eq('sku',mla).order('created_at',{ascending:false}).limit(20);if(byS)movs=movs.concat(byS.filter(v=>!movs.find(x=>x.id===v.id)))}
   movs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   if(!movs.length){el.innerHTML='<div style="font-size:12px;color:var(--tx3)">Sin movimientos</div>';return}
-  el.innerHTML=movs.slice(0,30).map(m=>{const t=(m.tipo||'').toLowerCase();const tc=t.includes('venta')?'mv':t.includes('ingreso')?'mi2':'mj';const tl=t.includes('venta')?'Venta':t.includes('ingreso')?'Ingreso':'Ajuste';const chN={ml_ivan:'🛒I',ml_gustavo:'🛒G',ml_mauro:'🛒M',mostrador:'🏬',tiendanube:'🏪',reparacion:'🔧'};return'<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--brd);font-size:11px"><span class="mg '+tc+'" style="font-size:9px">'+tl+'</span><span style="flex:1">'+m.fecha+' '+(m.hora||'')+' · '+(chN[m.canal]||'')+' '+(m.usuario||'')+'</span><span style="font-weight:600">'+(t.includes('venta')?'−':'+')+m.cantidad+' u.</span></div>'}).join('')}catch(e){el.innerHTML='<div style="font-size:12px;color:var(--err)">Error</div>'}}
+  el.innerHTML=movs.slice(0,30).map(m=>{const t=(m.tipo||'').toLowerCase();const tc=t.includes('venta')?'mv':t.includes('ingreso')?'mi2':'mj';const tl=t.includes('venta')?'Venta':t.includes('ingreso')?'Ingreso':'Ajuste';const chN={mostrador:'🏬',tiendanube:'🏪',reparacion:'🔧'};Object.values(ML_CUENTAS_SLUG).forEach(c=>{chN['ml_'+c.id]='🛒'+c.nombre[0]});return'<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--brd);font-size:11px"><span class="mg '+tc+'" style="font-size:9px">'+tl+'</span><span style="flex:1">'+m.fecha+' '+(m.hora||'')+' · '+(chN[m.canal]||'')+' '+(m.usuario||'')+'</span><span style="font-weight:600">'+(t.includes('venta')?'−':'+')+m.cantidad+' u.</span></div>'}).join('')}catch(e){el.innerHTML='<div style="font-size:12px;color:var(--err)">Error</div>'}}
 /* EMOJI EDITOR */
 async function editEmoji(){if(!cur)return;const emojis=['📦','📺','🎮','🚗','🏍️','📡','🎧','🔌','🔋','🔊','🔧','💡','🖥️','📱','⌨️','🖨️','🎵','📷','🕹️','🧲'];const pick=prompt('Elegí un emoji:\n\n'+emojis.join(' ')+'\n\nO escribí el que quieras:',cur.emoji||ico(cur.articulo));if(!pick)return;await db.from('stock').update({emoji:pick}).eq('id',cur.id);cur.emoji=pick;const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx].emoji=pick;$('d-em').textContent=pick;toast('Emoji actualizado')}
 /* VENTAS 60D AUTO-CALC */
