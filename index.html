@@ -732,10 +732,10 @@ async function uploadMLReport(){
     for(let i=headerRow+1;i<rows.length;i++){
       const r=rows[i];const orden=String(r[0]||'');
       if(!orden.startsWith('200'))continue;
-      const bruto=parseFloat(r[7])||0;const neto=parseFloat(r[18])||0;
-      const mla=String(r[23]||'').trim();
-      const titulo=String(r[24]||'').trim();
-      const comprador=String(r[33]||'').trim();
+      const bruto=parseFloat(r[7])||0;const neto=parseFloat(r[15])||0;
+      const mla=String(r[20]||'').trim();
+      const titulo=String(r[21]||'').trim();
+      const comprador=String(r[31]||'').trim();
       const entrega=String(r[41]||'').trim();
       inserts.push({cuenta,orden,fecha:String(r[1]||''),estado:String(r[2]||''),unidades:parseInt(r[6])||1,bruto,deducciones:bruto-neto,neto,mla,titulo,comprador,entrega});
     }
