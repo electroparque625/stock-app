@@ -399,10 +399,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <!-- PRESUPUESTOS --><div class="sc" id="s-presu">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
 <div class="stit" style="margin:0">Presupuestos</div>
-<button class="b bp" onclick="newPresu()" style="width:auto;padding:8px 16px">+ Nuevo</button>
+<div style="display:flex;gap:6px"><button class="b bs" onclick="go('cuentas')" style="width:auto;padding:8px 12px;font-size:12px">📒 Cuentas Corrientes</button><button class="b bp" onclick="newPresu()" style="width:auto;padding:8px 16px">+ Nuevo</button></div>
 </div>
 <div id="presu-list"><div class="emp">Sin presupuestos</div></div>
 </div>
+
+<!-- CUENTAS CORRIENTES --><div class="sc" id="s-cuentas">
+<button class="bk" onclick="go('presu')">‹ Volver a Presupuestos</button>
+<div class="dg" id="cuentas-kpi"></div>
+<div id="cuentas-list"><div class="emp">Sin clientes con presupuestos facturados</div></div>
+</div>
+
+<!-- DETALLE CUENTA CORRIENTE --><div class="mo" id="cuenta-modal"><div class="ml">
+<div class="mb"></div><div class="mti" id="cuenta-title">Cliente</div>
+<div class="cd" id="cuenta-resumen"></div>
+<div class="stit">Historial de presupuestos facturados</div>
+<div id="cuenta-presus"></div>
+<div class="stit">Pagos registrados</div>
+<div id="cuenta-pagos"></div>
+<div class="fs"><div class="fst">Registrar pago</div>
+<div class="fr"><div class="f"><label>Monto</label><input type="number" id="pago-monto" min="0"/></div><div class="f"><label>Observaciones</label><input type="text" id="pago-obs" placeholder="Opcional"/></div></div>
+<button class="b bo" onclick="registrarPago()" style="margin-top:4px">💰 Registrar pago</button>
+</div>
+<button class="b bs" onclick="$('cuenta-modal').classList.remove('show')" style="margin-top:8px">Cerrar</button>
+</div></div>
 
 <!-- PRESUPUESTO FORM --><div class="sc" id="s-presu-form">
 <button class="bk" onclick="go('presu')">‹ Volver</button>
@@ -639,7 +659,7 @@ function ico(a){a=(a||'').toLowerCase();if(/joystick|gamepad|dualsense|dualshock
 function aB(p){const a=p.estado_alerta||'OK';if(a==='SIN STOCK')return['🔴 SIN STOCK','b-sin'];if(a.includes('CRITICO AVION'))return['🔴 CRÍTICO ✈️','b-crit'];if(a.includes('CRITICO BARCO'))return['🔴 CRÍTICO 🚢','b-crit'];if(a.includes('PRE ALERTA AVION'))return['🟡 PRE-ALERTA ✈️','b-pre'];if(a.includes('PRE ALERTA BARCO'))return['🟡 PRE-ALERTA 🚢','b-pre'];return['🟢 OK','b-ok']}
 function sC(p){if(!p.cantidades)return'e';if(p.stock_minimo&&p.cantidades<p.stock_minimo)return'w';return'o'}
 
-function go(s){if(s==='imp'&&String(ses&&ses.usuario||'').toLowerCase()!=='electroparque'){toast('No tenés acceso a este módulo');return}document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='rep')loadRep();if(s==='presu')loadPresus();if(s==='usr')loadUsr();if(s==='importados')loadImportados();if(s==='imp'){const f=$('imp-frame');if(!f.src)f.src='https://electroparque-bot.onrender.com'}window.location.hash=s}
+function go(s){if(s==='imp'&&String(ses&&ses.usuario||'').toLowerCase()!=='electroparque'){toast('No tenés acceso a este módulo');return}document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='rep')loadRep();if(s==='presu')loadPresus();if(s==='usr')loadUsr();if(s==='importados')loadImportados();if(s==='cuentas')loadCuentasCorrientes();if(s==='imp'){const f=$('imp-frame');if(!f.src)f.src='https://electroparque-bot.onrender.com'}window.location.hash=s}
 window.addEventListener('hashchange',()=>{const h=location.hash.replace('#','');if(h&&$('s-'+h)&&ses)go(h)})
 let invTab='stock';
 function setTab(t,btn){invTab=t;document.querySelectorAll('#inv-tabs .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');filtrar()}
@@ -1363,6 +1383,56 @@ async function savePresu(){
   const obj={cliente_nombre:nombre,cliente_telefono:$('pf-tel').value||null,cliente_email:$('pf-email').value||null,items:JSON.stringify(presuItems),subtotal:sub,descuento:desc,total:Math.max(0,sub-desc),validez_dias:+$('pf-validez').value||15,observaciones:$('pf-obs').value||null,creado_por:ses?.usuario||'admin'};
   if(curPresuId){await db.from('presupuestos').update(obj).eq('id',curPresuId);toast('Presupuesto actualizado')}
   else{const{data}=await db.from('presupuestos').insert(obj).select().single();if(data)curPresuId=data.id;toast('Presupuesto P-'+String(curPresuId).padStart(4,'0')+' guardado')}
+}
+
+/* CUENTAS CORRIENTES */
+let cuentaActual=null;
+async function loadCuentasCorrientes(){
+  const el=$('cuentas-list');el.innerHTML='<div class="ld"><div class="sp"></div></div>';
+  try{
+    const{data:presus}=await db.from('presupuestos').select('*').eq('facturado',true);
+    const{data:pagos}=await db.from('pagos').select('*');
+    const clientes={};
+    (presus||[]).forEach(p=>{
+      const key=(p.cliente_nombre||'—')+'|'+(p.cliente_telefono||'');
+      if(!clientes[key])clientes[key]={nombre:p.cliente_nombre,telefono:p.cliente_telefono,debe:0,pagado:0,presus:[],pagos:[]};
+      clientes[key].debe+=p.total||0;
+      clientes[key].presus.push(p);
+    });
+    (pagos||[]).forEach(pg=>{
+      const key=(pg.cliente_nombre||'—')+'|'+(pg.cliente_telefono||'');
+      if(!clientes[key])clientes[key]={nombre:pg.cliente_nombre,telefono:pg.cliente_telefono,debe:0,pagado:0,presus:[],pagos:[]};
+      clientes[key].pagado+=pg.monto||0;
+      clientes[key].pagos.push(pg);
+    });
+    const list=Object.values(clientes).map(c=>({...c,saldo:c.debe-c.pagado})).sort((a,b)=>b.saldo-a.saldo);
+    window._cuentasData=list;
+    const totalDebe=list.reduce((s,c)=>s+c.debe,0),totalPagado=list.reduce((s,c)=>s+c.pagado,0),totalSaldo=list.reduce((s,c)=>s+c.saldo,0);
+    $('cuentas-kpi').innerHTML='<div class="dc"><div class="dl">Total facturado</div><div class="dv">$'+Math.round(totalDebe).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Total cobrado</div><div class="dv ok">$'+Math.round(totalPagado).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Te deben</div><div class="dv e">$'+Math.round(totalSaldo).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Clientes</div><div class="dv">'+list.length+'</div></div>';
+    el.innerHTML=list.length?list.map((c,i)=>{
+      const badge=c.saldo>0?'<span class="ab b-sin">Debe $'+Math.round(c.saldo).toLocaleString('es-AR')+'</span>':'<span class="ab b-ok">Al día</span>';
+      return'<div class="ar" onclick="showCuentaDetalle('+i+')"><div class="ae">👤</div><div class="ai"><div class="an">'+(c.nombre||'—')+'</div><div class="am">'+(c.telefono||'')+' · Llevó $'+Math.round(c.debe).toLocaleString('es-AR')+' · Pagó $'+Math.round(c.pagado).toLocaleString('es-AR')+'</div></div>'+badge+'</div>';
+    }).join(''):'<div class="emp">Sin clientes con presupuestos facturados</div>';
+  }catch(e){el.innerHTML='<div class="emp">Error: '+e.message+'</div>'}
+}
+function showCuentaDetalle(i){
+  const c=window._cuentasData[i];if(!c)return;
+  cuentaActual=c;
+  $('cuenta-title').textContent=c.nombre||'—';
+  $('cuenta-resumen').innerHTML='<div class="fr"><div><div class="dl">Llevó</div><div style="font-weight:700">$'+Math.round(c.debe).toLocaleString('es-AR')+'</div></div><div><div class="dl">Pagó</div><div style="font-weight:700;color:var(--ok)">$'+Math.round(c.pagado).toLocaleString('es-AR')+'</div></div></div><div style="margin-top:8px"><div class="dl">Saldo</div><div style="font-size:22px;font-weight:800;color:'+(c.saldo>0?'var(--err)':'var(--ok)')+'">$'+Math.round(c.saldo).toLocaleString('es-AR')+'</div></div>';
+  $('cuenta-presus').innerHTML=c.presus.length?c.presus.map(p=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd);font-size:12px"><span>P-'+String(p.id).padStart(4,'0')+' · '+new Date(p.fecha_facturacion||p.created_at).toLocaleDateString('es-AR')+'</span><span style="font-weight:600">$'+Math.round(p.total||0).toLocaleString('es-AR')+'</span></div>').join(''):'<div style="font-size:12px;color:var(--tx3)">Sin presupuestos</div>';
+  $('cuenta-pagos').innerHTML=c.pagos.length?c.pagos.map(pg=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd);font-size:12px"><span>'+new Date(pg.fecha).toLocaleDateString('es-AR')+(pg.observaciones?' · '+pg.observaciones:'')+'</span><span style="font-weight:600;color:var(--ok)">$'+Math.round(pg.monto).toLocaleString('es-AR')+'</span></div>').join(''):'<div style="font-size:12px;color:var(--tx3)">Sin pagos registrados</div>';
+  $('pago-monto').value='';$('pago-obs').value='';
+  $('cuenta-modal').classList.add('show');
+}
+async function registrarPago(){
+  if(!cuentaActual)return;
+  const monto=+$('pago-monto').value;
+  if(!monto||monto<=0){toast('Ingresá un monto válido');return}
+  await db.from('pagos').insert({cliente_nombre:cuentaActual.nombre,cliente_telefono:cuentaActual.telefono,monto,observaciones:$('pago-obs').value||null,creado_por:ses?.nombre||'—'});
+  toast('Pago registrado');
+  $('cuenta-modal').classList.remove('show');
+  loadCuentasCorrientes();
 }
 function printPresu(){
   const nombre=$('pf-nombre').value.trim();if(!nombre||!presuItems.length){toast('Guardá primero');return}
