@@ -181,7 +181,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="fb" onclick="setF('monitorear',this)">⭐ Monitoreados</button><button class="fb" onclick="setF('sinstock',this)">🔴 Sin stock</button>
 <button class="fb" onclick="setF('Joystick',this)">🎮 Joysticks</button><button class="fb" onclick="setF('CarPlay',this)">🚗 CarPlay</button>
 <button class="fb" onclick="setF('Televisor',this)">📺 TV</button><button class="fb" onclick="setF('PAUSADA',this)">⏸ Pausados</button>
-</div></div></div>
+</div>
+<div class="stit" style="margin:10px 0 6px">Filtrar por ubicación / marca</div>
+<div class="fr3">
+<div class="f"><label>Caja</label><select id="f-caja" onchange="filtrar()"><option value="">Todas</option></select></div>
+<div class="f"><label>Estantería</label><select id="f-est" onchange="filtrar()"><option value="">Todas</option></select></div>
+<div class="f"><label>Marca</label><select id="f-marca" onchange="filtrar()"><option value="">Todas</option></select></div>
+</div>
+<button class="b bs" onclick="limpiarFiltrosExtra()" style="margin-top:8px;width:auto;padding:7px 14px;font-size:12px">✕ Limpiar caja/estantería/marca</button>
+</div></div>
 
 <div id="notif-panel" style="display:none;position:fixed;top:50px;right:10px;width:340px;max-width:calc(100vw - 20px);max-height:70vh;overflow-y:auto;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);box-shadow:0 8px 30px rgba(0,0,0,.15);z-index:200;padding:14px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:14px;font-weight:700">🔔 Notificaciones</div><button onclick="$('notif-panel').style.display='none'" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--tx3)">✕</button></div>
@@ -627,7 +635,7 @@ function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-l
 function doLogout(){if(!confirm('¿Cerrar sesión?'))return;clearSes();$('app').style.display='none';$('scr-login').style.display='flex';$('l-u').value='';$('l-p').value='';$('l-e').classList.remove('show')}
 
 async function loadData(){const t0=performance.now();try{let a=[],p=0;while(true){const{data,error}=await db.from('stock').select('*').order('id',{ascending:true}).range(p*1000,p*1000+999);if(error)throw error;if(!data||!data.length)break;a=a.concat(data);if(data.length<1000)break;p++}ALL=a;updM();filtrar();fillL();$('t-sub').textContent=ALL.length+' productos · '+Math.round(performance.now()-t0)+'ms'}catch(e){$('pl').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
-function fillL(){const m=[...new Set(ALL.map(p=>p.marca).filter(Boolean))].sort(),o=[...new Set(ALL.map(p=>p.modelo).filter(Boolean))].sort();$('dlm').innerHTML=m.map(x=>'<option value="'+x+'">').join('');$('dlo').innerHTML=o.map(x=>'<option value="'+x+'">').join('');fillCajaEst();if(!sessionStorage.getItem('alertShown')){showStockAlerts();sessionStorage.setItem('alertShown','1')}updateNotifBadge();calcVentas60d()}
+function fillL(){const m=[...new Set(ALL.map(p=>p.marca).filter(Boolean))].sort(),o=[...new Set(ALL.map(p=>p.modelo).filter(Boolean))].sort();$('dlm').innerHTML=m.map(x=>'<option value="'+x+'">').join('');$('dlo').innerHTML=o.map(x=>'<option value="'+x+'">').join('');fillCajaEst();poblarFiltrosUbicacion();if(!sessionStorage.getItem('alertShown')){showStockAlerts();sessionStorage.setItem('alertShown','1')}updateNotifBadge();calcVentas60d()}
 
 function fillCajaEst(){
   const cajas=[...new Set(ALL.map(p=>p.caja).filter(Boolean))].sort();
@@ -683,7 +691,17 @@ function filtrar(){const q=($('q').value||'').toLowerCase();let l=ALL;
   else if(filt==='monitorear')l=l.filter(p=>p.monitorear);
   else if(filt!=='todos'&&filt!=='sinstock'&&filt!=='PAUSADA')l=l.filter(p=>(p.articulo||'').toLowerCase().includes(filt.toLowerCase()));
   if(q){const words=q.split(/\s+/).filter(w=>w.length>0);l=l.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')+' '+(p.cod_barra||'')+' '+(p.ml_id_1||'')+' '+(p.ml_id_2||'')+' '+(p.ml_id_3||'')+' '+(p.observaciones||'')+' '+p.id).toLowerCase();return words.every(w=>h.includes(w))})}
+  const fCaja=$('f-caja')?.value,fEst=$('f-est')?.value,fMarca=$('f-marca')?.value;
+  if(fCaja)l=l.filter(p=>p.caja===fCaja);
+  if(fEst)l=l.filter(p=>p.estanteria===fEst);
+  if(fMarca)l=l.filter(p=>p.marca===fMarca);
   rList(l)}
+function limpiarFiltrosExtra(){$('f-caja').value='';$('f-est').value='';$('f-marca').value='';filtrar()}
+function poblarFiltrosUbicacion(){
+  const opts=(campo)=>[...new Set(ALL.map(p=>p[campo]).filter(v=>v&&String(v).trim()))].sort((a,b)=>String(a).localeCompare(String(b),'es'));
+  const fill=(id,campo)=>{const sel=$(id);if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">Todas</option>'+opts(campo).map(v=>'<option value="'+String(v).replace(/"/g,'&quot;')+'">'+v+'</option>').join('');sel.value=cur}
+  fill('f-caja','caja');fill('f-est','estanteria');fill('f-marca','marca');
+}
 function rList(l){
   rend=l;const el=$('pl');
   if(!l.length){el.innerHTML='<div class="emp">Sin resultados en esta pestaña</div>';return}
