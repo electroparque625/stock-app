@@ -428,8 +428,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- HISTORICO FACTURACION --><div class="mo" id="historico-modal"><div class="ml">
 <div class="mb"></div><div class="mti">📊 Histórico mensual</div>
-<div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Se va guardando solo, mes a mes, a medida que cargás facturación (ML, mostrador/Tienda Nube y reparaciones). No es el crudo de MercadoLibre, son los totales ya calculados.</div>
+<div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Se va guardando solo, mes a mes, a medida que cargás facturación (ML, mostrador/Tienda Nube y reparaciones). No es el crudo de MercadoLibre, son los totales ya calculados — tocá un mes para ver el desglose.</div>
 <div id="historico-list"><div class="emp">Sin datos históricos todavía</div></div>
+<div id="historico-detail" style="display:none"></div>
 <button class="b bs" onclick="$('historico-modal').classList.remove('show')" style="margin-top:8px">Cerrar</button>
 </div></div>
 
@@ -810,6 +811,7 @@ async function rFac(){
     const repCanal=canales.reparacion||{cnt:0,units:0,monto:0};
     window._otrosSinRepMonto=totalM-repCanal.monto;window._otrosSinRepVentas=totalV-repCanal.cnt;window._otrosSinRepUnidades=totalU-repCanal.units;
     window._repMonto=repCanal.monto;window._repCnt=repCanal.cnt;
+    window._canalesDetalle=canales;
     showCanalVentas('all');
     loadRepBilling();
     await loadMLBilling();
@@ -828,20 +830,54 @@ async function snapshotHistoricoMes(){
     const otrosM=window._otrosSinRepMonto||0,otrosV=window._otrosSinRepVentas||0,otrosU=window._otrosSinRepUnidades||0;
     const repM=window._repMonto||0,repC=window._repCnt||0;
     const total=mlN+otrosM+repM;
-    await db.from('facturacion_mensual').upsert({mes,ml_bruto:mlB,ml_deducciones:mlD,ml_neto:mlN,ml_ventas:mlV,otros_monto:otrosM,otros_ventas:otrosV,otros_unidades:otrosU,reparaciones_monto:repM,reparaciones_cnt:repC,total,updated_at:new Date().toISOString()},{onConflict:'mes'});
+    const porCuenta={};Object.entries(byCuenta).forEach(([k,v])=>{porCuenta[k]={bruto:v.bruto||0,deducciones:v.deducciones||0,neto:v.neto||0,cnt:v.cnt||0}});
+    const canalesDet={};Object.entries(window._canalesDetalle||{}).forEach(([k,v])=>{canalesDet[k]={cnt:v.cnt||0,units:v.units||0,monto:v.monto||0}});
+    await db.from('facturacion_mensual').upsert({mes,ml_bruto:mlB,ml_deducciones:mlD,ml_neto:mlN,ml_ventas:mlV,otros_monto:otrosM,otros_ventas:otrosV,otros_unidades:otrosU,reparaciones_monto:repM,reparaciones_cnt:repC,total,ml_por_cuenta:porCuenta,canales_detalle:canalesDet,updated_at:new Date().toISOString()},{onConflict:'mes'});
   }catch(e){console.warn('snapshot histórico falló',e)}
 }
 
 async function loadHistorico(){
   $('historico-modal').classList.add('show');
+  $('historico-detail').style.display='none';
+  $('historico-list').style.display='block';
   $('historico-list').innerHTML='<div class="ld"><div class="sp"></div></div>';
   const{data}=await db.from('facturacion_mensual').select('*').order('mes',{ascending:false});
+  window._historicoData=data||[];
   const list=data||[];
   $('historico-list').innerHTML=list.length?list.map(m=>{
     const[y,mo]=m.mes.split('-');
     const nombreMes=new Date(+y,+mo-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
-    return'<div class="fac-row"><div class="fac-ch"><span class="fac-ico">📅</span><div><div class="fac-name" style="text-transform:capitalize">'+nombreMes+'</div><div style="font-size:11px;color:var(--tx3)">ML: $'+Math.round(m.ml_neto).toLocaleString('es-AR')+' · Otros: $'+Math.round(m.otros_monto).toLocaleString('es-AR')+' · Reparaciones: $'+Math.round(m.reparaciones_monto).toLocaleString('es-AR')+'</div></div></div><div class="fac-val" style="color:var(--ok)">$'+Math.round(m.total).toLocaleString('es-AR')+'</div></div>';
+    return'<div class="fac-row" style="cursor:pointer" onclick="showHistoricoMes(\''+m.mes+'\')"><div class="fac-ch"><span class="fac-ico">📅</span><div><div class="fac-name" style="text-transform:capitalize">'+nombreMes+'</div><div style="font-size:11px;color:var(--tx3)">ML: $'+Math.round(m.ml_neto).toLocaleString('es-AR')+' · Otros: $'+Math.round(m.otros_monto).toLocaleString('es-AR')+' · Reparaciones: $'+Math.round(m.reparaciones_monto).toLocaleString('es-AR')+'</div></div></div><div class="fac-val" style="color:var(--ok)">$'+Math.round(m.total).toLocaleString('es-AR')+'</div></div>';
   }).join(''):'<div class="emp">Sin datos históricos todavía — se va guardando a medida que cargues facturación</div>';
+}
+
+function showHistoricoMes(mes){
+  const m=(window._historicoData||[]).find(x=>x.mes===mes);if(!m)return;
+  const[y,mo]=m.mes.split('-');
+  const nombreMes=new Date(+y,+mo-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+  const porCuenta=m.ml_por_cuenta||{};
+  const canales=m.canales_detalle||{};
+  const chNames={mostrador:'🏬 Mostrador',tiendanube:'🏪 Tienda Nube',reparacion:'🔧 Reparaciones',mercadolibre:'🛒 MercadoLibre'};
+  let html='<button class="b bs" onclick="$(\'historico-detail\').style.display=\'none\';$(\'historico-list\').style.display=\'block\'" style="margin-bottom:10px;width:auto;padding:8px 12px;font-size:12px">‹ Volver</button>';
+  html+='<div style="font-size:15px;font-weight:700;text-transform:capitalize;margin-bottom:10px">'+nombreMes+'</div>';
+  html+='<div class="dg" style="margin-bottom:10px"><div class="dc"><div class="dl">Total del mes</div><div class="dv ok">$'+Math.round(m.total).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">ML neto</div><div class="dv">$'+Math.round(m.ml_neto).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Otros</div><div class="dv">$'+Math.round(m.otros_monto).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Reparaciones</div><div class="dv">$'+Math.round(m.reparaciones_monto).toLocaleString('es-AR')+'</div></div></div>';
+  const ctas=Object.keys(porCuenta);
+  if(ctas.length){
+    html+='<div class="stit">MercadoLibre por cuenta</div><div class="fac-card">'+ctas.map(cta=>{
+      const d=porCuenta[cta];const pctDed=d.bruto>0?Math.round(d.deducciones/d.bruto*100):0;
+      return'<div class="fac-row"><div class="fac-ch"><span class="fac-ico">🛒</span><div><div class="fac-name">'+ctaLabel(cta)+'</div><div style="font-size:11px;color:var(--tx3)">'+d.cnt+' ventas · Bruto $'+Math.round(d.bruto).toLocaleString('es-AR')+' · ML se lleva '+pctDed+'%</div></div></div><div class="fac-val" style="color:var(--ok)">$'+Math.round(d.neto).toLocaleString('es-AR')+'</div></div>';
+    }).join('')+'</div>';
+  }
+  const chKeys=Object.keys(canales).filter(k=>!k.startsWith('ml_')&&k!=='mercadolibre');
+  if(chKeys.length){
+    html+='<div class="stit">Detalle por canal</div><div class="fac-card">'+chKeys.map(k=>{
+      const v=canales[k];const name=chNames[k]||k;
+      return'<div class="fac-row"><div class="fac-ch"><span class="fac-ico">📦</span><div><div class="fac-name">'+name+'</div><div style="font-size:11px;color:var(--tx3)">'+v.cnt+' ventas · '+v.units+' u.</div></div></div><div class="fac-val" style="color:var(--ok)">$'+Math.round(v.monto).toLocaleString('es-AR')+'</div></div>';
+    }).join('')+'</div>';
+  }
+  $('historico-detail').innerHTML=html;
+  $('historico-list').style.display='none';
+  $('historico-detail').style.display='block';
 }
 
 async function loadRepBilling(){
