@@ -53,6 +53,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .sb{position:fixed;top:0;left:210px;right:0;z-index:19;padding:10px 24px;border-bottom:1px solid var(--brd);background:var(--card);box-sizing:border-box}
 .ct{margin-left:210px;padding:70px 24px 24px}
 .dg{grid-template-columns:repeat(4,1fr)!important}
+#historico-detail .dg{grid-template-columns:repeat(2,1fr)!important}
 .mo{align-items:center}.ml{max-width:580px;border-radius:16px;margin-bottom:0}
 .imp-frame{height:calc(100vh - 94px)}
 .store-btn{background:var(--pri-l);border-radius:var(--rs);padding:10px 12px;width:100%}
@@ -136,7 +137,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .fac-ch{display:flex;align-items:center;gap:8px}.fac-ico{font-size:18px}.fac-name{font-size:13px;font-weight:600}
 .fac-val{font-size:15px;font-weight:700}
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:none;align-items:flex-end;justify-content:center}.mo.show{display:flex}
-.ml{background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:18px 16px 30px}
+.ml{background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;overflow-x:hidden;padding:18px 16px 30px;box-sizing:border-box}
 .mb{width:36px;height:4px;background:var(--brd);border-radius:2px;margin:0 auto 14px}.mti{font-size:15px;font-weight:700;margin-bottom:14px}
 .es2{background:var(--bg);border-radius:var(--rad);padding:12px;margin-bottom:10px}.es2t{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
 .macts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
@@ -808,10 +809,6 @@ async function rFac(){
     // Default: show all
     window._facVentas=ventas;window._chMap=chMap;
     window._otrosVentas=totalV;window._otrosVentasCount=totalV;window._otrosUnits=totalU;window._otrosFac=totalM;
-    const repCanal=canales.reparacion||{cnt:0,units:0,monto:0};
-    window._otrosSinRepMonto=totalM-repCanal.monto;window._otrosSinRepVentas=totalV-repCanal.cnt;window._otrosSinRepUnidades=totalU-repCanal.units;
-    window._repMonto=repCanal.monto;window._repCnt=repCanal.cnt;
-    window._canalesDetalle=canales;
     showCanalVentas('all');
     loadRepBilling();
     await loadMLBilling();
@@ -821,18 +818,35 @@ async function rFac(){
 
 async function snapshotHistoricoMes(){
   try{
-    const mes=new Date().toISOString().slice(0,7);
+    const now=new Date();
+    const mes=now.toISOString().slice(0,7);
+    const inicioMes=new Date(now.getFullYear(),now.getMonth(),1).toISOString();
+
+    // ML: se toma lo que esté cargado ahora en facturacion_ml (no hay una fecha
+    // confiable/uniforme entre cuentas como para agrupar por mes calendario).
     const byCuenta=window._mlByCuenta||{};
     const mlB=Object.values(byCuenta).reduce((s,c)=>s+(c.bruto||0),0);
     const mlD=Object.values(byCuenta).reduce((s,c)=>s+(c.deducciones||0),0);
     const mlN=window._mlReportNeto||0;
     const mlV=Object.values(byCuenta).reduce((s,c)=>s+(c.cnt||0),0);
-    const otrosM=window._otrosSinRepMonto||0,otrosV=window._otrosSinRepVentas||0,otrosU=window._otrosSinRepUnidades||0;
-    const repM=window._repMonto||0,repC=window._repCnt||0;
-    const total=mlN+otrosM+repM;
     const porCuenta={};Object.entries(byCuenta).forEach(([k,v])=>{porCuenta[k]={bruto:v.bruto||0,deducciones:v.deducciones||0,neto:v.neto||0,cnt:v.cnt||0}});
-    const canalesDet={};Object.entries(window._canalesDetalle||{}).forEach(([k,v])=>{canalesDet[k]={cnt:v.cnt||0,units:v.units||0,monto:v.monto||0}});
-    await db.from('facturacion_mensual').upsert({mes,ml_bruto:mlB,ml_deducciones:mlD,ml_neto:mlN,ml_ventas:mlV,otros_monto:otrosM,otros_ventas:otrosV,otros_unidades:otrosU,reparaciones_monto:repM,reparaciones_cnt:repC,total,ml_por_cuenta:porCuenta,canales_detalle:canalesDet,updated_at:new Date().toISOString()},{onConflict:'mes'});
+
+    // Mostrador/Tienda Nube/Reparaciones: mes calendario real, desde movimientos.
+    const{data:movs}=await db.from('movimientos').select('canal,cantidad,monto').eq('tipo','venta').gte('created_at',inicioMes);
+    const ventasMes=(movs||[]).filter(v=>!(v.canal||'').startsWith('ml_')&&v.canal!=='mercadolibre');
+    const canalesDet={};
+    ventasMes.forEach(v=>{const ch=v.canal||'mostrador';if(!canalesDet[ch])canalesDet[ch]={cnt:0,units:0,monto:0};canalesDet[ch].cnt++;canalesDet[ch].units+=v.cantidad||0;canalesDet[ch].monto+=v.monto||0});
+    const repCanal=canalesDet.reparacion||{cnt:0,units:0,monto:0};
+    const otrosEntries=Object.entries(canalesDet).filter(([k])=>k!=='reparacion');
+    const otrosM=otrosEntries.reduce((s,[,v])=>s+v.monto,0),otrosV=otrosEntries.reduce((s,[,v])=>s+v.cnt,0),otrosU=otrosEntries.reduce((s,[,v])=>s+v.units,0);
+
+    // Presupuestos/Cuenta Corriente: se cuenta lo efectivamente COBRADO este mes
+    // (pagos registrados), no el total facturado, porque se cobra de a partes.
+    const{data:pagosMes}=await db.from('pagos').select('monto').gte('fecha',inicioMes);
+    const presuM=(pagosMes||[]).reduce((s,p)=>s+(+p.monto||0),0),presuC=(pagosMes||[]).length;
+
+    const total=mlN+otrosM+repCanal.monto+presuM;
+    await db.from('facturacion_mensual').upsert({mes,ml_bruto:mlB,ml_deducciones:mlD,ml_neto:mlN,ml_ventas:mlV,otros_monto:otrosM,otros_ventas:otrosV,otros_unidades:otrosU,reparaciones_monto:repCanal.monto,reparaciones_cnt:repCanal.cnt,presupuestos_monto:presuM,presupuestos_cnt:presuC,total,ml_por_cuenta:porCuenta,canales_detalle:canalesDet,updated_at:new Date().toISOString()},{onConflict:'mes'});
   }catch(e){console.warn('snapshot histórico falló',e)}
 }
 
@@ -847,7 +861,7 @@ async function loadHistorico(){
   $('historico-list').innerHTML=list.length?list.map(m=>{
     const[y,mo]=m.mes.split('-');
     const nombreMes=new Date(+y,+mo-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
-    return'<div class="fac-row" style="cursor:pointer" onclick="showHistoricoMes(\''+m.mes+'\')"><div class="fac-ch"><span class="fac-ico">📅</span><div><div class="fac-name" style="text-transform:capitalize">'+nombreMes+'</div><div style="font-size:11px;color:var(--tx3)">ML: $'+Math.round(m.ml_neto).toLocaleString('es-AR')+' · Otros: $'+Math.round(m.otros_monto).toLocaleString('es-AR')+' · Reparaciones: $'+Math.round(m.reparaciones_monto).toLocaleString('es-AR')+'</div></div></div><div class="fac-val" style="color:var(--ok)">$'+Math.round(m.total).toLocaleString('es-AR')+'</div></div>';
+    return'<div class="fac-row" style="cursor:pointer" onclick="showHistoricoMes(\''+m.mes+'\')"><div class="fac-ch"><span class="fac-ico">📅</span><div><div class="fac-name" style="text-transform:capitalize">'+nombreMes+'</div><div style="font-size:11px;color:var(--tx3)">ML: $'+Math.round(m.ml_neto).toLocaleString('es-AR')+' · Otros: $'+Math.round(m.otros_monto).toLocaleString('es-AR')+' · Rep: $'+Math.round(m.reparaciones_monto).toLocaleString('es-AR')+' · Presu: $'+Math.round(m.presupuestos_monto||0).toLocaleString('es-AR')+'</div></div></div><div class="fac-val" style="color:var(--ok)">$'+Math.round(m.total).toLocaleString('es-AR')+'</div></div>';
   }).join(''):'<div class="emp">Sin datos históricos todavía — se va guardando a medida que cargues facturación</div>';
 }
 
@@ -860,7 +874,7 @@ function showHistoricoMes(mes){
   const chNames={mostrador:'🏬 Mostrador',tiendanube:'🏪 Tienda Nube',reparacion:'🔧 Reparaciones',mercadolibre:'🛒 MercadoLibre'};
   let html='<button class="b bs" onclick="$(\'historico-detail\').style.display=\'none\';$(\'historico-list\').style.display=\'block\'" style="margin-bottom:10px;width:auto;padding:8px 12px;font-size:12px">‹ Volver</button>';
   html+='<div style="font-size:15px;font-weight:700;text-transform:capitalize;margin-bottom:10px">'+nombreMes+'</div>';
-  html+='<div class="dg" style="margin-bottom:10px"><div class="dc"><div class="dl">Total del mes</div><div class="dv ok">$'+Math.round(m.total).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">ML neto</div><div class="dv">$'+Math.round(m.ml_neto).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Otros</div><div class="dv">$'+Math.round(m.otros_monto).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Reparaciones</div><div class="dv">$'+Math.round(m.reparaciones_monto).toLocaleString('es-AR')+'</div></div></div>';
+  html+='<div class="dg" style="margin-bottom:10px"><div class="dc"><div class="dl">Total del mes</div><div class="dv ok">$'+Math.round(m.total).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">ML neto</div><div class="dv">$'+Math.round(m.ml_neto).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Mostrador/TN</div><div class="dv">$'+Math.round(m.otros_monto).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Reparaciones</div><div class="dv">$'+Math.round(m.reparaciones_monto).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Presupuestos (cobrado)</div><div class="dv">$'+Math.round(m.presupuestos_monto||0).toLocaleString('es-AR')+'</div></div></div>';
   const ctas=Object.keys(porCuenta);
   if(ctas.length){
     html+='<div class="stit">MercadoLibre por cuenta</div><div class="fac-card">'+ctas.map(cta=>{
@@ -869,11 +883,13 @@ function showHistoricoMes(mes){
     }).join('')+'</div>';
   }
   const chKeys=Object.keys(canales).filter(k=>!k.startsWith('ml_')&&k!=='mercadolibre');
-  if(chKeys.length){
+  if(chKeys.length||m.presupuestos_monto>0){
     html+='<div class="stit">Detalle por canal</div><div class="fac-card">'+chKeys.map(k=>{
       const v=canales[k];const name=chNames[k]||k;
       return'<div class="fac-row"><div class="fac-ch"><span class="fac-ico">📦</span><div><div class="fac-name">'+name+'</div><div style="font-size:11px;color:var(--tx3)">'+v.cnt+' ventas · '+v.units+' u.</div></div></div><div class="fac-val" style="color:var(--ok)">$'+Math.round(v.monto).toLocaleString('es-AR')+'</div></div>';
-    }).join('')+'</div>';
+    }).join('')
+    +(m.presupuestos_monto>0?'<div class="fac-row"><div class="fac-ch"><span class="fac-ico">📒</span><div><div class="fac-name">Presupuestos (cobrado)</div><div style="font-size:11px;color:var(--tx3)">'+(m.presupuestos_cnt||0)+' pagos registrados</div></div></div><div class="fac-val" style="color:var(--ok)">$'+Math.round(m.presupuestos_monto).toLocaleString('es-AR')+'</div></div>':'')
+    +'</div>';
   }
   $('historico-detail').innerHTML=html;
   $('historico-list').style.display='none';
