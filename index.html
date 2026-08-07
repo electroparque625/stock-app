@@ -212,7 +212,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- DASHBOARD (admin) --><div class="sc" id="s-dash"><div class="dg" id="dk"></div><div class="stit">⭐ Nivel de stock — Productos monitoreados</div><div id="d-bars" style="display:flex;align-items:flex-end;gap:6px;min-height:220px;padding:16px 10px 0;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);margin-bottom:14px;overflow-x:auto;position:relative"><div class="emp">Marcá productos con ⭐</div></div><div class="stit">Detalle por producto</div><div id="d-mo"><div class="emp">Marcá productos con ⭐ para verlos acá</div></div></div>
 
-<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div><div id="fac-pie-rep" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Reparaciones (30d)</div><div id="fac-pie-rep-svg"></div><div id="fac-rep-total" style="font-size:11px;color:var(--tx3);margin-top:6px"></div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
+<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div style="text-align:right;margin-bottom:8px"><button class="b bs" onclick="loadHistorico()" style="width:auto;padding:8px 12px;font-size:12px">📊 Histórico mensual</button></div><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div><div id="fac-pie-rep" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Reparaciones (30d)</div><div id="fac-pie-rep-svg"></div><div id="fac-rep-total" style="font-size:11px;color:var(--tx3);margin-top:6px"></div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
 <div class="stit" style="margin-top:14px">💰 Facturación real MercadoLibre</div>
 <div class="fs admin-only" style="display:none"><div class="fst">Subir reporte de MercadoLibre</div>
 <div class="fr"><div class="f"><label>Cuenta</label><select id="fac-upload-cuenta"></select></div><div class="f"><label>Archivo Excel</label><input type="file" id="fac-upload-file" accept=".xlsx,.xls" style="padding:6px"/></div></div>
@@ -425,6 +425,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="dg" id="cuentas-kpi"></div>
 <div id="cuentas-list"><div class="emp">Sin clientes con presupuestos facturados</div></div>
 </div>
+
+<!-- HISTORICO FACTURACION --><div class="mo" id="historico-modal"><div class="ml">
+<div class="mb"></div><div class="mti">📊 Histórico mensual</div>
+<div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Se va guardando solo, mes a mes, a medida que cargás facturación (ML, mostrador/Tienda Nube y reparaciones). No es el crudo de MercadoLibre, son los totales ya calculados.</div>
+<div id="historico-list"><div class="emp">Sin datos históricos todavía</div></div>
+<button class="b bs" onclick="$('historico-modal').classList.remove('show')" style="margin-top:8px">Cerrar</button>
+</div></div>
 
 <!-- DETALLE CUENTA CORRIENTE --><div class="mo" id="cuenta-modal"><div class="ml">
 <div class="mb"></div><div class="mti" id="cuenta-title">Cliente</div>
@@ -800,10 +807,41 @@ async function rFac(){
     // Default: show all
     window._facVentas=ventas;window._chMap=chMap;
     window._otrosVentas=totalV;window._otrosVentasCount=totalV;window._otrosUnits=totalU;window._otrosFac=totalM;
+    const repCanal=canales.reparacion||{cnt:0,units:0,monto:0};
+    window._otrosSinRepMonto=totalM-repCanal.monto;window._otrosSinRepVentas=totalV-repCanal.cnt;window._otrosSinRepUnidades=totalU-repCanal.units;
+    window._repMonto=repCanal.monto;window._repCnt=repCanal.cnt;
     showCanalVentas('all');
-    loadMLBilling();
     loadRepBilling();
+    await loadMLBilling();
+    snapshotHistoricoMes();
   }catch(e){$('fac-detail').innerHTML='<div class="emp">Error: '+e.message+'</div>'}
+}
+
+async function snapshotHistoricoMes(){
+  try{
+    const mes=new Date().toISOString().slice(0,7);
+    const byCuenta=window._mlByCuenta||{};
+    const mlB=Object.values(byCuenta).reduce((s,c)=>s+(c.bruto||0),0);
+    const mlD=Object.values(byCuenta).reduce((s,c)=>s+(c.deducciones||0),0);
+    const mlN=window._mlReportNeto||0;
+    const mlV=Object.values(byCuenta).reduce((s,c)=>s+(c.cnt||0),0);
+    const otrosM=window._otrosSinRepMonto||0,otrosV=window._otrosSinRepVentas||0,otrosU=window._otrosSinRepUnidades||0;
+    const repM=window._repMonto||0,repC=window._repCnt||0;
+    const total=mlN+otrosM+repM;
+    await db.from('facturacion_mensual').upsert({mes,ml_bruto:mlB,ml_deducciones:mlD,ml_neto:mlN,ml_ventas:mlV,otros_monto:otrosM,otros_ventas:otrosV,otros_unidades:otrosU,reparaciones_monto:repM,reparaciones_cnt:repC,total,updated_at:new Date().toISOString()},{onConflict:'mes'});
+  }catch(e){console.warn('snapshot histórico falló',e)}
+}
+
+async function loadHistorico(){
+  $('historico-modal').classList.add('show');
+  $('historico-list').innerHTML='<div class="ld"><div class="sp"></div></div>';
+  const{data}=await db.from('facturacion_mensual').select('*').order('mes',{ascending:false});
+  const list=data||[];
+  $('historico-list').innerHTML=list.length?list.map(m=>{
+    const[y,mo]=m.mes.split('-');
+    const nombreMes=new Date(+y,+mo-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+    return'<div class="fac-row"><div class="fac-ch"><span class="fac-ico">📅</span><div><div class="fac-name" style="text-transform:capitalize">'+nombreMes+'</div><div style="font-size:11px;color:var(--tx3)">ML: $'+Math.round(m.ml_neto).toLocaleString('es-AR')+' · Otros: $'+Math.round(m.otros_monto).toLocaleString('es-AR')+' · Reparaciones: $'+Math.round(m.reparaciones_monto).toLocaleString('es-AR')+'</div></div></div><div class="fac-val" style="color:var(--ok)">$'+Math.round(m.total).toLocaleString('es-AR')+'</div></div>';
+  }).join(''):'<div class="emp">Sin datos históricos todavía — se va guardando a medida que cargues facturación</div>';
 }
 
 async function loadRepBilling(){
