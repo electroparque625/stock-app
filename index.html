@@ -213,7 +213,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- DASHBOARD (admin) --><div class="sc" id="s-dash"><div class="dg" id="dk"></div><div class="stit">⭐ Nivel de stock — Productos monitoreados</div><div id="d-bars" style="display:flex;align-items:flex-end;gap:6px;min-height:220px;padding:16px 10px 0;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);margin-bottom:14px;overflow-x:auto;position:relative"><div class="emp">Marcá productos con ⭐</div></div><div class="stit">Detalle por producto</div><div id="d-mo"><div class="emp">Marcá productos con ⭐ para verlos acá</div></div></div>
 
-<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div style="text-align:right;margin-bottom:8px"><button class="b bs" onclick="loadHistorico()" style="width:auto;padding:8px 12px;font-size:12px">📊 Histórico mensual</button></div><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div><div id="fac-pie-rep" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Reparaciones (30d)</div><div id="fac-pie-rep-svg"></div><div id="fac-rep-total" style="font-size:11px;color:var(--tx3);margin-top:6px"></div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
+<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div style="text-align:right;margin-bottom:8px"><button class="b bs" onclick="loadHistorico()" style="width:auto;padding:8px 12px;font-size:12px">📊 Histórico mensual</button></div><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div><div id="fac-pie-rep" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Reparaciones (30d)</div><div id="fac-pie-rep-svg"></div><div id="fac-rep-total" style="font-size:11px;color:var(--tx3);margin-top:6px"></div></div><div id="fac-pie-presu" style="cursor:pointer;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center" onclick="go('cuentas')"><div class="dl">Presupuestos (30d)</div><div style="font-size:22px;font-weight:800;color:var(--ok);margin-top:30px" id="fac-presu-total">$0</div><div style="font-size:11px;color:var(--tx3);margin-top:6px">cobrado en Cuenta Corriente</div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
 <div class="stit" style="margin-top:14px">💰 Facturación real MercadoLibre</div>
 <div class="fs admin-only" style="display:none"><div class="fst">Subir reporte de MercadoLibre</div>
 <div class="fr"><div class="f"><label>Cuenta</label><select id="fac-upload-cuenta"></select></div><div class="f"><label>Archivo Excel</label><input type="file" id="fac-upload-file" accept=".xlsx,.xls" style="padding:6px"/></div></div>
@@ -789,11 +789,14 @@ async function rFac(){
   try{
     const now=new Date(),d30=new Date(now-30*86400000);
     const{data:movs}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',d30.toISOString()).order('created_at',{ascending:false});
+    const{data:pagos30}=await db.from('pagos').select('monto').gte('fecha',d30.toISOString());
+    const presuMonto=(pagos30||[]).reduce((s,p)=>s+(+p.monto||0),0),presuCnt=(pagos30||[]).length;
+    $('fac-presu-total').textContent='$'+Math.round(presuMonto).toLocaleString('es-AR');
     const ventas=(movs||[]).filter(v=>!(v.canal||'').startsWith('ml_')&&v.canal!=='mercadolibre');
     const canales={};
     ventas.forEach(v=>{const ch=v.canal||'mostrador';if(!canales[ch])canales[ch]={cnt:0,units:0,monto:0};canales[ch].cnt++;canales[ch].units+=v.cantidad||0;canales[ch].monto+=v.monto||0});
     const totalU=Object.values(canales).reduce((s,c)=>s+c.units,0);
-    const totalM=Object.values(canales).reduce((s,c)=>s+c.monto,0);
+    const totalM=Object.values(canales).reduce((s,c)=>s+c.monto,0)+presuMonto;
     const totalV=Object.values(canales).reduce((s,c)=>s+c.cnt,0);
     const mlTotal=Object.entries(canales).filter(([k])=>k.startsWith('ml_')||k==='mercadolibre').reduce((s,[,v])=>s+v.units,0);
     $('fac-kpi').innerHTML='<div class="dc"><div class="dl">Ventas (30d)</div><div class="dv">'+totalV+'</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv">'+totalU+'</div></div><div class="dc"><div class="dl">Facturado</div><div class="dv ok">$'+totalM.toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">ML total</div><div class="dv">'+mlTotal+' u.</div></div>';
@@ -805,7 +808,9 @@ async function rFac(){
     // Detail cards
     const chMap={mercadolibre:{ico:'🛒',name:'MercadoLibre'},tiendanube:{ico:'🏪',name:'Tienda Nube'},mostrador:{ico:'🏬',name:'Mostrador'},reparacion:{ico:'🔧',name:'Reparaciones'}};
     Object.values(ML_CUENTAS_SLUG).forEach(c=>{chMap['ml_'+c.id]={ico:'🛒',name:c.nombre+' (Cuenta '+c.numero+')'}});
-    $('fac-detail').innerHTML='<div class="fac-card">'+Object.entries(canales).map(([k,v])=>{const c=chMap[k]||{ico:'📦',name:k};return'<div class="fac-row" style="cursor:pointer" onclick="showCanalVentas(\''+k+'\')"><div class="fac-ch"><span class="fac-ico">'+c.ico+'</span><div><div class="fac-name">'+c.name+'</div><div style="font-size:11px;color:var(--tx3)">'+v.cnt+' ventas · '+v.units+' u.</div></div></div><div class="fac-val" style="color:var(--ok)">$'+v.monto.toLocaleString('es-AR')+'</div></div>'}).join('')+'</div>';
+    $('fac-detail').innerHTML='<div class="fac-card">'+Object.entries(canales).map(([k,v])=>{const c=chMap[k]||{ico:'📦',name:k};return'<div class="fac-row" style="cursor:pointer" onclick="showCanalVentas(\''+k+'\')"><div class="fac-ch"><span class="fac-ico">'+c.ico+'</span><div><div class="fac-name">'+c.name+'</div><div style="font-size:11px;color:var(--tx3)">'+v.cnt+' ventas · '+v.units+' u.</div></div></div><div class="fac-val" style="color:var(--ok)">$'+v.monto.toLocaleString('es-AR')+'</div></div>'}).join('')
+      +(presuMonto>0?'<div class="fac-row" style="cursor:pointer" onclick="go(\'cuentas\')"><div class="fac-ch"><span class="fac-ico">📒</span><div><div class="fac-name">Presupuestos (cobrado)</div><div style="font-size:11px;color:var(--tx3)">'+presuCnt+' pagos · 30 días</div></div></div><div class="fac-val" style="color:var(--ok)">$'+Math.round(presuMonto).toLocaleString('es-AR')+'</div></div>':'')
+      +'</div>';
     // Default: show all
     window._facVentas=ventas;window._chMap=chMap;
     window._otrosVentas=totalV;window._otrosVentasCount=totalV;window._otrosUnits=totalU;window._otrosFac=totalM;
@@ -995,7 +1000,7 @@ async function loadMLBilling(){
     $('fac-kpi').innerHTML='<div class="dc"><div class="dl">Ventas total</div><div class="dv">'+(totalVentas+otrosV)+'</div></div>'
       +'<div class="dc"><div class="dl">ML ventas</div><div class="dv">'+totalVentas+'</div></div>'
       +'<div class="dc"><div class="dl">Facturado ML (neto)</div><div class="dv ok">$'+Math.round(totalNeto).toLocaleString('es-AR')+'</div></div>'
-      +'<div class="dc"><div class="dl">Mostrador/TN</div><div class="dv">$'+Math.round(otrosFac).toLocaleString('es-AR')+'</div></div>';
+      +'<div class="dc"><div class="dl">Otros ingresos</div><div class="dv">$'+Math.round(otrosFac).toLocaleString('es-AR')+'</div></div>';
   }catch(e){$('fac-ml-kpi').innerHTML='<div class="dc full"><div class="emp">Error: '+e.message+'</div></div>'}
 }
 
