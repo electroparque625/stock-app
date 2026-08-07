@@ -54,6 +54,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ct{margin-left:210px;padding:70px 24px 24px}
 .dg{grid-template-columns:repeat(4,1fr)!important}
 #historico-detail .dg{grid-template-columns:repeat(2,1fr)!important}
+#fac-total-recaudado{grid-template-columns:repeat(2,1fr)!important}
+#fac-total-recaudado .dv{font-size:26px}
 .mo{align-items:center}.ml{max-width:580px;border-radius:16px;margin-bottom:0}
 .imp-frame{height:calc(100vh - 94px)}
 .store-btn{background:var(--pri-l);border-radius:var(--rs);padding:10px 12px;width:100%}
@@ -213,7 +215,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- DASHBOARD (admin) --><div class="sc" id="s-dash"><div class="dg" id="dk"></div><div class="stit">⭐ Nivel de stock — Productos monitoreados</div><div id="d-bars" style="display:flex;align-items:flex-end;gap:6px;min-height:220px;padding:16px 10px 0;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);margin-bottom:14px;overflow-x:auto;position:relative"><div class="emp">Marcá productos con ⭐</div></div><div class="stit">Detalle por producto</div><div id="d-mo"><div class="emp">Marcá productos con ⭐ para verlos acá</div></div></div>
 
-<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div style="text-align:right;margin-bottom:8px"><button class="b bs" onclick="loadHistorico()" style="width:auto;padding:8px 12px;font-size:12px">📊 Histórico mensual</button></div><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div><div id="fac-pie-rep" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Reparaciones (30d)</div><div id="fac-pie-rep-svg"></div><div id="fac-rep-total" style="font-size:11px;color:var(--tx3);margin-top:6px"></div></div><div id="fac-pie-presu" style="cursor:pointer;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center" onclick="go('cuentas')"><div class="dl">Presupuestos (30d)</div><div style="font-size:22px;font-weight:800;color:var(--ok);margin-top:30px" id="fac-presu-total">$0</div><div style="font-size:11px;color:var(--tx3);margin-top:6px">cobrado en Cuenta Corriente</div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
+<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div style="text-align:right;margin-bottom:8px"><button class="b bs" onclick="loadHistorico()" style="width:auto;padding:8px 12px;font-size:12px">📊 Histórico mensual</button></div><div class="dg" id="fac-total-recaudado" style="margin-bottom:10px"><div class="dc"><div class="dl">Total recaudado (bruto)</div><div class="dv">—</div></div><div class="dc"><div class="dl">Total recaudado (neto — en mano)</div><div class="dv ok">—</div></div></div><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div><div id="fac-pie-rep" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Reparaciones (30d)</div><div id="fac-pie-rep-svg"></div><div id="fac-rep-total" style="font-size:11px;color:var(--tx3);margin-top:6px"></div></div><div id="fac-pie-presu" style="cursor:pointer;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center" onclick="go('cuentas')"><div class="dl">Presupuestos (30d)</div><div style="font-size:22px;font-weight:800;color:var(--ok);margin-top:30px" id="fac-presu-total">$0</div><div style="font-size:11px;color:var(--tx3);margin-top:6px">cobrado en Cuenta Corriente</div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
 <div class="stit" style="margin-top:14px">💰 Facturación real MercadoLibre</div>
 <div class="fs admin-only" style="display:none"><div class="fst">Subir reporte de MercadoLibre</div>
 <div class="fr"><div class="f"><label>Cuenta</label><select id="fac-upload-cuenta"></select></div><div class="f"><label>Archivo Excel</label><input type="file" id="fac-upload-file" accept=".xlsx,.xls" style="padding:6px"/></div></div>
@@ -814,9 +816,11 @@ async function rFac(){
     // Default: show all
     window._facVentas=ventas;window._chMap=chMap;
     window._otrosVentas=totalV;window._otrosVentasCount=totalV;window._otrosUnits=totalU;window._otrosFac=totalM;
+    window._otrosPuroMonto=Object.entries(canales).filter(([k])=>k!=='reparacion').reduce((s,[,v])=>s+v.monto,0);
+    window._presuMontoLive=presuMonto;
     showCanalVentas('all');
-    loadRepBilling();
-    await loadMLBilling();
+    await Promise.all([loadRepBilling(),loadMLBilling()]);
+    renderTotalRecaudado();
     snapshotHistoricoMes();
   }catch(e){$('fac-detail').innerHTML='<div class="emp">Error: '+e.message+'</div>'}
 }
@@ -909,10 +913,24 @@ async function loadRepBilling(){
     const list=ots||[];
     const mo=list.reduce((s,o)=>s+(+o.costo_mano_obra||0),0);
     const rep=list.reduce((s,o)=>s+(+o.costo_repuestos||0),0);
+    window._repMO=mo;window._repRepuestos=rep;
     const data=[{name:'Mano de obra',val:mo,color:'var(--ok)',key:'mo'},{name:'Repuestos',val:rep,color:'var(--tx3)',key:'rep'}].filter(d=>d.val>0);
     pie.innerHTML=data.length?makePie(data):'<div class="emp">Sin reparaciones entregadas (30d)</div>';
     $('fac-rep-total').textContent='Generado: $'+Math.round(mo).toLocaleString('es-AR');
   }catch(e){pie.innerHTML='<div class="emp">Error</div>'}
+}
+
+function renderTotalRecaudado(){
+  const mlBruto=Object.values(window._mlByCuenta||{}).reduce((s,c)=>s+(c.bruto||0),0);
+  const mlNeto=window._mlReportNeto||0;
+  const otros=window._otrosPuroMonto||0;
+  const repBruto=(window._repMO||0)+(window._repRepuestos||0);
+  const repNeto=window._repMO||0;
+  const presu=window._presuMontoLive||0;
+  const bruto=mlBruto+otros+repBruto+presu;
+  const neto=mlNeto+otros+repNeto+presu;
+  const el=$('fac-total-recaudado');if(!el)return;
+  el.innerHTML='<div class="dc"><div class="dl">Total recaudado (bruto)</div><div class="dv">$'+Math.round(bruto).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Total recaudado (neto — en mano)</div><div class="dv ok">$'+Math.round(neto).toLocaleString('es-AR')+'</div></div>';
 }
 
 async function uploadMLReport(){
