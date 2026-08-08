@@ -805,12 +805,12 @@ async function rFac(){
     const mlTotal=Object.entries(canales).filter(([k])=>k.startsWith('ml_')||k==='mercadolibre').reduce((s,[,v])=>s+v.units,0);
     $('fac-kpi').innerHTML='<div class="dc"><div class="dl">Ventas (30d)</div><div class="dv">'+totalV+'</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv">'+totalU+'</div></div><div class="dc"><div class="dl">Facturado</div><div class="dv ok">$'+totalM.toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">ML total</div><div class="dv">'+mlTotal+' u.</div></div>';
     // PIE 1: General - will update after ML reports load
-    const g=[{name:'Tienda Nube',val:canales.tiendanube?.units||0,color:'#2ecc71',key:'tiendanube'},{name:'Mostrador',val:canales.mostrador?.units||0,color:'var(--pri)',key:'mostrador'}].filter(d=>d.val>0);
+    const g=[{name:'Tienda Nube',val:canales.tiendanube?.units||0,color:'#2ecc71',key:'tiendanube'},{name:'Mostrador',val:canales.mostrador?.units||0,color:'var(--pri)',key:'mostrador'},{name:'Tienda Online',val:canales.web?.units||0,color:'#9b59b6',key:'web'}].filter(d=>d.val>0);
     $('fac-pie-svg').innerHTML=g.length?makePie(g):'<div class="emp">Sin ventas manuales</div>';
     // PIE 2: ML - will be filled by loadMLBilling
     $('fac-pie-ml-svg').innerHTML='<div class="ld"><div class="sp"></div></div>';
     // Detail cards
-    const chMap={mercadolibre:{ico:'🛒',name:'MercadoLibre'},tiendanube:{ico:'🏪',name:'Tienda Nube'},mostrador:{ico:'🏬',name:'Mostrador'},reparacion:{ico:'🔧',name:'Reparaciones'}};
+    const chMap={mercadolibre:{ico:'🛒',name:'MercadoLibre'},tiendanube:{ico:'🏪',name:'Tienda Nube'},mostrador:{ico:'🏬',name:'Mostrador'},reparacion:{ico:'🔧',name:'Reparaciones'},web:{ico:'🌐',name:'Tienda Online'}};
     Object.values(ML_CUENTAS_SLUG).forEach(c=>{chMap['ml_'+c.id]={ico:'🛒',name:c.nombre+' (Cuenta '+c.numero+')'}});
     $('fac-detail').innerHTML='<div class="fac-card">'+Object.entries(canales).map(([k,v])=>{const c=chMap[k]||{ico:'📦',name:k};return'<div class="fac-row" style="cursor:pointer" onclick="showCanalVentas(\''+k+'\')"><div class="fac-ch"><span class="fac-ico">'+c.ico+'</span><div><div class="fac-name">'+c.name+'</div><div style="font-size:11px;color:var(--tx3)">'+v.cnt+' ventas · '+v.units+' u.</div></div></div><div class="fac-val" style="color:var(--ok)">$'+v.monto.toLocaleString('es-AR')+'</div></div>'}).join('')
       +(presuMonto>0?'<div class="fac-row" style="cursor:pointer" onclick="go(\'cuentas\')"><div class="fac-ch"><span class="fac-ico">📒</span><div><div class="fac-name">Presupuestos (cobrado)</div><div style="font-size:11px;color:var(--tx3)">'+presuCnt+' pagos · 30 días</div></div></div><div class="fac-val" style="color:var(--ok)">$'+Math.round(presuMonto).toLocaleString('es-AR')+'</div></div>':'')
@@ -882,7 +882,7 @@ function showHistoricoMes(mes){
   const nombreMes=new Date(+y,+mo-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
   const porCuenta=m.ml_por_cuenta||{};
   const canales=m.canales_detalle||{};
-  const chNames={mostrador:'🏬 Mostrador',tiendanube:'🏪 Tienda Nube',reparacion:'🔧 Reparaciones',mercadolibre:'🛒 MercadoLibre'};
+  const chNames={mostrador:'🏬 Mostrador',tiendanube:'🏪 Tienda Nube',reparacion:'🔧 Reparaciones',mercadolibre:'🛒 MercadoLibre',web:'🌐 Tienda Online'};
   let html='<button class="b bs" onclick="$(\'historico-detail\').style.display=\'none\';$(\'historico-list\').style.display=\'block\'" style="margin-bottom:10px;width:auto;padding:8px 12px;font-size:12px">‹ Volver</button>';
   html+='<div style="font-size:15px;font-weight:700;text-transform:capitalize;margin-bottom:10px">'+nombreMes+'</div>';
   html+='<div class="dg" style="margin-bottom:10px"><div class="dc"><div class="dl">Total del mes</div><div class="dv ok">$'+Math.round(m.total).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">ML neto</div><div class="dv">$'+Math.round(m.ml_neto).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Mostrador/TN</div><div class="dv">$'+Math.round(m.otros_monto).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Reparaciones</div><div class="dv">$'+Math.round(m.reparaciones_monto).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Presupuestos (cobrado)</div><div class="dv">$'+Math.round(m.presupuestos_monto||0).toLocaleString('es-AR')+'</div></div></div>';
@@ -1225,7 +1225,7 @@ async function doStockChange(op){
     if(fresh){cur=fresh;const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx]=fresh}
     else{cur.cantidades=nv;cur.estado=ne}
     $('canal-sel').style.display='none';showDet(cur);updM();filtrar();
-    const chN={mostrador:'🏬',mercadolibre:'🛒',tiendanube:'🏪',ingreso:'📥'};
+    const chN={mostrador:'🏬',mercadolibre:'🛒',tiendanube:'🏪',ingreso:'📥',web:'🌐'};
     toast((op==='restar'?'−':'+')+cQty+' u. '+(chN[op==='restar'?selCanal:'ingreso']||'')+' · '+ses?.nombre);cQty=1;$('d-q').value=1;
   }catch(e){toast('Error: '+e.message)}
   $('br').disabled=$('bs2').disabled=false;
