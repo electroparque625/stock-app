@@ -1167,7 +1167,7 @@ async function publicarWeb(){
   if(!cur)return;
   const btn=$('d-web-btn');btn.disabled=true;const orig=btn.textContent;btn.textContent='Publicando...';
   try{
-    const res=await fetch(WEB_API_URL,{method:'POST',headers:{'Content-Type':'application/json','x-stock-app-secret':WEB_API_SECRET},body:JSON.stringify({stock_app_id:cur.id,name:cur.articulo,price:cur.precio_venta||0,sku:cur.sku||null})});
+    const res=await fetch(WEB_API_URL,{method:'POST',headers:{'Content-Type':'application/json','x-stock-app-secret':WEB_API_SECRET},body:JSON.stringify({stock_app_id:cur.id,name:cur.articulo,price:cur.precio_venta||0,sku:cur.sku||null,imagen:cur.imagen||null})});
     const json=await res.json().catch(()=>({}));
     if(!res.ok)throw new Error(json.error||'Error al publicar');
     const nowIso=new Date().toISOString();
