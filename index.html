@@ -2147,6 +2147,10 @@ async function syncSheetToSupabase(){
       const sheetQty=+row[5]||0;
       const prod=ALL.find(p=>p.sku===sku);
       if(!prod||prod.cantidades===sheetQty)continue;
+      // Publicado en electroparque.com: ese stock lo maneja la web (ventas reales del
+      // sitio), no la planilla — si dejamos que la planilla lo pise acá, tapa las ventas
+      // de la web cada vez que corre este sync (cada 2 minutos).
+      if(prod.web_product_id)continue;
       // Sheet has different qty - update Supabase
       await db.from('stock').update({cantidades:sheetQty,estado:sheetQty>0?'STOCK':'SIN STOCK'}).eq('id',prod.id);
       prod.cantidades=sheetQty;
