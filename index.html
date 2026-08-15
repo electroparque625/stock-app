@@ -617,7 +617,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-08-15-1';
+const APP_VERSION='2026-08-15-2';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1445,7 +1445,7 @@ async function loadLista(){
       return'<div class="fac-card"><div class="fst">'+titulo+' · '+items.length+'</div>'
         +items.map(r=>'<div class="fac-row" style="'+(r.retirado?'opacity:.45':'')+'">'
           +'<div class="fac-ch" style="cursor:pointer" onclick="toggleRetirado('+r.id+','+(!r.retirado)+')"><span class="fac-ico">'+(r.retirado?'✅':'⬜')+'</span><div>'
-          +'<div class="fac-name" style="'+(r.retirado?'text-decoration:line-through':'')+'">'+(r.articulo||'MLA '+r.mla)+'</div>'
+          +'<div class="fac-name" style="'+(r.retirado?'text-decoration:line-through':'')+'">'+(r.articulo||'MLA '+r.mla)+(r.usuario==='Auto (Flex)'?' <span style="font-size:10px;background:var(--warn);color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">🚚 FLEX</span>':'')+'</div>'
           +'<div style="font-size:11px;color:var(--tx3)">'+(r.sku?r.sku+' · ':'')+r.mla+' · x'+r.cantidad+'</div>'
           +'</div></div>'
           +'<button onclick="quitarDeLista('+r.id+')" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:14px">🗑</button>'
@@ -2344,10 +2344,10 @@ async function syncLogsSilent(){
       if(ex&&ex.length)continue;
       const nombre=ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta;
       // Restar stock en Supabase — se busca el producto directo en la base, no en ALL en memoria
-      let stockAnterior=0,stockNuevo=0;
+      let stockAnterior=0,stockNuevo=0,prod=null;
       if(mla){
-        const{data:prods}=await db.from('stock').select('id,sku,cantidades').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
-        const prod=prods&&prods[0];
+        const{data:prods}=await db.from('stock').select('id,sku,articulo,cantidades').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
+        prod=prods&&prods[0];
         if(prod){
           stockAnterior=prod.cantidades||0;
           stockNuevo=Math.max(0,stockAnterior-cant);
@@ -2357,6 +2357,14 @@ async function syncLogsSilent(){
         }
       }
       await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:stockAnterior,stock_nuevo:stockNuevo,canal:'ml_'+nombre.toLowerCase(),monto:0});
+      // Venta FLEX (entrega hoy) -> se carga sola en la Lista de retiro, para que el
+      // encargado no tenga que ir a buscarla a mano MLA por MLA.
+      if(/FLEX/i.test(txt)){
+        const{data:yaEsta}=await db.from('lista_retiro').select('id').eq('mla',mla||orden).limit(1);
+        if(!yaEsta||!yaEsta.length){
+          await db.from('lista_retiro').insert({mla:mla||orden,cantidad:cant,usuario:'Auto (Flex)',articulo:prod?prod.articulo:articulo,sku:prod?prod.sku:null,stock_id:prod?prod.id:null,cuenta_numero:cuenta,cuenta_nombre:nombre});
+        }
+      }
       imported++;
     }
     if(imported>0)console.log('Auto-sync: '+imported+' ventas ML importadas');
@@ -2413,10 +2421,10 @@ async function syncLogs(){
       if(ex&&ex.length){skipped++;continue}
       const nombre=ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta;
       // Restar stock en Supabase — se busca el producto directo en la base, no en ALL en memoria
-      let stockAnterior=0,stockNuevo=0;
+      let stockAnterior=0,stockNuevo=0,prod=null;
       if(mla){
-        const{data:prods}=await db.from('stock').select('id,sku,cantidades').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
-        const prod=prods&&prods[0];
+        const{data:prods}=await db.from('stock').select('id,sku,articulo,cantidades').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
+        prod=prods&&prods[0];
         if(prod){
           stockAnterior=prod.cantidades||0;
           stockNuevo=Math.max(0,stockAnterior-cant);
@@ -2426,6 +2434,12 @@ async function syncLogs(){
         }
       }
       await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:stockAnterior,stock_nuevo:stockNuevo,canal:'ml_'+nombre.toLowerCase(),monto:0});
+      if(/FLEX/i.test(txt)){
+        const{data:yaEsta}=await db.from('lista_retiro').select('id').eq('mla',mla||orden).limit(1);
+        if(!yaEsta||!yaEsta.length){
+          await db.from('lista_retiro').insert({mla:mla||orden,cantidad:cant,usuario:'Auto (Flex)',articulo:prod?prod.articulo:articulo,sku:prod?prod.sku:null,stock_id:prod?prod.id:null,cuenta_numero:cuenta,cuenta_nombre:nombre});
+        }
+      }
       imported++;
     }
     toast('Importados: '+imported+' | Omitidos: '+skipped);
