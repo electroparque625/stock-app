@@ -2214,6 +2214,20 @@ async function syncSheetToSupabase(){
     const data=await res.json();
     if(!data||data.length<2)return;
     const rows=data.slice(1).filter(f=>f[0]!=null&&f[0]!=='');
+    // Ventas reales (30d) por producto, sea de mostrador/web (sku=SKU real) o de ML
+    // (el articulo trae [MLA...] porque ahí el campo sku guarda el N° de orden, no el
+    // SKU) — así la planilla no puede "revivir" hacia arriba un stock que una venta ya
+    // bajó, aunque esa fila de la planilla haga rato que nadie la toca a mano.
+    const since=new Date(Date.now()-60*86400000).toISOString();
+    const{data:ventasRec}=await db.from('movimientos').select('sku,articulo,created_at').eq('tipo','venta').gte('created_at',since);
+    const ventaReciente={};
+    (ventasRec||[]).forEach(v=>{
+      let prod=null;
+      const mlaM=(v.articulo||'').match(/\[(MLA\d+)\]/);
+      if(mlaM){const mla=mlaM[1];prod=ALL.find(p=>p.ml_id_1===mla||p.ml_id_2===mla||p.ml_id_3===mla)}
+      else if(v.sku){prod=ALL.find(p=>p.sku===v.sku)}
+      if(prod)ventaReciente[prod.id]=true;
+    });
     let updated=0;
     for(const row of rows){
       const sku=String(row[1]||'').trim();
@@ -2225,6 +2239,10 @@ async function syncSheetToSupabase(){
       // sitio), no la planilla — si dejamos que la planilla lo pise acá, tapa las ventas
       // de la web cada vez que corre este sync (cada 2 minutos).
       if(prod.web_product_id)continue;
+      // La planilla quiere subir el número, pero hubo una venta real (ML, web o local)
+      // en los últimos 60 días que lo bajó — no la dejamos tapar esa venta con un dato
+      // viejo de la planilla.
+      if(sheetQty>prod.cantidades&&ventaReciente[prod.id])continue;
       // Sheet has different qty - update Supabase
       await db.from('stock').update({cantidades:sheetQty,estado:sheetQty>0?'STOCK':'SIN STOCK'}).eq('id',prod.id);
       prod.cantidades=sheetQty;
