@@ -617,7 +617,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-08-15-2';
+const APP_VERSION='2026-08-15-3';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1430,6 +1430,14 @@ async function agregarALista(){
     loadLista();
   }catch(e){toast('Error: '+e.message)}
 }
+// Flex entrega en el día si la venta fue de lunes a sábado antes de las 13:00; si no,
+// pasa para el día siguiente — se calcula solo con la fecha en que se detectó la venta,
+// no hace falta ningún dato extra del Apps Script.
+function flexEsHoy(fechaStr){
+  const ts=new Date(fechaStr);
+  const dia=ts.getDay(),hora=ts.getHours();
+  return dia>=1&&dia<=6&&hora<13;
+}
 async function loadLista(){
   const el=$('lr-list');el.innerHTML='<div class="ld"><div class="sp"></div></div>';
   try{
@@ -1443,13 +1451,18 @@ async function loadLista(){
       const items=grupos[k];
       const titulo=k==='_sin'?'❓ Sin identificar':'🛒 '+(items[0].cuenta_nombre||'Cuenta '+k)+' (Cuenta '+k+')';
       return'<div class="fac-card"><div class="fst">'+titulo+' · '+items.length+'</div>'
-        +items.map(r=>'<div class="fac-row" style="'+(r.retirado?'opacity:.45':'')+'">'
+        +items.map(r=>{
+          const esFlex=r.usuario==='Auto (Flex)';
+          const esHoy=esFlex&&flexEsHoy(r.created_at);
+          const flexTag=esFlex?' <span style="font-size:10px;background:'+(esHoy?'var(--err)':'var(--warn)')+';color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">🚚 FLEX · '+(esHoy?'HOY':'MAÑANA')+'</span>':'';
+          return'<div class="fac-row" style="'+(r.retirado?'opacity:.45':'')+'">'
           +'<div class="fac-ch" style="cursor:pointer" onclick="toggleRetirado('+r.id+','+(!r.retirado)+')"><span class="fac-ico">'+(r.retirado?'✅':'⬜')+'</span><div>'
-          +'<div class="fac-name" style="'+(r.retirado?'text-decoration:line-through':'')+'">'+(r.articulo||'MLA '+r.mla)+(r.usuario==='Auto (Flex)'?' <span style="font-size:10px;background:var(--warn);color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">🚚 FLEX</span>':'')+'</div>'
+          +'<div class="fac-name" style="'+(r.retirado?'text-decoration:line-through':'')+'">'+(r.articulo||'MLA '+r.mla)+flexTag+'</div>'
           +'<div style="font-size:11px;color:var(--tx3)">'+(r.sku?r.sku+' · ':'')+r.mla+' · x'+r.cantidad+'</div>'
           +'</div></div>'
           +'<button onclick="quitarDeLista('+r.id+')" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:14px">🗑</button>'
-          +'</div>').join('')
+          +'</div>';
+        }).join('')
         +'</div>';
     }).join('');
   }catch(e){el.innerHTML='<div class="emp">Error: '+e.message+'</div>'}
