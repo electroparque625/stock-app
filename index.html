@@ -617,7 +617,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-08-15-3';
+const APP_VERSION='2026-08-15-4';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1417,9 +1417,11 @@ async function agregarALista(){
     if((p.ml_id_3||'').toUpperCase()===mla){prod=p;slot='3';break}
   }
   const cuenta=slot?Object.values(ML_CUENTAS_SLUG).find(c=>String(c.numero)===slot):null;
+  const ubicacion=prod?[prod.caja,prod.estanteria].filter(Boolean).join(' · '):null;
   const row={
     mla:mlaRaw,cantidad:cant,usuario:ses?.nombre||'—',
     articulo:prod?prod.articulo:null,sku:prod?prod.sku:null,stock_id:prod?prod.id:null,
+    observaciones:prod?prod.observaciones:null,ubicacion:ubicacion||null,
     cuenta_numero:cuenta?cuenta.numero:null,cuenta_nombre:cuenta?cuenta.nombre:null,
   };
   try{
@@ -1444,26 +1446,37 @@ async function loadLista(){
     const{data}=await db.from('lista_retiro').select('*').order('created_at',{ascending:true});
     const rows=data||[];
     if(!rows.length){el.innerHTML='<div class="emp">Sin pedidos anotados</div>';return}
+    const renderItem=r=>{
+      const esFlex=r.usuario==='Auto (Flex)';
+      const esHoy=esFlex&&flexEsHoy(r.created_at);
+      const flexTag=esFlex?' <span style="font-size:10px;background:'+(esHoy?'var(--err)':'var(--warn)')+';color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">🚚 FLEX · '+(esHoy?'HOY':'MAÑANA')+'</span>':'';
+      return'<div class="fac-row" style="'+(r.retirado?'opacity:.45':'')+'">'
+        +'<div class="fac-ch" style="cursor:pointer;flex:1;min-width:0" onclick="toggleRetirado('+r.id+','+(!r.retirado)+')"><span class="fac-ico">'+(r.retirado?'✅':'⬜')+'</span><div style="flex:1;min-width:0">'
+        +'<div class="fac-name" style="'+(r.retirado?'text-decoration:line-through':'')+'">'+(r.articulo||'MLA '+r.mla)+flexTag+'</div>'
+        +'<div style="font-size:11px;color:var(--tx3)">'+(r.sku?r.sku+' · ':'')+r.mla+' · x'+r.cantidad+'</div>'
+        +(r.ubicacion?'<div style="font-size:11px;color:var(--pri);font-weight:600">📍 '+r.ubicacion+'</div>':'')
+        +(r.observaciones?'<div style="font-size:11px;color:var(--tx3);font-style:italic">'+r.observaciones+'</div>':'')
+        +'</div></div>'
+        +'<button onclick="quitarDeLista('+r.id+')" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:14px">🗑</button>'
+        +'</div>';
+    };
     const grupos={};
     rows.forEach(r=>{const k=r.cuenta_numero||'_sin';if(!grupos[k])grupos[k]=[];grupos[k].push(r)});
     const claves=Object.keys(grupos).sort((a,b)=>a==='_sin'?1:b==='_sin'?-1:a.localeCompare(b));
     el.innerHTML=claves.map(k=>{
       const items=grupos[k];
       const titulo=k==='_sin'?'❓ Sin identificar':'🛒 '+(items[0].cuenta_nombre||'Cuenta '+k)+' (Cuenta '+k+')';
-      return'<div class="fac-card"><div class="fst">'+titulo+' · '+items.length+'</div>'
-        +items.map(r=>{
-          const esFlex=r.usuario==='Auto (Flex)';
-          const esHoy=esFlex&&flexEsHoy(r.created_at);
-          const flexTag=esFlex?' <span style="font-size:10px;background:'+(esHoy?'var(--err)':'var(--warn)')+';color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">🚚 FLEX · '+(esHoy?'HOY':'MAÑANA')+'</span>':'';
-          return'<div class="fac-row" style="'+(r.retirado?'opacity:.45':'')+'">'
-          +'<div class="fac-ch" style="cursor:pointer" onclick="toggleRetirado('+r.id+','+(!r.retirado)+')"><span class="fac-ico">'+(r.retirado?'✅':'⬜')+'</span><div>'
-          +'<div class="fac-name" style="'+(r.retirado?'text-decoration:line-through':'')+'">'+(r.articulo||'MLA '+r.mla)+flexTag+'</div>'
-          +'<div style="font-size:11px;color:var(--tx3)">'+(r.sku?r.sku+' · ':'')+r.mla+' · x'+r.cantidad+'</div>'
-          +'</div></div>'
-          +'<button onclick="quitarDeLista('+r.id+')" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:14px">🗑</button>'
-          +'</div>';
-        }).join('')
-        +'</div>';
+      // Los productos de un mismo pedido van juntos, con el N° de pedido bien visible;
+      // lo que no tiene N° de pedido (cargado a mano sin uno) queda suelto.
+      const porPedido={},sueltos=[];
+      items.forEach(r=>{if(r.orden){if(!porPedido[r.orden])porPedido[r.orden]=[];porPedido[r.orden].push(r)}else sueltos.push(r)});
+      const bloquePedidos=Object.entries(porPedido).map(([orden,its])=>
+        '<div style="border:1px solid var(--brd);border-radius:var(--rs);margin-bottom:8px;overflow:hidden">'
+        +'<div style="background:var(--bg);padding:6px 10px;font-size:11px;font-weight:700">📦 Pedido #'+orden+' · '+its.length+' producto'+(its.length>1?'s':'')+'</div>'
+        +its.map(renderItem).join('')
+        +'</div>'
+      ).join('');
+      return'<div class="fac-card"><div class="fst">'+titulo+' · '+items.length+'</div>'+bloquePedidos+sueltos.map(renderItem).join('')+'</div>';
     }).join('');
   }catch(e){el.innerHTML='<div class="emp">Error: '+e.message+'</div>'}
 }
@@ -2352,14 +2365,17 @@ async function syncLogsSilent(){
       const ts=row[0]?new Date(row[0]):null;
       const fecha=ts?ts.toLocaleDateString('es-AR'):'';
       const hora=ts?ts.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'';
-      // Dedup by order number
-      const{data:ex}=await db.from('movimientos').select('id').eq('sku',orden).limit(1);
+      // Dedup por pedido + producto (un mismo pedido con 2 productos distintos manda 2
+      // líneas de log con el mismo N° de orden — si dedupamos solo por orden, el segundo
+      // producto del pedido se descartaba como "ya procesado" y nunca descontaba stock).
+      const dedupKey=orden+(mla?'-'+mla:'');
+      const{data:ex}=await db.from('movimientos').select('id').eq('sku',dedupKey).limit(1);
       if(ex&&ex.length)continue;
       const nombre=ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta;
       // Restar stock en Supabase — se busca el producto directo en la base, no en ALL en memoria
       let stockAnterior=0,stockNuevo=0,prod=null;
       if(mla){
-        const{data:prods}=await db.from('stock').select('id,sku,articulo,cantidades').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
+        const{data:prods}=await db.from('stock').select('id,sku,articulo,cantidades,observaciones,caja,estanteria').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
         prod=prods&&prods[0];
         if(prod){
           stockAnterior=prod.cantidades||0;
@@ -2369,13 +2385,14 @@ async function syncLogsSilent(){
           const idx=ALL.findIndex(x=>x.id===prod.id);if(idx>-1)ALL[idx].cantidades=stockNuevo;
         }
       }
-      await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:stockAnterior,stock_nuevo:stockNuevo,canal:'ml_'+nombre.toLowerCase(),monto:0});
+      await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:dedupKey,tipo:'venta',cantidad:cant,stock_anterior:stockAnterior,stock_nuevo:stockNuevo,canal:'ml_'+nombre.toLowerCase(),monto:0});
       // Venta FLEX (entrega hoy) -> se carga sola en la Lista de retiro, para que el
       // encargado no tenga que ir a buscarla a mano MLA por MLA.
       if(/FLEX/i.test(txt)){
         const{data:yaEsta}=await db.from('lista_retiro').select('id').eq('mla',mla||orden).limit(1);
         if(!yaEsta||!yaEsta.length){
-          await db.from('lista_retiro').insert({mla:mla||orden,cantidad:cant,usuario:'Auto (Flex)',articulo:prod?prod.articulo:articulo,sku:prod?prod.sku:null,stock_id:prod?prod.id:null,cuenta_numero:cuenta,cuenta_nombre:nombre});
+          const ubicacion=prod?[prod.caja,prod.estanteria].filter(Boolean).join(' · '):null;
+          await db.from('lista_retiro').insert({mla:mla||orden,orden,cantidad:cant,usuario:'Auto (Flex)',articulo:prod?prod.articulo:articulo,sku:prod?prod.sku:null,stock_id:prod?prod.id:null,observaciones:prod?prod.observaciones:null,ubicacion:ubicacion||null,cuenta_numero:cuenta,cuenta_nombre:nombre});
         }
       }
       imported++;
@@ -2430,13 +2447,15 @@ async function syncLogs(){
       const ts=row[0]?new Date(row[0]):null;
       const fecha=ts?ts.toLocaleDateString('es-AR'):'';
       const hora=ts?ts.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'';
-      const{data:ex}=await db.from('movimientos').select('id').eq('sku',orden).limit(1);
+      // Dedup por pedido + producto (ver comentario en syncLogsSilent)
+      const dedupKey=orden+(mla?'-'+mla:'');
+      const{data:ex}=await db.from('movimientos').select('id').eq('sku',dedupKey).limit(1);
       if(ex&&ex.length){skipped++;continue}
       const nombre=ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta;
       // Restar stock en Supabase — se busca el producto directo en la base, no en ALL en memoria
       let stockAnterior=0,stockNuevo=0,prod=null;
       if(mla){
-        const{data:prods}=await db.from('stock').select('id,sku,articulo,cantidades').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
+        const{data:prods}=await db.from('stock').select('id,sku,articulo,cantidades,observaciones,caja,estanteria').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
         prod=prods&&prods[0];
         if(prod){
           stockAnterior=prod.cantidades||0;
@@ -2446,11 +2465,12 @@ async function syncLogs(){
           const idx=ALL.findIndex(x=>x.id===prod.id);if(idx>-1)ALL[idx].cantidades=stockNuevo;
         }
       }
-      await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:orden,tipo:'venta',cantidad:cant,stock_anterior:stockAnterior,stock_nuevo:stockNuevo,canal:'ml_'+nombre.toLowerCase(),monto:0});
+      await db.from('movimientos').insert({fecha,hora,usuario:nombre,articulo:articulo+(mla?' ['+mla+']':''),sku:dedupKey,tipo:'venta',cantidad:cant,stock_anterior:stockAnterior,stock_nuevo:stockNuevo,canal:'ml_'+nombre.toLowerCase(),monto:0});
       if(/FLEX/i.test(txt)){
         const{data:yaEsta}=await db.from('lista_retiro').select('id').eq('mla',mla||orden).limit(1);
         if(!yaEsta||!yaEsta.length){
-          await db.from('lista_retiro').insert({mla:mla||orden,cantidad:cant,usuario:'Auto (Flex)',articulo:prod?prod.articulo:articulo,sku:prod?prod.sku:null,stock_id:prod?prod.id:null,cuenta_numero:cuenta,cuenta_nombre:nombre});
+          const ubicacion=prod?[prod.caja,prod.estanteria].filter(Boolean).join(' · '):null;
+          await db.from('lista_retiro').insert({mla:mla||orden,orden,cantidad:cant,usuario:'Auto (Flex)',articulo:prod?prod.articulo:articulo,sku:prod?prod.sku:null,stock_id:prod?prod.id:null,observaciones:prod?prod.observaciones:null,ubicacion:ubicacion||null,cuenta_numero:cuenta,cuenta_nombre:nombre});
         }
       }
       imported++;
