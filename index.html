@@ -617,7 +617,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-08-15-7';
+const APP_VERSION='2026-08-16-1';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1433,12 +1433,27 @@ async function agregarALista(){
   }catch(e){toast('Error: '+e.message)}
 }
 // Flex entrega en el día si la venta fue de lunes a sábado antes de las 13:00; si no,
-// pasa para el día siguiente — se calcula solo con la fecha en que se detectó la venta,
-// no hace falta ningún dato extra del Apps Script.
-function flexEsHoy(fechaStr){
+// pasa al próximo día hábil (saltando domingos y feriados) — se calcula solo con la
+// fecha en que se detectó la venta, no hace falta ningún dato extra del Apps Script.
+// Sumar acá las fechas de feriados (formato 'YYYY-MM-DD') a medida que se necesiten.
+const FLEX_FERIADOS=['2026-08-17'];
+const FLEX_DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
+function flexEsHabil(d){
+  const iso=d.toISOString().slice(0,10);
+  return d.getDay()>=1&&d.getDay()<=6&&!FLEX_FERIADOS.includes(iso);
+}
+function flexFechaEntrega(fechaStr){
   const ts=new Date(fechaStr);
-  const dia=ts.getDay(),hora=ts.getHours();
-  return dia>=1&&dia<=6&&hora<13;
+  const entrega=new Date(ts);
+  const calificaHoy=flexEsHabil(ts)&&ts.getHours()<13;
+  if(!calificaHoy)entrega.setDate(entrega.getDate()+1);
+  while(!flexEsHabil(entrega))entrega.setDate(entrega.getDate()+1);
+  return entrega;
+}
+function flexLabel(fechaStr){
+  const entrega=flexFechaEntrega(fechaStr);
+  const esHoy=entrega.toDateString()===new Date().toDateString();
+  return esHoy?'HOY':FLEX_DIAS[entrega.getDay()];
 }
 async function loadLista(){
   const el=$('lr-list');el.innerHTML='<div class="ld"><div class="sp"></div></div>';
@@ -1448,8 +1463,8 @@ async function loadLista(){
     if(!rows.length){el.innerHTML='<div class="emp">Sin pedidos anotados</div>';return}
     const renderItem=r=>{
       const esFlex=r.usuario==='Auto (Flex)';
-      const esHoy=esFlex&&flexEsHoy(r.created_at);
-      const flexTag=esFlex?' <span style="font-size:10px;background:'+(esHoy?'var(--err)':'var(--warn)')+';color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">🚚 FLEX · '+(esHoy?'HOY':'MAÑANA')+'</span>':'';
+      const flexEtiqueta=esFlex?flexLabel(r.created_at):null;
+      const flexTag=esFlex?' <span style="font-size:10px;background:'+(flexEtiqueta==='HOY'?'var(--err)':'var(--warn)')+';color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">🚚 FLEX · '+flexEtiqueta+'</span>':'';
       return'<div class="fac-row" style="'+(r.retirado?'opacity:.45':'')+'">'
         +'<div class="fac-ch" style="cursor:pointer;flex:1;min-width:0" onclick="toggleRetirado('+r.id+','+(!r.retirado)+')"><span class="fac-ico">'+(r.retirado?'✅':'⬜')+'</span><div style="flex:1;min-width:0">'
         +'<div class="fac-name" style="'+(r.retirado?'text-decoration:line-through':'')+'">'+(r.articulo||'MLA '+r.mla)+flexTag+'</div>'
