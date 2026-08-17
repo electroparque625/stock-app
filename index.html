@@ -248,7 +248,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="fst">Proyección de stock</div>
 <div id="mon-proj"></div>
 </div>
-<div class="stit">Historial de ventas</div>
+<div class="stit">Historial de movimientos (ingresos y salidas)</div>
 <div id="mon-sales"></div>
 </div>
 
@@ -620,7 +620,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-08-17-4';
+const APP_VERSION='2026-08-17-5';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1109,20 +1109,26 @@ async function loadMonChart(){
   if(!monProd)return;
   const days=parseInt($('mon-period').value)||30;
   const since=new Date(Date.now()-days*86400000).toISOString();
-  // Find sales from LOGS (movimientos) by exact MLA only
-  let ventas=[];
+  // Trae TODO el movimiento del producto (ingresos + salidas de cualquier canal:
+  // mostrador/tiendanube/web usan el SKU real, Mercado Libre trae el MLA en el
+  // texto del artículo porque ahí el SKU guarda el N° de orden).
+  let movs=[];
   try{
-    const mlas=[monProd.ml_id_1,monProd.ml_id_2,monProd.ml_id_3].filter(Boolean);
-    if(mlas.length){
-      for(const mla of mlas){
-        const{data}=await db.from('movimientos').select('*').eq('tipo','venta').gte('created_at',since).ilike('articulo','%'+mla+'%');
-        if(data)ventas=ventas.concat(data.filter(v=>!ventas.find(x=>x.id===v.id)));
-      }
-      // Deduplicate by order number (sku field)
-      const seen=new Set();
-      ventas=ventas.filter(v=>{const key=v.sku||v.id;if(seen.has(key))return false;seen.add(key);return true});
+    if(monProd.sku){
+      const{data:bySku}=await db.from('movimientos').select('*').gte('created_at',since).eq('sku',monProd.sku);
+      if(bySku)movs=movs.concat(bySku);
     }
+    const mlas=[monProd.ml_id_1,monProd.ml_id_2,monProd.ml_id_3].filter(Boolean);
+    for(const mla of mlas){
+      const{data}=await db.from('movimientos').select('*').gte('created_at',since).ilike('articulo','%'+mla+'%');
+      if(data)movs=movs.concat(data.filter(v=>!movs.find(x=>x.id===v.id)));
+    }
+    // Deduplicar (una venta de ML puede matchear por mas de un MLA si el pedido tiene varios items)
+    const seen=new Set();
+    movs=movs.filter(v=>{if(seen.has(v.id))return false;seen.add(v.id);return true});
+    movs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   }catch(e){console.warn(e)}
+  const ventas=movs.filter(v=>(v.tipo||'').toLowerCase().includes('venta'));
 
   const totalUnits=ventas.reduce((s,v)=>s+(v.cantidad||0),0);
   const avgPerDay=days>0?(totalUnits/days).toFixed(1):0;
@@ -1157,10 +1163,13 @@ async function loadMonChart(){
   projHtml+='</div>';
   $('mon-proj').innerHTML=projHtml;
 
-  // Sales list
-  const chN={mostrador:'🏬 Mostrador',tiendanube:'🏪 TN'};
+  // Historial completo: ingresos y salidas, cualquier canal
+  const chN={mostrador:'🏬 Mostrador',tiendanube:'🏪 TN',ingreso:'📥 Ingreso',correccion:'🔧 Corrección'};
   Object.values(ML_CUENTAS_SLUG).forEach(c=>{chN['ml_'+c.id]='🛒 '+c.nombre});
-  $('mon-sales').innerHTML=ventas.length?ventas.map(v=>{return'<div class="mr"><div class="mt"><div class="ma">'+(v.articulo||'—')+'</div><span class="mg mv">'+(chN[v.canal]||v.canal||'Venta')+'</span></div><div class="mm"><span>📅 '+(v.fecha||'')+' '+(v.hora||'')+'</span><span>−'+(v.cantidad||0)+' u.</span></div></div>'}).join(''):'<div class="emp">Sin ventas de este MLA en el período</div>';
+  $('mon-sales').innerHTML=movs.length?movs.map(v=>{
+    const t=(v.tipo||'').toLowerCase(),esVenta=t.includes('venta'),tc=esVenta?'mv':t.includes('ingreso')?'mi2':'mj',signo=(v.stock_nuevo<v.stock_anterior||esVenta)?'−':'+';
+    return'<div class="mr"><div class="mt"><div class="ma">'+(v.articulo||'—')+'</div><span class="mg '+tc+'">'+(chN[v.canal]||chN[t]||v.tipo||'—')+'</span></div><div class="mm"><span>📅 '+(v.fecha||'')+' '+(v.hora||'')+'</span><span>👤 '+(v.usuario||'—')+'</span><span>'+signo+Math.abs(v.cantidad||0)+' u.</span><span>Stock: '+(v.stock_anterior??'—')+' → '+(v.stock_nuevo??'—')+'</span></div></div>'
+  }).join(''):'<div class="emp">Sin movimientos en el período</div>';
 }
 
 /* DETAIL */
