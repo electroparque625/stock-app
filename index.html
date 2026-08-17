@@ -621,7 +621,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-08-17-7';
+const APP_VERSION='2026-08-17-8';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1472,7 +1472,7 @@ function flexLabel(fechaStr){
 async function loadLista(){
   const el=$('lr-list');el.innerHTML='<div class="ld"><div class="sp"></div></div>';
   try{
-    const{data}=await db.from('lista_retiro').select('*').order('created_at',{ascending:true});
+    const{data}=await db.from('lista_retiro').select('*').order('created_at',{ascending:false});
     const rows=data||[];
     if(!rows.length){el.innerHTML='<div class="emp">Sin pedidos anotados</div>';return}
     const renderItem=r=>{
@@ -1493,7 +1493,15 @@ async function loadLista(){
     };
     const grupos={};
     rows.forEach(r=>{const k=r.cuenta_numero||'_sin';if(!grupos[k])grupos[k]=[];grupos[k].push(r)});
-    const claves=Object.keys(grupos).sort((a,b)=>a==='_sin'?1:b==='_sin'?-1:a.localeCompare(b));
+    // Cuentas con algo pendiente van primero (arriba de todo); las que ya estan
+    // 100% retiradas quedan al final, para no tener que scrollear para ver lo nuevo.
+    const tienePendiente=k=>grupos[k].some(r=>!r.retirado);
+    const claves=Object.keys(grupos).sort((a,b)=>{
+      if(a==='_sin')return 1;if(b==='_sin')return -1;
+      const pa=tienePendiente(a),pb=tienePendiente(b);
+      if(pa!==pb)return pa?-1:1;
+      return a.localeCompare(b);
+    });
     el.innerHTML=claves.map(k=>{
       const items=grupos[k];
       const titulo=k==='_sin'?'❓ Sin identificar':'🛒 '+(items[0].cuenta_nombre||'Cuenta '+k)+' (Cuenta '+k+')';
@@ -1501,13 +1509,23 @@ async function loadLista(){
       // lo que no tiene N° de pedido (cargado a mano sin uno) queda suelto.
       const porPedido={},sueltos=[];
       items.forEach(r=>{if(r.orden){if(!porPedido[r.orden])porPedido[r.orden]=[];porPedido[r.orden].push(r)}else sueltos.push(r)});
-      const bloquePedidos=Object.entries(porPedido).map(([orden,its])=>
+      // Dentro de la cuenta: pedidos con algo pendiente primero (el mas nuevo arriba),
+      // los ya retirados del todo se van al fondo.
+      const ordenar=its=>{const pend=its.some(x=>!x.retirado);const masNuevo=Math.max(...its.map(x=>new Date(x.created_at).getTime()));return[pend?0:1,-masNuevo]};
+      const bloquePedidos=Object.entries(porPedido).sort((a,b)=>{
+        const[pa,fa]=ordenar(a[1]),[pb,fb]=ordenar(b[1]);
+        return pa!==pb?pa-pb:fa-fb;
+      }).map(([orden,its])=>
         '<div style="border:1px solid var(--brd);border-radius:var(--rs);margin-bottom:8px;overflow:hidden">'
         +'<div style="background:var(--bg);padding:6px 10px;font-size:11px;font-weight:700">📦 Pedido #'+orden+' · '+its.length+' producto'+(its.length>1?'s':'')+'</div>'
         +its.map(renderItem).join('')
         +'</div>'
       ).join('');
-      return'<div class="fac-card"><div class="fst">'+titulo+' · '+items.length+'</div>'+bloquePedidos+sueltos.map(renderItem).join('')+'</div>';
+      const sueltosOrdenados=sueltos.slice().sort((a,b)=>{
+        if(!!a.retirado!==!!b.retirado)return a.retirado?1:-1;
+        return new Date(b.created_at)-new Date(a.created_at);
+      });
+      return'<div class="fac-card"><div class="fst">'+titulo+' · '+items.length+'</div>'+bloquePedidos+sueltosOrdenados.map(renderItem).join('')+'</div>';
     }).join('');
   }catch(e){el.innerHTML='<div class="emp">Error: '+e.message+'</div>'}
 }
