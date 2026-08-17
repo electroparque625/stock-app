@@ -202,7 +202,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 
 <div class="ct">
-<!-- HOME --><div class="sc a" id="s-home"><div class="dg"><div class="dc"><div class="dl">Artículos</div><div class="dv" id="m-t">—</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv" id="m-u">—</div></div><div class="dc"><div class="dl">Stock bajo</div><div class="dv w" id="m-l">—</div></div><div class="dc"><div class="dl">Sin stock</div><div class="dv e" id="m-z">—</div></div></div>
+<!-- HOME --><div class="sc a" id="s-home"><div class="dg"><div class="dc"><div class="dl">Artículos</div><div class="dv" id="m-t">—</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv" id="m-u">—</div></div><div class="dc"><div class="dl">Stock bajo</div><div class="dv w" id="m-l">—</div></div><div class="dc"><div class="dl">Sin stock</div><div class="dv e" id="m-z">—</div></div><div class="dc" style="cursor:pointer" onclick="go('lista')"><div class="dl">📦 Armar pedidos</div><div class="dv" id="m-pp">—</div></div></div>
 <div id="inv-tabs" style="display:flex;gap:4px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px">
 <button class="fb a" onclick="setTab('stock',this)" style="white-space:nowrap;flex-shrink:0">🟢 En Stock</button>
 <button class="fb" onclick="setTab('sinstock',this)" style="white-space:nowrap;flex-shrink:0">🔴 Sin Stock</button>
@@ -621,7 +621,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-08-17-8';
+const APP_VERSION='2026-08-17-9';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -671,7 +671,7 @@ function clearSes(){ses=null;try{localStorage.removeItem('ep4')}catch(e){}}
 
 async function doLogin(){const u=$('l-u').value.trim(),p=$('l-p').value,b=$('l-b'),e=$('l-e');if(!u||!p){e.textContent='Completá ambos campos';e.classList.add('show');return}b.disabled=true;b.textContent='Verificando...';e.classList.remove('show');try{if(u===SA.usuario){if(H(p)!==SA_H)throw 1;b.disabled=false;b.textContent='Ingresar';startApp({...SA});return}const{data,error}=await db.from('usuarios').select('*').eq('usuario',u).eq('activo',true).single();if(error||!data||data.pass_hash!==H(p))throw 1;b.disabled=false;b.textContent='Ingresar';if(data.primer_login){ses=data;$('scr-login').style.display='none';$('scr-cp').style.display='flex'}else startApp({usuario:data.usuario,nombre:data.nombre,rol:data.rol})}catch(x){e.textContent='Credenciales incorrectas';e.classList.add('show');b.disabled=false;b.textContent='Ingresar'}}
 async function doCP(){const a=$('np1').value,b=$('np2').value,e=$('cp-e');if(a.length<4){e.textContent='Mínimo 4';e.classList.add('show');return}if(a!==b){e.textContent='No coinciden';e.classList.add('show');return}await db.from('usuarios').update({pass_hash:H(a),primer_login:false}).eq('usuario',ses.usuario);$('scr-cp').style.display='none';startApp({usuario:ses.usuario,nombre:ses.nombre,rol:ses.rol||'usuario'})}
-function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.admin-or-super').forEach(el=>el.style.display=(u.rol==='superadmin'||u.rol==='admin')?'':'none');document.querySelectorAll('.owner-only').forEach(el=>el.style.display=String(u.usuario||'').toLowerCase()==='electroparque'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');loadData();loadMlCuentas();updateTaskBadge();const scanParam=new URLSearchParams(location.search).get('scan');if(scanParam){setTimeout(()=>{go('scan');$('scq').value=scanParam;doScan();history.replaceState(null,'',location.pathname+location.hash)},600)}else if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)};setTimeout(()=>syncSheetToSupabase(),8000);setInterval(()=>syncSheetToSupabase(),120000);setTimeout(()=>checkForUpdate(),15000);setInterval(()=>checkForUpdate(),180000)}
+function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.admin-or-super').forEach(el=>el.style.display=(u.rol==='superadmin'||u.rol==='admin')?'':'none');document.querySelectorAll('.owner-only').forEach(el=>el.style.display=String(u.usuario||'').toLowerCase()==='electroparque'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');loadData();loadMlCuentas();updateTaskBadge();updPedidosPendientes();setInterval(()=>updPedidosPendientes(),120000);const scanParam=new URLSearchParams(location.search).get('scan');if(scanParam){setTimeout(()=>{go('scan');$('scq').value=scanParam;doScan();history.replaceState(null,'',location.pathname+location.hash)},600)}else if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)};setTimeout(()=>syncSheetToSupabase(),8000);setInterval(()=>syncSheetToSupabase(),120000);setTimeout(()=>checkForUpdate(),15000);setInterval(()=>checkForUpdate(),180000)}
 function doLogout(){if(!confirm('¿Cerrar sesión?'))return;clearSes();$('app').style.display='none';$('scr-login').style.display='flex';$('l-u').value='';$('l-p').value='';$('l-e').classList.remove('show')}
 
 async function loadData(){const t0=performance.now();try{let a=[],p=0;while(true){const{data,error}=await db.from('stock').select('*').order('id',{ascending:true}).range(p*1000,p*1000+999);if(error)throw error;if(!data||!data.length)break;a=a.concat(data);if(data.length<1000)break;p++}ALL=a;updM();filtrar();fillL();$('t-sub').textContent=ALL.length+' productos · '+Math.round(performance.now()-t0)+'ms'}catch(e){$('pl').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
@@ -706,6 +706,13 @@ function showStockAlerts(){if(_alertsShown)return;_alertsShown=true;
   $('notif-overlay').style.display='flex';
 }
 function updM(){$('m-t').textContent=ALL.length;$('m-u').textContent=ALL.reduce((s,p)=>s+(p.cantidades||0),0).toLocaleString('es-AR');$('m-l').textContent=ALL.filter(p=>p.cantidades>0&&p.stock_minimo>0&&p.cantidades<p.stock_minimo).length;$('m-z').textContent=ALL.filter(p=>!p.cantidades).length}
+async function updPedidosPendientes(){
+  try{
+    const{count}=await db.from('lista_retiro').select('id',{count:'exact',head:true}).eq('retirado',false);
+    const n=count||0,el=$('m-pp');if(!el)return;
+    el.textContent=n;el.className='dv'+(n>0?' e':'')
+  }catch(e){}
+}
 function syncS(a,p){
   const url=SYNC+'?accion='+a+'&'+new URLSearchParams(p);
   fetch(url,{mode:'no-cors'}).catch(()=>{});
@@ -1471,6 +1478,7 @@ function flexLabel(fechaStr){
 }
 async function loadLista(){
   const el=$('lr-list');el.innerHTML='<div class="ld"><div class="sp"></div></div>';
+  updPedidosPendientes();
   try{
     const{data}=await db.from('lista_retiro').select('*').order('created_at',{ascending:false});
     const rows=data||[];
