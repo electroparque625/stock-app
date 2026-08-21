@@ -314,7 +314,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
 <div class="stit" style="margin:0">Pedidos por buscar</div>
-<button class="b bs" style="width:auto;padding:6px 10px;font-size:11px" onclick="vaciarLista()">🗑 Vaciar todo</button>
+<button class="b bs" style="width:auto;padding:6px 10px;font-size:11px" onclick="vaciarLista()">✅ Borrar los ya hechos</button>
 </div>
 <div id="lr-list"><div class="ld"><div class="sp"></div>Cargando...</div></div>
 </div>
@@ -621,7 +621,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-08-17-9';
+const APP_VERSION='2026-08-21-1';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1496,7 +1496,7 @@ async function loadLista(){
         +(r.ubicacion?'<div style="font-size:11px;color:var(--pri);font-weight:600">📍 '+r.ubicacion+'</div>':'')
         +(r.observaciones?'<div style="font-size:11px;color:var(--tx3);font-style:italic">'+r.observaciones+'</div>':'')
         +'</div></div>'
-        +'<button onclick="quitarDeLista('+r.id+')" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:14px">🗑</button>'
+        +'<button onclick="event.stopPropagation();quitarDeLista('+r.id+')" title="Borrar este pedido" style="background:var(--err-l);border:1px solid var(--err);border-radius:var(--rs);cursor:pointer;color:var(--err);font-size:16px;padding:6px 10px;flex-shrink:0;align-self:center">🗑</button>'
         +'</div>';
     };
     const grupos={};
@@ -1539,7 +1539,7 @@ async function loadLista(){
 }
 async function toggleRetirado(id,val){await db.from('lista_retiro').update({retirado:val}).eq('id',id);loadLista()}
 async function quitarDeLista(id){await db.from('lista_retiro').delete().eq('id',id);loadLista()}
-async function vaciarLista(){if(!confirm('¿Vaciar toda la lista de retiro? No se puede deshacer.'))return;await db.from('lista_retiro').delete().gte('id',0);toast('Lista vaciada');loadLista()}
+async function vaciarLista(){if(!confirm('¿Borrar de la lista los pedidos ya marcados como retirados? Los pendientes quedan intactos. No se puede deshacer.'))return;await db.from('lista_retiro').delete().eq('retirado',true);toast('Se borraron los ya hechos');loadLista()}
 
 /* REPARACIONES */
 let repTab='activas',allOTs=[],curOT=null;
