@@ -631,7 +631,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-08-21-2';
+const APP_VERSION='2026-08-21-3';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1559,6 +1559,7 @@ async function quitarDeLista(id){await db.from('lista_retiro').delete().eq('id',
 async function vaciarLista(){if(!confirm('¿Borrar de la lista los pedidos ya marcados como retirados? Los pendientes quedan intactos. No se puede deshacer.'))return;await db.from('lista_retiro').delete().eq('retirado',true);toast('Se borraron los ya hechos');loadLista()}
 
 /* PREGUNTAS ML */
+const CUENTA_ML_NOMBRE={'1':'Electroparque-OK','2':'DomitechStore','3':'MAUROMAURO'};
 async function loadPreguntas(){
   const el=$('pg-list');el.innerHTML='<div class="ld"><div class="sp"></div></div>';
   updPreguntasPendientes();
@@ -1570,7 +1571,7 @@ async function loadPreguntas(){
     const renderItem=r=>'<div class="fac-row" style="'+(r.resuelta?'opacity:.45':'')+'">'
       +'<div class="fac-ch" style="cursor:pointer;flex:1;min-width:0" onclick="toggleResueltaPregunta('+r.id+','+(!r.resuelta)+')"><span class="fac-ico">'+(r.resuelta?'✅':'⬜')+'</span><div style="flex:1;min-width:0">'
       +'<div class="fac-name" style="'+(r.resuelta?'text-decoration:line-through':'')+'">'+(r.pregunta||'—')+'</div>'
-      +'<div style="font-size:11px;color:var(--tx3)">'+(r.item_id||'')+' · '+(r.cuenta_nombre||'Cuenta '+r.cuenta_numero)+'</div>'
+      +'<div style="font-size:11px;color:var(--tx3)">'+(r.item_id||'')+' · '+(CUENTA_ML_NOMBRE[r.cuenta_numero]||r.cuenta_nombre||'Cuenta '+r.cuenta_numero)+'</div>'
       +'<span style="font-size:10px;background:var(--warn-l);color:var(--warn);padding:1px 6px;border-radius:8px;font-weight:700">'+(motN[r.motivo]||r.motivo||'—')+'</span>'
       +'</div></div>'
       +'<button onclick="event.stopPropagation();borrarPregunta('+r.id+')" title="Borrar" style="background:var(--err-l);border:1px solid var(--err);border-radius:var(--rs);cursor:pointer;color:var(--err);font-size:16px;padding:6px 10px;flex-shrink:0;align-self:center">🗑</button>'
@@ -1581,7 +1582,7 @@ async function loadPreguntas(){
     const claves=Object.keys(grupos).sort((a,b)=>{if(a==='_sin')return 1;if(b==='_sin')return -1;const pa=tienePendiente(a),pb=tienePendiente(b);if(pa!==pb)return pa?-1:1;return a.localeCompare(b)});
     el.innerHTML=claves.map(k=>{
       const items=grupos[k].slice().sort((a,b)=>{if(!!a.resuelta!==!!b.resuelta)return a.resuelta?1:-1;return new Date(b.created_at)-new Date(a.created_at)});
-      const titulo=k==='_sin'?'❓ Sin identificar':'🛒 '+(items[0].cuenta_nombre||'Cuenta '+k)+' (Cuenta '+k+')';
+      const titulo=k==='_sin'?'❓ Sin identificar':'🛒 '+(CUENTA_ML_NOMBRE[k]||items[0].cuenta_nombre||'Cuenta '+k);
       return'<div class="fac-card"><div class="fst">'+titulo+' · '+items.length+'</div>'+items.map(renderItem).join('')+'</div>';
     }).join('');
   }catch(e){el.innerHTML='<div class="emp">Error: '+e.message+'</div>'}
