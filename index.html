@@ -39,7 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .side{display:none}
 .sb{background:var(--card);border-bottom:1px solid var(--brd);padding:8px 14px;position:relative;z-index:19;display:none;box-sizing:border-box;overflow:hidden}.sb.v{display:block}
 @media(min-width:768px){
-.tb{position:fixed;top:0;left:0;width:210px;height:100vh;flex-direction:column;align-items:flex-start;border-right:1px solid var(--brd);border-bottom:none;padding:20px 14px;z-index:20;justify-content:flex-start;gap:0}
+.tb{position:fixed;top:0;left:0;width:210px;height:100vh;flex-direction:column;align-items:flex-start;border-right:1px solid var(--brd);border-bottom:none;padding:20px 14px;z-index:20;justify-content:flex-start;gap:0;overflow-y:auto}
 .tb-r{margin-top:auto;flex-direction:column;align-items:flex-start;gap:6px;width:100%}
 .side{display:flex;flex-direction:column;gap:2px;width:100%;margin-top:14px}
 .side .nb{flex-direction:row;justify-content:flex-start;padding:10px 12px;border-radius:var(--rs);gap:8px;flex:none;width:100%}
@@ -631,7 +631,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-08-21-4';
+const APP_VERSION='2026-08-21-5';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
