@@ -337,6 +337,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 <div style="display:flex;gap:8px;margin-bottom:10px">
 <button class="b bp" onclick="$('s-rep-new').style.display='block';$('s-rep-new').scrollIntoView()" style="flex:1">+ Nueva OT</button>
+<button class="b bs" onclick="go('clientes')" style="width:auto;padding:12px 16px">👥 Clientes</button>
 <button class="b bs" onclick="loadRep()" style="width:auto;padding:12px 16px">🔄</button>
 </div>
 <div class="f" style="margin-bottom:8px"><input type="text" id="rep-search" placeholder="Buscar por cliente, teléfono, marca, modelo, N° serie..." oninput="filterRep()"/></div>
@@ -371,6 +372,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 <div style="display:flex;gap:8px"><button class="b bp" onclick="saveNewOT()" style="flex:1">Guardar OT</button><button class="b bs" onclick="$('s-rep-new').style.display='none'" style="width:auto;padding:12px 16px">✕</button></div>
 </div>
+</div>
+
+<!-- CLIENTES REPARACIONES --><div class="sc" id="s-clientes">
+<button class="bk" onclick="go('rep')">‹ Volver a Reparaciones</button>
+<div class="f" style="margin-bottom:8px"><input type="text" id="cli-q" placeholder="Buscar cliente por nombre o teléfono..." oninput="filtrarClientes()"/></div>
+<div id="cli-list"><div class="ld"><div class="sp"></div>Cargando...</div></div>
+</div>
+
+<!-- CLIENTE DETALLE --><div class="sc" id="s-cli-det">
+<button class="bk" onclick="go('clientes')">‹ Volver a Clientes</button>
+<div class="dh" id="cli-header"></div>
+<div class="dg" id="cli-kpis"></div>
+<div class="stit">Historial de equipos</div>
+<div id="cli-ots"></div>
 </div>
 
 <!-- OT DETAIL --><div class="sc" id="s-rep-det">
@@ -631,7 +646,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://rdphsorailxlalbjoaly.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcGhzb3JhaWx4bGFsYmpvYWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzAxMjcsImV4cCI6MjA5NzEwNjEyN30.j6s23uAI4GefP4Iq-PbalXZyHSf1xn2ySc1B-DtEK5g',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-08-21-5';
+const APP_VERSION='2026-08-21-6';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -738,7 +753,7 @@ function ico(a){a=(a||'').toLowerCase();if(/joystick|gamepad|dualsense|dualshock
 function aB(p){const a=p.estado_alerta||'OK';if(a==='SIN STOCK')return['🔴 SIN STOCK','b-sin'];if(a.includes('CRITICO AVION'))return['🔴 CRÍTICO ✈️','b-crit'];if(a.includes('CRITICO BARCO'))return['🔴 CRÍTICO 🚢','b-crit'];if(a.includes('PRE ALERTA AVION'))return['🟡 PRE-ALERTA ✈️','b-pre'];if(a.includes('PRE ALERTA BARCO'))return['🟡 PRE-ALERTA 🚢','b-pre'];return['🟢 OK','b-ok']}
 function sC(p){if(!p.cantidades)return'e';if(p.stock_minimo&&p.cantidades<p.stock_minimo)return'w';return'o'}
 
-function go(s){if(s==='imp'&&String(ses&&ses.usuario||'').toLowerCase()!=='electroparque'){toast('No tenés acceso a este módulo');return}document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='lista')loadLista();if(s==='preguntas')loadPreguntas();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='rep')loadRep();if(s==='presu')loadPresus();if(s==='usr')loadUsr();if(s==='importados')loadImportados();if(s==='cuentas')loadCuentasCorrientes();if(s==='imp'){const f=$('imp-frame');if(!f.src)f.src='https://electroparque-bot.onrender.com'}if(SIDE_MORE_SCREENS.includes(s)){$('side-more')?.classList.add('open');$('side-more-btn')?.classList.add('open')}window.location.hash=s}
+function go(s){if(s==='imp'&&String(ses&&ses.usuario||'').toLowerCase()!=='electroparque'){toast('No tenés acceso a este módulo');return}document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='lista')loadLista();if(s==='preguntas')loadPreguntas();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='rep')loadRep();if(s==='clientes')loadClientes();if(s==='presu')loadPresus();if(s==='usr')loadUsr();if(s==='importados')loadImportados();if(s==='cuentas')loadCuentasCorrientes();if(s==='imp'){const f=$('imp-frame');if(!f.src)f.src='https://electroparque-bot.onrender.com'}if(SIDE_MORE_SCREENS.includes(s)){$('side-more')?.classList.add('open');$('side-more-btn')?.classList.add('open')}window.location.hash=s}
 window.addEventListener('hashchange',()=>{const h=location.hash.replace('#','');if(h&&$('s-'+h)&&ses)go(h)})
 let invTab='stock';
 function setTab(t,btn){invTab=t;document.querySelectorAll('#inv-tabs .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');filtrar()}
@@ -1597,6 +1612,47 @@ const OT_STATES={ingresado:{lbl:'Ingresado',color:'var(--tx3)',ico:'📥'},en_di
 function setRepTab(t,btn){repTab=t;document.querySelectorAll('#rep-tabs .fb').forEach(b=>b.classList.remove('a'));btn.classList.add('a');renderRepList()}
 async function loadRep(){try{const{data}=await db.from('rep_ordenes').select('*,rep_clientes(*)').order('created_at',{ascending:false});allOTs=data||[];renderRepList();$('rep-activas').textContent=allOTs.filter(o=>o.estado!=='entregado'&&o.estado!=='rechazado').length;$('rep-listas').textContent=allOTs.filter(o=>o.estado==='listo_retirar').length;$('rep-enrep').textContent=allOTs.filter(o=>o.estado==='en_reparacion').length;$('rep-total').textContent=allOTs.length}catch(e){$('rep-list').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
 function renderRepList(){let list=allOTs;if(repTab==='activas')list=list.filter(o=>o.estado!=='entregado'&&o.estado!=='rechazado');else if(repTab==='listo')list=list.filter(o=>o.estado==='listo_retirar');else if(repTab!=='todas')list=list.filter(o=>o.estado===repTab);$('rep-list').innerHTML=list.length?list.map(o=>{const st=OT_STATES[o.estado]||{lbl:o.estado,color:'var(--tx3)',ico:'📋'};const cli=o.rep_clientes;return'<div class="ar" onclick="showOT('+o.id+')"><div class="ae">'+st.ico+'</div><div class="ai"><div class="an">OT #'+o.id+' · '+(o.marca||'')+' '+(o.modelo||'')+'</div><div class="am">'+(cli?cli.nombre:'?')+' · '+(o.falla_cliente||'').substring(0,40)+'</div></div><span class="ab" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:'+st.color+'">'+st.lbl+'</span></div>'}).join(''):'<div class="emp">Sin órdenes</div>'}
+let allClientes=[];
+async function loadClientes(){
+  const el=$('cli-list');el.innerHTML='<div class="ld"><div class="sp"></div></div>';
+  try{
+    const{data:clientes}=await db.from('rep_clientes').select('*').order('nombre',{ascending:true});
+    const{data:ots}=await db.from('rep_ordenes').select('id,id_cliente,estado');
+    allClientes=(clientes||[]).map(c=>{
+      const misOts=(ots||[]).filter(o=>o.id_cliente===c.id);
+      const enDeposito=misOts.filter(o=>o.estado!=='entregado'&&o.estado!=='rechazado').length;
+      const entregadas=misOts.filter(o=>o.estado==='entregado').length;
+      return{...c,totalOts:misOts.length,enDeposito,entregadas};
+    });
+    renderClientes(allClientes);
+  }catch(e){el.innerHTML='<div class="emp">Error: '+e.message+'</div>'}
+}
+function filtrarClientes(){
+  const q=($('cli-q').value||'').toLowerCase().trim();
+  const lista=!q?allClientes:allClientes.filter(c=>(c.nombre||'').toLowerCase().includes(q)||(c.telefono||'').includes(q));
+  renderClientes(lista);
+}
+function renderClientes(lista){
+  const el=$('cli-list');
+  if(!lista.length){el.innerHTML='<div class="emp">Sin clientes</div>';return}
+  el.innerHTML=lista.map(c=>'<div class="ar" onclick="showCliente('+c.id+')"><div class="ae">👤</div><div class="ai"><div class="an">'+(c.nombre||'—')+'</div><div class="am">'+(c.telefono||'')+' · '+c.totalOts+' equipo'+(c.totalOts===1?'':'s')+(c.enDeposito?' · '+c.enDeposito+' en depósito':'')+'</div></div></div>').join('');
+}
+async function showCliente(id){
+  document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));
+  $('s-cli-det').classList.add('a');$('sbar').classList.remove('v');
+  const{data:cli}=await db.from('rep_clientes').select('*').eq('id',id).single();
+  if(!cli)return;
+  $('cli-header').innerHTML='<div class="di" style="font-size:28px">👤</div><div style="flex:1;min-width:0"><div class="dt">'+(cli.nombre||'—')+'</div><div class="dk">'+(cli.telefono||'')+(cli.dni_cuit?' · '+cli.dni_cuit:'')+(cli.email?' · '+cli.email:'')+'</div></div>';
+  const{data:ots}=await db.from('rep_ordenes').select('*').eq('id_cliente',id).order('created_at',{ascending:false});
+  const rows=ots||[];
+  const enDeposito=rows.filter(o=>o.estado!=='entregado'&&o.estado!=='rechazado').length;
+  const entregadas=rows.filter(o=>o.estado==='entregado').length;
+  $('cli-kpis').innerHTML='<div class="dc"><div class="dl">Equipos totales</div><div class="dv">'+rows.length+'</div></div><div class="dc"><div class="dl">En depósito</div><div class="dv w">'+enDeposito+'</div></div><div class="dc"><div class="dl">Entregados</div><div class="dv ok">'+entregadas+'</div></div>';
+  $('cli-ots').innerHTML=rows.length?rows.map(o=>{
+    const st=OT_STATES[o.estado]||{lbl:o.estado,color:'var(--tx3)',ico:'📋'};
+    return'<div class="ar" onclick="showOT('+o.id+')"><div class="ae">'+st.ico+'</div><div class="ai"><div class="an">OT #'+o.id+' · '+(o.marca||'')+' '+(o.modelo||'')+'</div><div class="am">'+(o.falla_cliente||'').substring(0,40)+'</div></div><span class="ab" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:'+st.color+'">'+st.lbl+'</span></div>';
+  }).join(''):'<div class="emp">Sin equipos registrados</div>';
+}
 async function searchRepClient(){const tel=$('rc-tel').value.trim();if(tel.length<4){$('rc-found').style.display='none';return}const{data}=await db.from('rep_clientes').select('*').ilike('telefono','%'+tel+'%').limit(1);if(data&&data.length){const c=data[0];$('rc-nom').value=c.nombre;$('rc-dni').value=c.dni_cuit||'';$('rc-email').value=c.email||'';$('rc-found').style.display='block';$('rc-found').textContent='✅ Cliente: '+c.nombre;$('rc-found').dataset.id=c.id}else{$('rc-found').style.display='none';$('rc-found').dataset.id=''}}
 async function saveNewOT(){const nom=$('rc-nom').value.trim(),tel=$('rc-tel').value.trim(),falla=$('ro-falla').value.trim();if(!nom||!tel||!falla){toast('Completá cliente, teléfono y falla');return}try{let cid=$('rc-found').dataset.id;if(!cid){const{data:nc,error:ce}=await db.from('rep_clientes').insert({nombre:nom,telefono:tel,dni_cuit:$('rc-dni').value||null,email:$('rc-email').value||null}).select().single();if(ce)throw ce;cid=nc.id}const{data:ot,error}=await db.from('rep_ordenes').insert({id_cliente:+cid,recibido_por:ses?.nombre||'—',tipo_equipo:$('ro-tipo').value,marca:$('ro-marca').value||null,modelo:$('ro-modelo').value||null,numero_serie:$('ro-serie').value||null,accesorios:$('ro-acc').value||null,observaciones_fisico:$('ro-fisico').value||null,falla_cliente:falla,costo_diagnostico:0}).select().single();if(error)throw error;toast('OT #'+ot.id+' creada');$('s-rep-new').style.display='none';['rc-tel','rc-nom','rc-dni','rc-email','ro-marca','ro-modelo','ro-serie','ro-acc','ro-fisico','ro-falla','fcj-new','fes-new'].forEach(id=>$(id).value='');$('rc-found').style.display='none';loadRep()}catch(e){toast('Error: '+e.message)}}
 async function showOT(id){const{data:ot}=await db.from('rep_ordenes').select('*,rep_clientes(*)').eq('id',id).single();if(!ot)return;curOT=ot;document.querySelectorAll('.sc').forEach(s=>s.classList.remove('a'));$('s-rep-det').classList.add('a');$('sbar').classList.remove('v');const st=OT_STATES[ot.estado]||{lbl:ot.estado,color:'var(--tx3)',ico:'📋'};$('ot-num').textContent='OT #'+ot.id;$('ot-fecha').textContent='Ingreso: '+new Date(ot.fecha_ingreso).toLocaleDateString('es-AR')+' · Recibió: '+(ot.recibido_por||'—');$('ot-status-card').innerHTML='<div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">'+st.ico+'</span><div><div style="font-size:15px;font-weight:700;color:'+st.color+'">'+st.lbl+'</div><div style="font-size:11px;color:var(--tx3)">'+ot.falla_cliente+'</div></div></div>';const cli=ot.rep_clientes||{};$('ot-cliente-info').innerHTML='<div style="font-size:13px"><b>'+cli.nombre+'</b> · 📱 '+cli.telefono+(cli.dni_cuit?' · DNI: '+cli.dni_cuit:'')+(cli.email?' · ✉ '+cli.email:'')+'</div>';$('ot-equipo-info').innerHTML='<div style="font-size:13px"><b>'+(ot.tipo_equipo||'')+'</b> · '+(ot.marca||'')+' '+(ot.modelo||'')+(ot.numero_serie?' · S/N: '+ot.numero_serie:'')+(ot.accesorios?'<br>Accesorios: '+ot.accesorios:'')+(ot.observaciones_fisico?'<br>Estado: '+ot.observaciones_fisico:'')+'</div>';const es=ot.estado;$('ot-diag-section').style.display=(es==='ingresado'||es==='en_diagnostico')?'block':'none';$('ot-presu-section').style.display=(es==='presupuesto_enviado'||es==='en_diagnostico')?'block':'none';$('ot-rep-section').style.display=(es==='en_reparacion'||es==='control_calidad')?'block':'none';$('ot-entrega-section').style.display=(es==='listo_retirar')?'block':'none';$('ot-gar-mo').value=ot.dias_garantia_mo||30;$('ot-gar-rep').value=ot.dias_garantia_repuesto||90;$('ot-tec-diag').value=ot.tecnico_diagnostico||'';$('ot-falla-conf').value=ot.falla_confirmada||'';$('ot-req-rep').checked=!!ot.requiere_repuesto;$('ot-repuesto').value=ot.repuesto_necesario||'';$('ot-desc-presu').value=ot.descripcion_presupuesto||'';$('ot-cost-rep').value=ot.costo_repuestos||0;$('ot-cost-mo').value=ot.costo_mano_obra||0;$('ot-cost-total').textContent='$'+((+ot.costo_repuestos||0)+(+ot.costo_mano_obra||0)).toLocaleString('es-AR');$('ot-tec-rep').value=ot.tecnico_reparacion||'';$('ot-obs-tec').value=ot.observaciones_tecnicas||'';$('ot-cost-rep').oninput=$('ot-cost-mo').oninput=()=>{$('ot-cost-total').textContent='$'+((+$('ot-cost-rep').value||0)+(+$('ot-cost-mo').value||0)).toLocaleString('es-AR')}}
