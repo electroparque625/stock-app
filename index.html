@@ -17,7 +17,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .f{margin-bottom:12px}.f label{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:4px}
 .f input,.f select{width:100%;border:1px solid var(--brd);border-radius:var(--rs);padding:10px 12px;font-size:14px;color:var(--tx);background:var(--bg);outline:none;font-family:inherit}
 .f input:focus,.f select:focus{border-color:var(--pri);background:var(--card);box-shadow:0 0 0 3px rgba(26,109,202,.1)}
-.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.fr4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
 .fn{font-size:11px;color:var(--tx3);margin-top:3px}
 .b{padding:12px 20px;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;width:100%}
 .bp{background:var(--pri);color:#fff}.bp:disabled{opacity:.5}.bo{background:var(--ok);color:#fff}.be{background:var(--err-l);color:var(--err);border:1px solid #f09595}.bs{background:var(--bg);color:var(--tx);border:1px solid var(--brd)}.bw{background:var(--warn);color:#fff}
@@ -360,7 +360,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="fs"><div class="fst">Precios</div><div class="fr price-restricted" style="display:none"><div class="f"><label>Costo</label><input type="number" id="fco" min="0"/></div><div class="f"><label>Margen %</label><input type="number" id="fmg" min="0"/></div></div><div class="fr"><div class="f"><label>P. venta</label><input type="number" id="fve" min="0"/></div><div class="f price-restricted" style="display:none"><label>P. mayorista</label><input type="number" id="fmy" min="0"/></div></div></div>
 <div class="fs"><div class="fst">Extra</div><div class="f"><label>Observaciones</label><input type="text" id="fob"/></div><div class="f"><label>ML Electroparque-OK</label><input type="url" id="flk" placeholder="https://articulo.mercadolibre.com.ar/..."/></div>
 <div class="f"><label>ML DOMITECH</label><input type="url" id="flk2"/></div>
-<div class="f"><label>ML MAUROMAURO</label><input type="url" id="flk3"/></div><div class="fr3"><div class="f"><label>ML ID 1</label><input type="text" id="fm1"/></div><div class="f"><label>ML ID 2</label><input type="text" id="fm2"/></div><div class="f"><label>ML ID 3</label><input type="text" id="fm3"/></div></div></div>
+<div class="f"><label>ML MAUROMAURO</label><input type="url" id="flk3"/></div>
+<div class="f"><label>ML MARIA DEL CARMEN</label><input type="url" id="flk4"/></div><div class="fr4"><div class="f"><label>ML ID 1</label><input type="text" id="fm1"/></div><div class="f"><label>ML ID 2</label><input type="text" id="fm2"/></div><div class="f"><label>ML ID 3</label><input type="text" id="fm3"/></div><div class="f"><label>ML ID 4</label><input type="text" id="fm4"/></div></div></div>
 <button class="b bp" id="bsv" onclick="saveNew()">Guardar producto</button><div style="height:12px"></div></div>
 
 <!-- SCANNER --><div class="sc" id="s-scan"><div class="scb">
@@ -748,7 +749,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="es2"><div class="es2t">Foto</div><div style="display:flex;align-items:center;gap:10px"><img id="e-photo-prev" style="width:60px;height:60px;object-fit:cover;border-radius:var(--rs);border:1px solid var(--brd);display:none" alt=""/><button class="b bs" style="flex:1" onclick="$('e-photo').click()">📷 Cambiar foto</button><input type="file" id="e-photo" accept="image/*" style="display:none" onchange="previewEditPhoto(this)"/></div></div>
 <div class="es2"><div class="es2t">Extra</div><div class="f"><label>Obs.</label><input type="text" id="eob"/></div><div class="f"><label>ML Electroparque-OK</label><input type="url" id="elk"/></div>
 <div class="f"><label>ML DOMITECH</label><input type="url" id="elk2"/></div>
-<div class="f"><label>ML MAUROMAURO</label><input type="url" id="elk3"/></div><div class="fr3"><div class="f"><label>ML 1</label><input type="text" id="em1"/></div><div class="f"><label>ML 2</label><input type="text" id="em2"/></div><div class="f"><label>ML 3</label><input type="text" id="em3"/></div></div></div>
+<div class="f"><label>ML MAUROMAURO</label><input type="url" id="elk3"/></div>
+<div class="f"><label>ML MARIA DEL CARMEN</label><input type="url" id="elk4"/></div><div class="fr4"><div class="f"><label>ML 1</label><input type="text" id="em1"/></div><div class="f"><label>ML 2</label><input type="text" id="em2"/></div><div class="f"><label>ML 3</label><input type="text" id="em3"/></div><div class="f"><label>ML 4</label><input type="text" id="em4"/></div></div></div>
 <div class="macts"><button class="b bs" onclick="closeEd()">Cancelar</button><button class="b bp" id="bes" onclick="saveEd()">Guardar</button></div></div></div>
 
 <div class="toast" id="toast"></div>
@@ -765,7 +767,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-09-1';
+const APP_VERSION='2026-09-09-2';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -889,7 +891,7 @@ function filtrar(){const q=($('q').value||'').toLowerCase();let l=ALL;
   else if(filt==='monitorear')l=l.filter(p=>p.monitorear);
   else if(filt==='es_full')l=l.filter(p=>p.es_full);
   else if(filt!=='todos'&&filt!=='sinstock'&&filt!=='PAUSADA')l=l.filter(p=>(p.articulo||'').toLowerCase().includes(filt.toLowerCase()));
-  if(q){const words=q.split(/\s+/).filter(w=>w.length>0);l=l.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')+' '+(p.cod_barra||'')+' '+(p.ml_id_1||'')+' '+(p.ml_id_2||'')+' '+(p.ml_id_3||'')+' '+(p.observaciones||'')+' '+p.id).toLowerCase();return words.every(w=>h.includes(w))})}
+  if(q){const words=q.split(/\s+/).filter(w=>w.length>0);l=l.filter(p=>{const h=((p.articulo||'')+' '+(p.sku||'')+' '+(p.marca||'')+' '+(p.modelo||'')+' '+(p.cod_barra||'')+' '+(p.ml_id_1||'')+' '+(p.ml_id_2||'')+' '+(p.ml_id_3||'')+' '+(p.ml_id_4||'')+' '+(p.observaciones||'')+' '+p.id).toLowerCase();return words.every(w=>h.includes(w))})}
   const fCaja=$('f-caja')?.value,fEst=$('f-est')?.value,fMarca=$('f-marca')?.value;
   if(fCaja)l=l.filter(p=>p.caja===fCaja);
   if(fEst)l=l.filter(p=>p.estanteria===fEst);
@@ -1277,7 +1279,7 @@ async function loadMonChart(){
       const{data:bySku}=await db.from('movimientos').select('*').gte('created_at',since).eq('sku',monProd.sku);
       if(bySku)movs=movs.concat(bySku);
     }
-    const mlas=[monProd.ml_id_1,monProd.ml_id_2,monProd.ml_id_3].filter(Boolean);
+    const mlas=[monProd.ml_id_1,monProd.ml_id_2,monProd.ml_id_3,monProd.ml_id_4].filter(Boolean);
     for(const mla of mlas){
       const{data}=await db.from('movimientos').select('*').gte('created_at',since).ilike('articulo','%'+mla+'%');
       if(data)movs=movs.concat(data.filter(v=>!movs.find(x=>x.id===v.id)));
@@ -1340,10 +1342,10 @@ const img=$('d-img'),em=$('d-em');if(p.imagen){img.src=p.imagen;img.style.displa
 const infoRows=[['ID',p.id],['Estado',(p.estado||'').toUpperCase()==='PAUSADA'?'PAUSADA':p.estado_alerta||'OK'],['P. venta',p.precio_venta?'$'+Number(p.precio_venta).toLocaleString('es-AR'):'—']];
   if(canSeePrices()){infoRows.push(['P. costo',p.precio_al_costo?'$'+Number(p.precio_al_costo).toLocaleString('es-AR'):'—']);infoRows.push(['Margen',p.margen_ganancia?p.margen_ganancia+'%':'—']);infoRows.push(['P. mayorista',p.precio_mayorista?'$'+Number(p.precio_mayorista).toLocaleString('es-AR'):'—'])}
   infoRows.push(['Stock mín.',p.stock_minimo?p.stock_minimo+' u.':'—'],['Ubicación',[p.caja?'Caja '+p.caja:'',p.estanteria?'Est. '+p.estanteria:''].filter(Boolean).join(' · ')||'—'],['Modelo',p.modelo||'—'],['Importación',(p.importacion_avion?'✈️ Avión ':'')+(p.importacion_barco?'🚢 Barco':'')||'—'],['Últ. mov.',p.ultimo_movimiento||'—']);
-  if([p.ml_id_1,p.ml_id_2,p.ml_id_3].filter(Boolean).length)infoRows.push(['ML IDs',[p.ml_id_1,p.ml_id_2,p.ml_id_3].filter(Boolean).join(' / ')]);
+  if([p.ml_id_1,p.ml_id_2,p.ml_id_3,p.ml_id_4].filter(Boolean).length)infoRows.push(['ML IDs',[p.ml_id_1,p.ml_id_2,p.ml_id_3,p.ml_id_4].filter(Boolean).join(' / ')]);
   $('d-inf').innerHTML=infoRows.map(r=>'<div class="ir"><span class="ik">'+r[0]+'</span><span class="iv">'+r[1]+'</span></div>').join('');
-const hasLinks=p.link||p.link_2||p.link_3;$('d-mlw').style.display=hasLinks?'block':'none';
-  if(hasLinks){let mh='';if(p.link)mh+='<a href="'+p.link+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 Electroparque-OK</a>';if(p.link_2)mh+='<a href="'+p.link_2+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 DOMITECH</a>';if(p.link_3)mh+='<a href="'+p.link_3+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 MAUROMAURO</a>';$('d-mll').innerHTML=mh}
+const hasLinks=p.link||p.link_2||p.link_3||p.link_4;$('d-mlw').style.display=hasLinks?'block':'none';
+  if(hasLinks){let mh='';if(p.link)mh+='<a href="'+p.link+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 Electroparque-OK</a>';if(p.link_2)mh+='<a href="'+p.link_2+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 DOMITECH</a>';if(p.link_3)mh+='<a href="'+p.link_3+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 MAUROMAURO</a>';if(p.link_4)mh+='<a href="'+p.link_4+'" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;background:#FFE600;border:1px solid #E6CF00;border-radius:var(--rs);font-size:12px;font-weight:700;color:#333;text-decoration:none;flex:1">🛒 MARIA DEL CARMEN</a>';$('d-mll').innerHTML=mh}
 renderWebCard(p);}
 
 function renderWebCard(p){
@@ -1468,7 +1470,7 @@ async function deleteProduct(){if(!cur)return;if(!confirm('¿ELIMINAR "'+cur.art
 /* PRODUCT HISTORY */
 async function loadProdHistory(){
   if(!cur)return;const el=$('d-history');el.innerHTML='<div class="ld"><div class="sp"></div></div>';
-  const mlas=[cur.ml_id_1,cur.ml_id_2,cur.ml_id_3].filter(Boolean);let movs=[];
+  const mlas=[cur.ml_id_1,cur.ml_id_2,cur.ml_id_3,cur.ml_id_4].filter(Boolean);let movs=[];
   try{const{data:bySku}=await db.from('movimientos').select('*').eq('sku',cur.sku).order('created_at',{ascending:false}).limit(50);if(bySku)movs=bySku;
   for(const mla of mlas){const{data:byMla}=await db.from('movimientos').select('*').ilike('articulo','%'+mla+'%').order('created_at',{ascending:false}).limit(20);if(byMla)movs=movs.concat(byMla.filter(v=>!movs.find(x=>x.id===v.id)));const{data:byS}=await db.from('movimientos').select('*').eq('sku',mla).order('created_at',{ascending:false}).limit(20);if(byS)movs=movs.concat(byS.filter(v=>!movs.find(x=>x.id===v.id)))}
   movs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
@@ -1477,17 +1479,17 @@ async function loadProdHistory(){
 /* EMOJI EDITOR */
 async function editEmoji(){if(!cur)return;const emojis=['📦','📺','🎮','🚗','🏍️','📡','🎧','🔌','🔋','🔊','🔧','💡','🖥️','📱','⌨️','🖨️','🎵','📷','🕹️','🧲'];const pick=prompt('Elegí un emoji:\n\n'+emojis.join(' ')+'\n\nO escribí el que quieras:',cur.emoji||ico(cur.articulo));if(!pick)return;await db.from('stock').update({emoji:pick}).eq('id',cur.id);cur.emoji=pick;const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)ALL[idx].emoji=pick;$('d-em').textContent=pick;toast('Emoji actualizado')}
 /* VENTAS 60D AUTO-CALC */
-async function calcVentas60d(){const monitoreados=ALL.filter(p=>p.monitorear);if(!monitoreados.length)return;const since=new Date(Date.now()-60*86400000).toISOString();try{const{data:ventas}=await db.from('movimientos').select('articulo,sku,cantidad').eq('tipo','venta').gte('created_at',since);if(!ventas)return;for(const prod of monitoreados){const mlas=[prod.ml_id_1,prod.ml_id_2,prod.ml_id_3].filter(Boolean);let total=0;ventas.forEach(v=>{const art=v.articulo||'';const sku=v.sku||'';if(sku===prod.sku)total+=v.cantidad||0;else{for(const mla of mlas){if(art.includes(mla)||sku===mla){total+=v.cantidad||0;break}}}});if(total!==prod.ventas_60d){await db.from('stock').update({ventas_60d:total}).eq('id',prod.id);prod.ventas_60d=total;const idx=ALL.findIndex(x=>x.id===prod.id);if(idx>-1)ALL[idx].ventas_60d=total}}}catch(e){console.warn('calcVentas60d:',e)}}
+async function calcVentas60d(){const monitoreados=ALL.filter(p=>p.monitorear);if(!monitoreados.length)return;const since=new Date(Date.now()-60*86400000).toISOString();try{const{data:ventas}=await db.from('movimientos').select('articulo,sku,cantidad').eq('tipo','venta').gte('created_at',since);if(!ventas)return;for(const prod of monitoreados){const mlas=[prod.ml_id_1,prod.ml_id_2,prod.ml_id_3,prod.ml_id_4].filter(Boolean);let total=0;ventas.forEach(v=>{const art=v.articulo||'';const sku=v.sku||'';if(sku===prod.sku)total+=v.cantidad||0;else{for(const mla of mlas){if(art.includes(mla)||sku===mla){total+=v.cantidad||0;break}}}});if(total!==prod.ventas_60d){await db.from('stock').update({ventas_60d:total}).eq('id',prod.id);prod.ventas_60d=total;const idx=ALL.findIndex(x=>x.id===prod.id);if(idx>-1)ALL[idx].ventas_60d=total}}}catch(e){console.warn('calcVentas60d:',e)}}
 /* EDIT */
-function openEd(){if(!cur)return;$('med').classList.add('show');editPhotoFile=null;$('ea').value=cur.articulo||'';$('emr').value=cur.marca||'';$('emo').value=cur.modelo||'';$('ecj').value=cur.caja||'';$('ees').value=cur.estanteria||'';$('ecj-new').value='';$('ees-new').value='';$('emi').value=cur.stock_minimo||'';$('eco').value=cur.precio_al_costo||'';$('emg').value=cur.margen_ganancia||'';$('eve').value=cur.precio_venta||'';$('emy').value=cur.precio_mayorista||'';$('eob').value=cur.observaciones||'';$('elk').value=cur.link||'';$('elk2').value=cur.link_2||'';$('elk3').value=cur.link_3||'';$('eet').value=cur.estado==='PAUSADA'?'PAUSADA':(cur.cantidades>0?'STOCK':'SIN STOCK');$('e-imp').checked=!!cur.importado;$('eav').checked=!!cur.importacion_avion;$('eba').checked=!!cur.importacion_barco;$('emn').checked=!!cur.monitorear;$('efull').checked=!!cur.es_full;$('epav').value=cur.pre_alerta_avion||'';$('emav').value=cur.minimo_avion||'';$('epba').value=cur.pre_alerta_barco||'';$('emba').value=cur.minimo_barco||'';$('em1').value=cur.ml_id_1||'';$('em2').value=cur.ml_id_2||'';$('em3').value=cur.ml_id_3||'';if(cur.imagen){$('e-photo-prev').src=cur.imagen;$('e-photo-prev').style.display='block'}else{$('e-photo-prev').style.display='none'}}
+function openEd(){if(!cur)return;$('med').classList.add('show');editPhotoFile=null;$('ea').value=cur.articulo||'';$('emr').value=cur.marca||'';$('emo').value=cur.modelo||'';$('ecj').value=cur.caja||'';$('ees').value=cur.estanteria||'';$('ecj-new').value='';$('ees-new').value='';$('emi').value=cur.stock_minimo||'';$('eco').value=cur.precio_al_costo||'';$('emg').value=cur.margen_ganancia||'';$('eve').value=cur.precio_venta||'';$('emy').value=cur.precio_mayorista||'';$('eob').value=cur.observaciones||'';$('elk').value=cur.link||'';$('elk2').value=cur.link_2||'';$('elk3').value=cur.link_3||'';$('elk4').value=cur.link_4||'';$('eet').value=cur.estado==='PAUSADA'?'PAUSADA':(cur.cantidades>0?'STOCK':'SIN STOCK');$('e-imp').checked=!!cur.importado;$('eav').checked=!!cur.importacion_avion;$('eba').checked=!!cur.importacion_barco;$('emn').checked=!!cur.monitorear;$('efull').checked=!!cur.es_full;$('epav').value=cur.pre_alerta_avion||'';$('emav').value=cur.minimo_avion||'';$('epba').value=cur.pre_alerta_barco||'';$('emba').value=cur.minimo_barco||'';$('em1').value=cur.ml_id_1||'';$('em2').value=cur.ml_id_2||'';$('em3').value=cur.ml_id_3||'';$('em4').value=cur.ml_id_4||'';if(cur.imagen){$('e-photo-prev').src=cur.imagen;$('e-photo-prev').style.display='block'}else{$('e-photo-prev').style.display='none'}}
 function closeEd(){$('med').classList.remove('show')}
-async function saveEd(){if(!cur)return;const b=$('bes');b.disabled=true;b.textContent='Guardando...';const u={articulo:$('ea').value,marca:$('emr').value,modelo:$('emo').value,caja:$('ecj-new').value||$('ecj').value,estanteria:$('ees-new').value||$('ees').value,stock_minimo:+$('emi').value||0,precio_al_costo:+$('eco').value||0,margen_ganancia:+$('emg').value||0,precio_venta:+$('eve').value||0,precio_mayorista:+$('emy').value||0,observaciones:$('eob').value,link:$('elk').value||null,link_2:$('elk2').value||null,link_3:$('elk3').value||null,estado:$('eet').value,importado:$('e-imp').checked,importacion_avion:$('eav').checked,importacion_barco:$('eba').checked,monitorear:$('emn').checked,es_full:$('efull').checked,pre_alerta_avion:+$('epav').value||0,minimo_avion:+$('emav').value||0,pre_alerta_barco:+$('epba').value||0,minimo_barco:+$('emba').value||0,ml_id_1:$('em1').value||null,ml_id_2:$('em2').value||null,ml_id_3:$('em3').value||null};try{if(editPhotoFile){try{const purl=await uploadToStorage(editPhotoFile,cur.id);u.imagen=purl}catch(pe){console.warn('Foto:',pe)}editPhotoFile=null}const{data}=await db.from('stock').update(u).eq('id',cur.id).select().single();if(data){Object.assign(cur,data);const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)Object.assign(ALL[idx],data)}else Object.assign(cur,u);syncS('actualizarProducto',{sku:cur.sku,...u});showDet(cur);closeEd();toast('Actualizado')}catch(e){toast('Error: '+e.message)}b.disabled=false;b.textContent='Guardar'}
+async function saveEd(){if(!cur)return;const b=$('bes');b.disabled=true;b.textContent='Guardando...';const u={articulo:$('ea').value,marca:$('emr').value,modelo:$('emo').value,caja:$('ecj-new').value||$('ecj').value,estanteria:$('ees-new').value||$('ees').value,stock_minimo:+$('emi').value||0,precio_al_costo:+$('eco').value||0,margen_ganancia:+$('emg').value||0,precio_venta:+$('eve').value||0,precio_mayorista:+$('emy').value||0,observaciones:$('eob').value,link:$('elk').value||null,link_2:$('elk2').value||null,link_3:$('elk3').value||null,link_4:$('elk4').value||null,estado:$('eet').value,importado:$('e-imp').checked,importacion_avion:$('eav').checked,importacion_barco:$('eba').checked,monitorear:$('emn').checked,es_full:$('efull').checked,pre_alerta_avion:+$('epav').value||0,minimo_avion:+$('emav').value||0,pre_alerta_barco:+$('epba').value||0,minimo_barco:+$('emba').value||0,ml_id_1:$('em1').value||null,ml_id_2:$('em2').value||null,ml_id_3:$('em3').value||null,ml_id_4:$('em4').value||null};try{if(editPhotoFile){try{const purl=await uploadToStorage(editPhotoFile,cur.id);u.imagen=purl}catch(pe){console.warn('Foto:',pe)}editPhotoFile=null}const{data}=await db.from('stock').update(u).eq('id',cur.id).select().single();if(data){Object.assign(cur,data);const idx=ALL.findIndex(x=>x.id===cur.id);if(idx>-1)Object.assign(ALL[idx],data)}else Object.assign(cur,u);syncS('actualizarProducto',{sku:cur.sku,...u});showDet(cur);closeEd();toast('Actualizado')}catch(e){toast('Error: '+e.message)}b.disabled=false;b.textContent='Guardar'}
 
 /* NEW */
 let nId=null;
 async function loadNID(){$('nid').textContent='...';const{data}=await db.from('stock').select('id').order('id',{ascending:false}).limit(1);nId=(data&&data[0]?data[0].id:0)+1;$('nid').textContent=nId}
 function genSKU(art,marca,modelo,id){const c=(art||'').toLowerCase();let cat='GEN';if(/joystick|gamepad|dualsense/.test(c))cat='JOY';else if(/carplay|android auto/.test(c))cat='CPL';else if(/televisor|tv /.test(c))cat='TEL';else if(/control remoto|remoto/.test(c))cat='REM';else if(/placa|mainboard/.test(c))cat='PLA';else if(/auricular/.test(c))cat='AUR';else if(/cable|hdmi|usb/.test(c))cat='CAB';else if(/parlante/.test(c))cat='PAR';else if(/bateria|cargador/.test(c))cat='BAT';const m=(marca||'GEN').substring(0,3).toUpperCase().replace(/[^A-Z]/g,''),mo=(modelo||'000').substring(0,3).toUpperCase().replace(/[^A-Z0-9]/g,'');return m+'-'+mo+'-'+cat+'-'+id}
-async function saveNew(){const art=$('fa').value.trim();if(!art){toast('Artículo obligatorio');return}if(!nId){toast('Esperando ID');return}const b=$('bsv');b.disabled=true;b.textContent='Guardando...';const marca=$('fmr').value,modelo=$('fmo').value,sku=genSKU(art,marca,modelo,nId),cant=+$('fc').value||0,now=new Date().toLocaleDateString('es-AR');const prod={id:nId,sku,articulo:art,cod_barra:$('fbar').value||null,marca:marca||null,modelo:modelo||null,cantidades:cant,fecha:now,caja:$('fcj-new').value||$('fcj').value||null,estanteria:$('fes-new').value||$('fes').value||null,estado:cant>0?'STOCK':'SIN STOCK',link:$('flk').value||null,link_2:$('flk2').value||null,link_3:$('flk3').value||null,precio_al_costo:+$('fco').value||0,margen_ganancia:+$('fmg').value||0,precio_venta:+$('fve').value||0,precio_mayorista:+$('fmy').value||0,stock_minimo:+$('fmi').value||0,ultimo_movimiento:now,observaciones:$('fob').value||null,ml_id_1:$('fm1').value||null,ml_id_2:$('fm2').value||null,ml_id_3:$('fm3').value||null,importacion_avion:$('fav').checked,importacion_barco:$('fba').checked,pre_alerta_avion:+$('fpav')?.value||0,minimo_avion:+$('fmav')?.value||0,pre_alerta_barco:+$('fpba')?.value||0,minimo_barco:+$('fmba')?.value||0,monitorear:$('fmn').checked,es_full:$('ffull').checked,importado:$('f-imp').checked};try{const{data,error}=await db.from('stock').insert(prod).select().single();if(error)throw error;if(newPhotoFile){try{const purl=await uploadToStorage(newPhotoFile,data.id);await db.from('stock').update({imagen:purl}).eq('id',data.id)}catch(pe){console.warn('Foto:',pe)}newPhotoFile=null;$('f-photo-prev').style.display='none'}syncS('agregar',{id:data.id,sku,...prod});if(cant>0)await db.from('movimientos').insert({fecha:now,hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:art,sku,tipo:'ingreso',cantidad:cant,stock_anterior:0,stock_nuevo:cant,canal:'ingreso',monto:0});if(pendingImportLink){await db.from('importados_catalogo').update({stock_app_id:data.id,cantidad_aplicada:pendingImportLink.cantidad}).eq('fila',pendingImportLink.fila);toast('#'+data.id+' guardado y vinculado a Importados · SKU: '+sku);pendingImportLink=null}else toast('#'+data.id+' guardado · SKU: '+sku);['fa','fbar','fmr','fmo','fc','fmi','fcj','fes','fco','fmg','fve','fmy','fob','flk','fm1','fm2','fm3','fsku','flk2','flk3'].forEach(id=>{const el=$(id);if(el)el.value=''});['fav','fba','fmn','ffull','f-imp'].forEach(id=>{const el=$(id);if(el)el.checked=false});$('fav-f').style.display='none';$('fba-f').style.display='none';$('f-imp-detail').style.display='none';nId=null;loadData();loadNID()}catch(e){toast('Error: '+e.message)}b.disabled=false;b.textContent='Guardar producto'}
+async function saveNew(){const art=$('fa').value.trim();if(!art){toast('Artículo obligatorio');return}if(!nId){toast('Esperando ID');return}const b=$('bsv');b.disabled=true;b.textContent='Guardando...';const marca=$('fmr').value,modelo=$('fmo').value,sku=genSKU(art,marca,modelo,nId),cant=+$('fc').value||0,now=new Date().toLocaleDateString('es-AR');const prod={id:nId,sku,articulo:art,cod_barra:$('fbar').value||null,marca:marca||null,modelo:modelo||null,cantidades:cant,fecha:now,caja:$('fcj-new').value||$('fcj').value||null,estanteria:$('fes-new').value||$('fes').value||null,estado:cant>0?'STOCK':'SIN STOCK',link:$('flk').value||null,link_2:$('flk2').value||null,link_3:$('flk3').value||null,link_4:$('flk4').value||null,precio_al_costo:+$('fco').value||0,margen_ganancia:+$('fmg').value||0,precio_venta:+$('fve').value||0,precio_mayorista:+$('fmy').value||0,stock_minimo:+$('fmi').value||0,ultimo_movimiento:now,observaciones:$('fob').value||null,ml_id_1:$('fm1').value||null,ml_id_2:$('fm2').value||null,ml_id_3:$('fm3').value||null,ml_id_4:$('fm4').value||null,importacion_avion:$('fav').checked,importacion_barco:$('fba').checked,pre_alerta_avion:+$('fpav')?.value||0,minimo_avion:+$('fmav')?.value||0,pre_alerta_barco:+$('fpba')?.value||0,minimo_barco:+$('fmba')?.value||0,monitorear:$('fmn').checked,es_full:$('ffull').checked,importado:$('f-imp').checked};try{const{data,error}=await db.from('stock').insert(prod).select().single();if(error)throw error;if(newPhotoFile){try{const purl=await uploadToStorage(newPhotoFile,data.id);await db.from('stock').update({imagen:purl}).eq('id',data.id)}catch(pe){console.warn('Foto:',pe)}newPhotoFile=null;$('f-photo-prev').style.display='none'}syncS('agregar',{id:data.id,sku,...prod});if(cant>0)await db.from('movimientos').insert({fecha:now,hora:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}),usuario:ses?.nombre||'—',articulo:art,sku,tipo:'ingreso',cantidad:cant,stock_anterior:0,stock_nuevo:cant,canal:'ingreso',monto:0});if(pendingImportLink){await db.from('importados_catalogo').update({stock_app_id:data.id,cantidad_aplicada:pendingImportLink.cantidad}).eq('fila',pendingImportLink.fila);toast('#'+data.id+' guardado y vinculado a Importados · SKU: '+sku);pendingImportLink=null}else toast('#'+data.id+' guardado · SKU: '+sku);['fa','fbar','fmr','fmo','fc','fmi','fcj','fes','fco','fmg','fve','fmy','fob','flk','fm1','fm2','fm3','fm4','fsku','flk2','flk3','flk4'].forEach(id=>{const el=$(id);if(el)el.value=''});['fav','fba','fmn','ffull','f-imp'].forEach(id=>{const el=$(id);if(el)el.checked=false});$('fav-f').style.display='none';$('fba-f').style.display='none';$('f-imp-detail').style.display='none';nId=null;loadData();loadNID()}catch(e){toast('Error: '+e.message)}b.disabled=false;b.textContent='Guardar producto'}
 
 /* SCANNER */
 let camStream=null,camInterval=null,barDetector=null;
@@ -1554,7 +1556,7 @@ function exportExcel(tipo){
   let data=[],filename='';
   if(tipo==='inventario'){
     filename='Inventario_ElectroParque_'+new Date().toLocaleDateString('es-AR').replace(/\//g,'-')+'.xlsx';
-    data=ALL.map(p=>({ID:p.id,SKU:p.sku,Artículo:p.articulo,Marca:p.marca,Modelo:p.modelo,Cantidad:p.cantidades,Estado:p.estado,'P.Costo':p.precio_al_costo,'P.Venta':p.precio_venta,'P.Mayorista':p.precio_mayorista,'Stock Mín':p.stock_minimo,Caja:p.caja,Estantería:p.estanteria,MLA1:p.ml_id_1,MLA2:p.ml_id_2,MLA3:p.ml_id_3,Observaciones:p.observaciones}));
+    data=ALL.map(p=>({ID:p.id,SKU:p.sku,Artículo:p.articulo,Marca:p.marca,Modelo:p.modelo,Cantidad:p.cantidades,Estado:p.estado,'P.Costo':p.precio_al_costo,'P.Venta':p.precio_venta,'P.Mayorista':p.precio_mayorista,'Stock Mín':p.stock_minimo,Caja:p.caja,Estantería:p.estanteria,MLA1:p.ml_id_1,MLA2:p.ml_id_2,MLA3:p.ml_id_3,MLA4:p.ml_id_4,Observaciones:p.observaciones}));
   }else if(tipo==='movimientos'){
     filename='Movimientos_ElectroParque_'+new Date().toLocaleDateString('es-AR').replace(/\//g,'-')+'.xlsx';
     const el=$('mvl');
@@ -1580,13 +1582,14 @@ async function agregarALista(){
   const cant=Math.max(1,parseInt($('lr-cant').value)||1);
   if(!mlaRaw){toast('Escribí el código MLA o N° de orden');return}
   const mla=mlaRaw.toUpperCase();
-  // Busca el producto que tenga ese código en cualquiera de sus 3 casilleros ML ID,
-  // y de cuál casillero salió (1,2 o 3) para saber a qué cuenta pertenece.
+  // Busca el producto que tenga ese código en cualquiera de sus 4 casilleros ML ID,
+  // y de cuál casillero salió (1,2,3 o 4) para saber a qué cuenta pertenece.
   let prod=null,slot=null;
   for(const p of ALL){
     if((p.ml_id_1||'').toUpperCase()===mla){prod=p;slot='1';break}
     if((p.ml_id_2||'').toUpperCase()===mla){prod=p;slot='2';break}
     if((p.ml_id_3||'').toUpperCase()===mla){prod=p;slot='3';break}
+    if((p.ml_id_4||'').toUpperCase()===mla){prod=p;slot='4';break}
   }
   const cuenta=slot?Object.values(ML_CUENTAS_SLUG).find(c=>String(c.numero)===slot):null;
   const ubicacion=prod?[prod.caja,prod.estanteria].filter(Boolean).join(' · '):null;
@@ -2492,17 +2495,18 @@ async function syncMLLinks(){
     // Find column indices dynamically by header name
     const colSKU=headers.indexOf('SKU');
     // Search for LINK_ML2/LINK_ML3 or similar headers
-    let colLink2=-1,colLink3=-1;
+    let colLink2=-1,colLink3=-1,colLink4=-1;
     headers.forEach((h,i)=>{
       const hUp=String(h).toUpperCase().replace(/\s/g,'');
       if(hUp.includes('LINK_ML2')||hUp.includes('LINKML2')||hUp==='LINK_ML_2'||hUp==='LINK2')colLink2=i;
       if(hUp.includes('LINK_ML3')||hUp.includes('LINKML3')||hUp==='LINK_ML_3'||hUp==='LINK3')colLink3=i;
+      if(hUp.includes('LINK_ML4')||hUp.includes('LINKML4')||hUp==='LINK_ML_4'||hUp==='LINK4')colLink4=i;
     });
-    if(colLink2<0&&colLink3<0){
+    if(colLink2<0&&colLink3<0&&colLink4<0){
       // Try by position - show headers so user can identify
-      toast('No encontré columnas LINK_ML2/3. Headers: '+headers.slice(0,30).join(' | '));return;
+      toast('No encontré columnas LINK_ML2/3/4. Headers: '+headers.slice(0,30).join(' | '));return;
     }
-    toast('Link2 col:'+colLink2+' Link3 col:'+colLink3+' — Sincronizando...');
+    toast('Link2 col:'+colLink2+' Link3 col:'+colLink3+' Link4 col:'+colLink4+' — Sincronizando...');
     let updated=0,skipped=0;
     for(let i=1;i<data.length;i++){
       const row=data[i];
@@ -2510,7 +2514,8 @@ async function syncMLLinks(){
       if(!sku){skipped++;continue}
       const link2=colLink2>=0?String(row[colLink2]||'').trim():'';
       const link3=colLink3>=0?String(row[colLink3]||'').trim():'';
-      if(!link2&&!link3){skipped++;continue}
+      const link4=colLink4>=0?String(row[colLink4]||'').trim():'';
+      if(!link2&&!link3&&!link4){skipped++;continue}
       // Find product in Supabase by SKU
       const prod=ALL.find(p=>p.sku===sku);
       if(!prod){skipped++;continue}
@@ -2518,6 +2523,7 @@ async function syncMLLinks(){
       const upd={};
       if(link2&&link2!==prod.link_2)upd.link_2=link2;
       if(link3&&link3!==prod.link_3)upd.link_3=link3;
+      if(link4&&link4!==prod.link_4)upd.link_4=link4;
       if(Object.keys(upd).length===0){skipped++;continue}
       await db.from('stock').update(upd).eq('id',prod.id);
       Object.assign(prod,upd);
@@ -2545,7 +2551,7 @@ async function syncSheetToSupabase(){
     (ventasRec||[]).forEach(v=>{
       let prod=null;
       const mlaM=(v.articulo||'').match(/\[(MLA\d+)\]/);
-      if(mlaM){const mla=mlaM[1];prod=ALL.find(p=>p.ml_id_1===mla||p.ml_id_2===mla||p.ml_id_3===mla)}
+      if(mlaM){const mla=mlaM[1];prod=ALL.find(p=>p.ml_id_1===mla||p.ml_id_2===mla||p.ml_id_3===mla||p.ml_id_4===mla)}
       else if(v.sku){prod=ALL.find(p=>p.sku===v.sku)}
       if(prod)ventaReciente[prod.id]=true;
     });
@@ -2672,7 +2678,7 @@ async function syncLogsSilent(){
       // habría que descontar si esta corrida es la que efectivamente gana la carrera.
       let prod=null;
       if(mla){
-        const{data:prods}=await db.from('stock').select('id,sku,articulo,cantidades,observaciones,caja,estanteria').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
+        const{data:prods}=await db.from('stock').select('id,sku,articulo,cantidades,observaciones,caja,estanteria').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla+',ml_id_4.eq.'+mla).limit(1);
         prod=prods&&prods[0];
       }
       const stockAnterior=prod?(prod.cantidades||0):0;
@@ -2760,7 +2766,7 @@ async function syncLogs(){
       const nombre=ML_CUENTAS[cuenta]||'ML Cuenta '+cuenta;
       let prod=null;
       if(mla){
-        const{data:prods}=await db.from('stock').select('id,sku,articulo,cantidades,observaciones,caja,estanteria').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla).limit(1);
+        const{data:prods}=await db.from('stock').select('id,sku,articulo,cantidades,observaciones,caja,estanteria').or('ml_id_1.eq.'+mla+',ml_id_2.eq.'+mla+',ml_id_3.eq.'+mla+',ml_id_4.eq.'+mla).limit(1);
         prod=prods&&prods[0];
       }
       const stockAnterior=prod?(prod.cantidades||0):0;
@@ -2864,7 +2870,7 @@ function buildNotifPanel(){
   // Inactive ML products (3 months without activity)
   const now90=Date.now()-90*86400000;
   const inactivos=ALL.filter(p=>{
-    if(!p.ml_id_1&&!p.ml_id_2&&!p.ml_id_3)return false;
+    if(!p.ml_id_1&&!p.ml_id_2&&!p.ml_id_3&&!p.ml_id_4)return false;
     const lastDate=p.updated_at?new Date(p.updated_at).getTime():p.created_at?new Date(p.created_at).getTime():0;
     return lastDate<now90;
   });
