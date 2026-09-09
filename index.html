@@ -767,7 +767,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-09-2';
+const APP_VERSION='2026-09-09-3';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -2795,13 +2795,16 @@ async function syncLogs(){
 }
 
 /* MIGRATE */
-async function migSheet(){if(ses?.rol!=='superadmin'||!confirm('¿Importar productos NUEVOS del Sheet? (no se modifican los existentes)'))return;const lg=$('mlog');lg.style.display='block';const log=m=>{lg.innerHTML+=m+'<br>';lg.scrollTop=lg.scrollHeight};try{log('📥 Descargando Sheet...');const res=await fetch(SYNC+'?accion=obtener');const data=await res.json();const rows=data.slice(1).filter(f=>f[0]!=null&&f[0]!=='');log('📊 '+rows.length+' filas en Sheet');
+async function migSheet(){if(ses?.rol!=='superadmin'||!confirm('¿Importar productos NUEVOS del Sheet? (no se modifican los existentes)'))return;const lg=$('mlog');lg.style.display='block';const log=m=>{lg.innerHTML+=m+'<br>';lg.scrollTop=lg.scrollHeight};try{log('📥 Descargando Sheet...');const res=await fetch(SYNC+'?accion=obtener');const data=await res.json();const headers=data[0];const rows=data.slice(1).filter(f=>f[0]!=null&&f[0]!=='');log('📊 '+rows.length+' filas en Sheet');
+const H=n=>{const t=String(n).toUpperCase().replace(/\s+/g,' ').trim();return headers.findIndex(h=>String(h).toUpperCase().replace(/\s+/g,' ').trim()===t)};
+const cSku=H('SKU'),cCod=H('COD BARRA'),cMarca=H('MARCA'),cModelo=H('MODELO'),cCant=H('CANTIDADES'),cArt=H('ARTICULO'),cFecha=H('FECHA'),cCaja=H('CAJA'),cEst=H('ESTANTERIA'),cEstado=H('ESTADO'),cLink1=H('LINK_ML1'),cLink2=H('LINK_ML2'),cLink3=H('LINK_ML3'),cLink4=H('LINK_ML4'),cCosto=H('PRECIO AL COSTO'),cMargen=H('MARGEN DE GANANCIA'),cVenta=H('PRECIO VENTA'),cMayor=H('PRECIO MAYORISTA'),cMin=H('STOCK_MINIMO'),cImg=H('IMAGEN'),cObs=H('OBSERVACIONES'),cM1=H('ML_ID_1'),cM2=H('ML_ID_2'),cM3=H('ML_ID_3'),cM4=H('ML_ID_4');
+const g=(f,i)=>i>=0&&f[i]!=null&&f[i]!==''?String(f[i]):null;
 // Get existing SKUs from Supabase
 const existingSKUs=new Set(ALL.map(p=>p.sku));
 log('📦 '+existingSKUs.size+' productos ya en Supabase');
 const newProds=[],skus=new Set();let skip=0,dupes=0;
-for(const f of rows){const sku=String(f[1]||'').trim();if(!sku){skip++;continue}if(skus.has(sku)||existingSKUs.has(sku)){dupes++;continue}skus.add(sku);
-newProds.push({sku,cod_barra:f[2]?String(f[2]):null,marca:f[3]?String(f[3]):null,modelo:f[4]?String(f[4]):null,cantidades:+f[5]||0,articulo:String(f[6]||''),fecha:f[7]?String(f[7]):null,caja:f[8]?String(f[8]):null,estanteria:f[9]?String(f[9]):null,estado:f[10]?String(f[10]):'SIN STOCK',link:f[12]?String(f[12]):null,precio_al_costo:+f[14]||0,margen_ganancia:+f[15]||0,precio_venta:+f[16]||0,precio_mayorista:+f[17]||0,stock_minimo:+f[18]||0,ultimo_movimiento:f[19]?String(f[19]):null,imagen:f[21]?String(f[21]):null,observaciones:f[22]?String(f[22]):null,ml_id_1:f[23]?String(f[23]):null,ml_id_2:f[24]?String(f[24]):null})}
+for(const f of rows){const sku=g(f,cSku)||'';if(!sku){skip++;continue}if(skus.has(sku)||existingSKUs.has(sku)){dupes++;continue}skus.add(sku);
+newProds.push({sku,cod_barra:g(f,cCod),marca:g(f,cMarca),modelo:g(f,cModelo),cantidades:+f[cCant]||0,articulo:g(f,cArt)||'',fecha:g(f,cFecha),caja:g(f,cCaja),estanteria:g(f,cEst),estado:g(f,cEstado)||'SIN STOCK',link:g(f,cLink1),link_2:g(f,cLink2),link_3:g(f,cLink3),link_4:g(f,cLink4),precio_al_costo:+f[cCosto]||0,margen_ganancia:+f[cMargen]||0,precio_venta:+f[cVenta]||0,precio_mayorista:+f[cMayor]||0,stock_minimo:+f[cMin]||0,imagen:g(f,cImg),observaciones:g(f,cObs),ml_id_1:g(f,cM1),ml_id_2:g(f,cM2),ml_id_3:g(f,cM3),ml_id_4:g(f,cM4)})}
 if(!newProds.length){log('✅ No hay productos nuevos para importar');return}
 log('🆕 '+newProds.length+' productos nuevos ('+dupes+' ya existían, '+skip+' sin SKU)');
 let ok=0;for(let i=0;i<newProds.length;i+=100){const b=newProds.slice(i,i+100);const{error}=await db.from('stock').insert(b);if(error){for(const p of b){const{error:e2}=await db.from('stock').insert(p);if(!e2)ok++}}else{ok+=b.length;log('📦 '+ok+'/'+newProds.length)}}
@@ -2822,17 +2825,18 @@ async function fullResync(){
     const headers=data[0];
     const rows=data.slice(1).filter(f=>f[0]!=null&&f[0]!=='');
     log('📊 '+rows.length+' filas en Sheet');
-    // Find link columns dynamically
-    let colLink2=-1,colLink3=-1;
-    headers.forEach((h,i)=>{const hUp=String(h).toUpperCase().replace(/\s/g,'');if(hUp.includes('LINK_ML2')||hUp.includes('LINKML2'))colLink2=i;if(hUp.includes('LINK_ML3')||hUp.includes('LINKML3'))colLink3=i});
-    log('📎 Link2 col:'+colLink2+' Link3 col:'+colLink3);
+    // Find todas las columnas dinámicamente por nombre de header (no por posición fija)
+    const H=n=>{const t=String(n).toUpperCase().replace(/\s+/g,' ').trim();return headers.findIndex(h=>String(h).toUpperCase().replace(/\s+/g,' ').trim()===t)};
+    const cId=H('ID'),cSku=H('SKU'),cCod=H('COD BARRA'),cMarca=H('MARCA'),cModelo=H('MODELO'),cCant=H('CANTIDADES'),cArt=H('ARTICULO'),cFecha=H('FECHA'),cCaja=H('CAJA'),cEst=H('ESTANTERIA'),cEstado=H('ESTADO'),cLink1=H('LINK_ML1'),cLink2=H('LINK_ML2'),cLink3=H('LINK_ML3'),cLink4=H('LINK_ML4'),cCosto=H('PRECIO AL COSTO'),cMargen=H('MARGEN DE GANANCIA'),cVenta=H('PRECIO VENTA'),cMayor=H('PRECIO MAYORISTA'),cMin=H('STOCK_MINIMO'),cImg=H('IMAGEN'),cObs=H('OBSERVACIONES'),cM1=H('ML_ID_1'),cM2=H('ML_ID_2'),cM3=H('ML_ID_3'),cM4=H('ML_ID_4');
+    log('📎 Link1:'+cLink1+' Link2:'+cLink2+' Link3:'+cLink3+' Link4:'+cLink4+' | MLID1:'+cM1+' MLID2:'+cM2+' MLID3:'+cM3+' MLID4:'+cM4);
+    const g=(f,i)=>i>=0&&f[i]!=null&&f[i]!==''?String(f[i]):null;
     const prods=[],skus=new Set();let skip=0;
     for(const f of rows){
-      const sku=String(f[1]||'').trim();
+      const sku=g(f,cSku)||'';
       if(!sku){skip++;continue}
       if(skus.has(sku)){skip++;continue}
       skus.add(sku);
-      prods.push({id:+f[0]||undefined,sku,cod_barra:f[2]?String(f[2]):null,marca:f[3]?String(f[3]):null,modelo:f[4]?String(f[4]):null,cantidades:+f[5]||0,articulo:String(f[6]||''),fecha:f[7]?String(f[7]):null,caja:f[8]?String(f[8]):null,estanteria:f[9]?String(f[9]):null,estado:f[10]?String(f[10]):'SIN STOCK',link:f[12]?String(f[12]):null,link_2:colLink2>=0&&f[colLink2]?String(f[colLink2]):null,link_3:colLink3>=0&&f[colLink3]?String(f[colLink3]):null,precio_al_costo:+f[14]||0,margen_ganancia:+f[15]||0,precio_venta:+f[16]||0,precio_mayorista:+f[17]||0,stock_minimo:+f[18]||0,ultimo_movimiento:f[19]?String(f[19]):null,imagen:f[21]?String(f[21]):null,observaciones:f[22]?String(f[22]):null,ml_id_1:f[23]?String(f[23]):null,ml_id_2:f[24]?String(f[24]):null});
+      prods.push({id:+f[cId]||undefined,sku,cod_barra:g(f,cCod),marca:g(f,cMarca),modelo:g(f,cModelo),cantidades:+f[cCant]||0,articulo:g(f,cArt)||'',fecha:g(f,cFecha),caja:g(f,cCaja),estanteria:g(f,cEst),estado:g(f,cEstado)||'SIN STOCK',link:g(f,cLink1),link_2:g(f,cLink2),link_3:g(f,cLink3),link_4:g(f,cLink4),precio_al_costo:+f[cCosto]||0,margen_ganancia:+f[cMargen]||0,precio_venta:+f[cVenta]||0,precio_mayorista:+f[cMayor]||0,stock_minimo:+f[cMin]||0,imagen:g(f,cImg),observaciones:g(f,cObs),ml_id_1:g(f,cM1),ml_id_2:g(f,cM2),ml_id_3:g(f,cM3),ml_id_4:g(f,cM4)});
     }
     log('✅ '+prods.length+' productos ('+skip+' omitidos)');
     let ok=0;
@@ -2843,7 +2847,7 @@ async function fullResync(){
       else{ok+=b.length;log('📦 '+ok+'/'+prods.length)}
     }
     try{await db.rpc('reset_stock_sequence')}catch(e){try{await db.rpc('exec_sql',{query:"SELECT setval('stock_id_seq',(SELECT COALESCE(MAX(id),0) FROM stock))"});log('✅ Secuencia reseteada')}catch(e2){log('⚠️ Ejecutá manualmente: SELECT setval(stock_id_seq, MAX(id) FROM stock)')}}
-    log('🎉 Re-sync completo: '+ok+' productos importados con ML Links 2 y 3');
+    log('🎉 Re-sync completo: '+ok+' productos importados con ML Links 1 a 4');
     loadData();
   }catch(e){log('❌ '+e.message)}
 }
