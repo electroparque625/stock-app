@@ -792,7 +792,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-18-6';
+const APP_VERSION='2026-09-18-7';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1774,9 +1774,11 @@ async function loadLista(){
     const renderItem=r=>{
       const esFlex=r.usuario==='Auto (Flex)';
       const esCorreo=r.usuario==='Auto (Correo)';
+      const esWeb=r.usuario==='Auto (Web)';
       const flexEtiqueta=esFlex?flexLabel(r.created_at):null;
       const flexTag=esFlex?' <span style="font-size:10px;background:'+(flexEtiqueta==='HOY'?'var(--err)':'var(--warn)')+';color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">🚚 FLEX · '+flexEtiqueta+'</span>'
-        :esCorreo?' <span style="font-size:10px;background:var(--tx3);color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">📮 CORREO</span>':'';
+        :esCorreo?' <span style="font-size:10px;background:var(--tx3);color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">📮 CORREO</span>'
+        :esWeb?' <span style="font-size:10px;background:#9b59b6;color:#fff;padding:1px 6px;border-radius:8px;font-weight:700">🌐 WEB</span>':'';
       return'<div class="fac-row" style="'+(r.retirado?'opacity:.45':'')+'">'
         +'<div class="fac-ch" style="cursor:pointer;flex:1;min-width:0" onclick="toggleRetirado('+r.id+','+(!r.retirado)+')"><span class="fac-ico">'+(r.retirado?'✅':'⬜')+'</span><div style="flex:1;min-width:0">'
         +'<div class="fac-name" style="'+(r.retirado?'text-decoration:line-through':'')+'">'+(r.articulo||'MLA '+r.mla)+flexTag+'</div>'
@@ -1825,7 +1827,20 @@ async function loadLista(){
     }).join('');
   }catch(e){el.innerHTML='<div class="emp">Error: '+e.message+'</div>'}
 }
-async function toggleRetirado(id,val){await db.from('lista_retiro').update({retirado:val}).eq('id',id);loadLista()}
+async function toggleRetirado(id,val){
+  const{data:row}=await db.from('lista_retiro').select('web_order_id').eq('id',id).maybeSingle();
+  await db.from('lista_retiro').update({retirado:val}).eq('id',id);
+  // Si es un pedido de la web y ya quedaron TODOS sus productos tildados,
+  // el pedido pasa solo de "Pagado" a "Preparando" en electroparque-web
+  // (no toca pedidos que ya avanzaron a otro estado o quedaron cancelados).
+  if(val&&row?.web_order_id){
+    const{data:hermanos}=await db.from('lista_retiro').select('retirado').eq('web_order_id',row.web_order_id);
+    if(hermanos&&hermanos.length&&hermanos.every(h=>h.retirado)){
+      await db.from('orders').update({status:'preparing',updated_at:new Date().toISOString()}).eq('id',row.web_order_id).eq('status','paid');
+    }
+  }
+  loadLista();
+}
 async function quitarDeLista(id){await db.from('lista_retiro').delete().eq('id',id);loadLista()}
 async function vaciarLista(){if(!confirm('¿Borrar de la lista los pedidos ya marcados como retirados? Los pendientes quedan intactos. No se puede deshacer.'))return;await db.from('lista_retiro').delete().eq('retirado',true);toast('Se borraron los ya hechos');loadLista()}
 
