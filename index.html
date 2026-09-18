@@ -237,7 +237,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="nb tecnico-hide" data-s="mov" onclick="go('mov')"><svg viewBox="0 0 22 22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Movimientos</span></button>
 <button class="nb tecnico-hide" data-s="lista" onclick="go('lista')"><svg viewBox="0 0 22 22"><path d="M9 4h6a2 2 0 012 2v13l-5-3-5 3V6a2 2 0 012-2z"/></svg><span>Lista retiro</span></button>
 <button class="nb tecnico-hide" data-s="preguntas" onclick="go('preguntas')"><svg viewBox="0 0 22 22"><circle cx="11" cy="11" r="9"/><path d="M8.3 8.5a2.7 2.7 0 015.3.6c0 1.8-2.3 2-2.3 3.6"/><circle cx="11" cy="15.7" r="0.7" fill="currentColor"/></svg><span>Preguntas</span></button>
-<button class="nb" data-s="asistente" onclick="go('asistente')"><svg viewBox="0 0 22 22"><path d="M3 5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H9l-4 4v-4H5a2 2 0 01-2-2V5z"/></svg><span>Asistente</span></button>
 <button class="nb" data-s="tasks" onclick="go('tasks')"><svg viewBox="0 0 22 22"><rect x="3" y="3" width="16" height="16" rx="2"/><line x1="7" y1="8" x2="15" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg><span>Tareas</span><div class="notif-badge" id="task-badge-s"></div></button>
 <button class="nb tecnico-hide" data-s="pizarra" onclick="go('pizarra')"><svg viewBox="0 0 22 22"><rect x="2" y="4" width="18" height="14" rx="2"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="2" y1="9" x2="20" y2="9"/></svg><span>Pizarra</span></button>
 <button class="nb" data-s="rep" onclick="go('rep')"><svg viewBox="0 0 22 22"><path d="M14.7 6.3a1 1 0 000 1.4l0 0a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg><span>Reparaciones</span></button>
@@ -397,16 +396,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="b bs" style="width:auto;padding:6px 10px;font-size:11px" onclick="vaciarPreguntas()">✅ Borrar las ya hechas</button>
 </div>
 <div id="pg-list"><div class="ld"><div class="sp"></div>Cargando...</div></div>
-</div>
-
-<!-- ASISTENTE IA --><div class="sc" id="s-asistente">
-<div class="fs">
-<div class="fst">🤖 Preguntale al sistema</div>
-<div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Preguntá lo que quieras sobre stock, ventas, reparaciones, tareas, pedidos, etc. — contesta con los datos reales del sistema.</div>
-<div id="asis-chat" style="margin-bottom:10px"></div>
-<div class="f"><input type="text" id="asis-input" placeholder="Ej: ¿cuánto stock queda de...?" onkeydown="if(event.key==='Enter'){event.preventDefault();askAgent()}"/></div>
-<button class="b bp" onclick="askAgent()" id="asis-btn">Preguntar</button>
-</div>
 </div>
 
 <!-- REPARACIONES --><div class="sc" id="s-rep">
@@ -740,7 +729,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="ar tecnico-hide" onclick="goMore('mov')"><div class="ae">📈</div><div class="ai"><div class="an">Movimientos</div></div></div>
 <div class="ar tecnico-hide" onclick="goMore('lista')"><div class="ae">📝</div><div class="ai"><div class="an">Lista retiro</div></div></div>
 <div class="ar tecnico-hide" onclick="goMore('preguntas')"><div class="ae">❓</div><div class="ai"><div class="an">Preguntas</div></div></div>
-<div class="ar" onclick="goMore('asistente')"><div class="ae">🤖</div><div class="ai"><div class="an">Asistente</div></div></div>
 <div class="ar tecnico-hide" onclick="goMore('pizarra')"><div class="ae">🗂️</div><div class="ai"><div class="an">Pizarra</div></div></div>
 <div class="ar" onclick="goMore('rep')"><div class="ae">🔧</div><div class="ai"><div class="an">Reparaciones</div></div></div>
 <div class="ar tecnico-hide" onclick="goMore('presu')"><div class="ae">📄</div><div class="ai"><div class="an">Presupuestos</div></div></div>
@@ -775,11 +763,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div id="notif-list"></div>
 <button class="b bp" onclick="$('notif-overlay').style.display='none'" style="margin-top:12px">Entendido</button>
 </div></div>
+<button id="asis-fab" onclick="toggleAsisChat()" title="Preguntale al sistema" style="display:none;position:fixed;right:16px;bottom:80px;width:52px;height:52px;border-radius:50%;background:var(--pri);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:45;align-items:center;justify-content:center">🤖</button>
+<!-- MODAL ASISTENTE --><div class="mo" id="mo-asis"><div class="ml">
+<div class="mb"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div class="mti" style="margin:0">🤖 Preguntale al sistema</div>
+<button onclick="toggleAsisChat()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx3)">✕</button>
+</div>
+<div id="asis-chat" style="max-height:45vh;overflow-y:auto;margin-bottom:10px"></div>
+<div class="f"><input type="text" id="asis-input" placeholder="Ej: ¿cuánto stock queda de...?" onkeydown="if(event.key==='Enter'){event.preventDefault();askAgent()}"/></div>
+<button class="b bp" onclick="askAgent()" id="asis-btn">Preguntar</button>
+</div></div>
 <script>
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-18-1';
+const APP_VERSION='2026-09-18-2';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -829,8 +828,8 @@ function clearSes(){ses=null;try{localStorage.removeItem('ep4')}catch(e){}}
 
 async function doLogin(){const u=$('l-u').value.trim(),p=$('l-p').value,b=$('l-b'),e=$('l-e');if(!u||!p){e.textContent='Completá ambos campos';e.classList.add('show');return}b.disabled=true;b.textContent='Verificando...';e.classList.remove('show');try{if(u===SA.usuario){if(H(p)!==SA_H)throw 1;b.disabled=false;b.textContent='Ingresar';startApp({...SA});return}const{data,error}=await db.from('usuarios').select('*').eq('usuario',u).eq('activo',true).single();if(error||!data||data.pass_hash!==H(p))throw 1;b.disabled=false;b.textContent='Ingresar';if(data.primer_login){ses=data;$('scr-login').style.display='none';$('scr-cp').style.display='flex'}else startApp({usuario:data.usuario,nombre:data.nombre,rol:data.rol})}catch(x){e.textContent='Credenciales incorrectas';e.classList.add('show');b.disabled=false;b.textContent='Ingresar'}}
 async function doCP(){const a=$('np1').value,b=$('np2').value,e=$('cp-e');if(a.length<4){e.textContent='Mínimo 4';e.classList.add('show');return}if(a!==b){e.textContent='No coinciden';e.classList.add('show');return}await db.from('usuarios').update({pass_hash:H(a),primer_login:false}).eq('usuario',ses.usuario);$('scr-cp').style.display='none';startApp({usuario:ses.usuario,nombre:ses.nombre,rol:ses.rol||'usuario'})}
-function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.admin-or-super').forEach(el=>el.style.display=(u.rol==='superadmin'||u.rol==='admin')?'':'none');document.querySelectorAll('.tecnico-hide').forEach(el=>el.style.display=u.rol==='tecnico'?'none':'');document.querySelectorAll('.owner-only').forEach(el=>el.style.display=String(u.usuario||'').toLowerCase()==='electroparque'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');loadData();loadMlCuentas();updateTaskBadge();updPedidosPendientes();setInterval(()=>updPedidosPendientes(),120000);updPreguntasPendientes();setInterval(()=>updPreguntasPendientes(),120000);const scanParam=new URLSearchParams(location.search).get('scan');if(scanParam){setTimeout(()=>{go('scan');$('scq').value=scanParam;doScan();history.replaceState(null,'',location.pathname+location.hash)},600)}else if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)};setTimeout(()=>syncSheetToSupabase(),8000);setInterval(()=>syncSheetToSupabase(),120000);setTimeout(()=>checkForUpdate(),15000);setInterval(()=>checkForUpdate(),180000)}
-function doLogout(){if(!confirm('¿Cerrar sesión?'))return;asisHistory=[];clearSes();$('app').style.display='none';$('scr-login').style.display='flex';$('l-u').value='';$('l-p').value='';$('l-e').classList.remove('show')}
+function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.admin-or-super').forEach(el=>el.style.display=(u.rol==='superadmin'||u.rol==='admin')?'':'none');document.querySelectorAll('.tecnico-hide').forEach(el=>el.style.display=u.rol==='tecnico'?'none':'');document.querySelectorAll('.owner-only').forEach(el=>el.style.display=String(u.usuario||'').toLowerCase()==='electroparque'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');$('asis-fab').style.display='flex';loadData();loadMlCuentas();updateTaskBadge();updPedidosPendientes();setInterval(()=>updPedidosPendientes(),120000);updPreguntasPendientes();setInterval(()=>updPreguntasPendientes(),120000);const scanParam=new URLSearchParams(location.search).get('scan');if(scanParam){setTimeout(()=>{go('scan');$('scq').value=scanParam;doScan();history.replaceState(null,'',location.pathname+location.hash)},600)}else if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)};setTimeout(()=>syncSheetToSupabase(),8000);setInterval(()=>syncSheetToSupabase(),120000);setTimeout(()=>checkForUpdate(),15000);setInterval(()=>checkForUpdate(),180000)}
+function doLogout(){if(!confirm('¿Cerrar sesión?'))return;asisHistory=[];$('mo-asis').classList.remove('show');$('asis-fab').style.display='none';clearSes();$('app').style.display='none';$('scr-login').style.display='flex';$('l-u').value='';$('l-p').value='';$('l-e').classList.remove('show')}
 
 async function loadData(){const t0=performance.now();try{let a=[],p=0;while(true){const{data,error}=await db.from('stock').select('*').order('id',{ascending:true}).range(p*1000,p*1000+999);if(error)throw error;if(!data||!data.length)break;a=a.concat(data);if(data.length<1000)break;p++}ALL=a;updM();filtrar();fillL();$('t-sub').textContent=ALL.length+' productos · '+Math.round(performance.now()-t0)+'ms'}catch(e){$('pl').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
 function fillL(){const m=[...new Set(ALL.map(p=>p.marca).filter(Boolean))].sort(),o=[...new Set(ALL.map(p=>p.modelo).filter(Boolean))].sort();$('dlm').innerHTML=m.map(x=>'<option value="'+x+'">').join('');$('dlo').innerHTML=o.map(x=>'<option value="'+x+'">').join('');fillCajaEst();poblarFiltrosUbicacion();if(!sessionStorage.getItem('alertShown')){showStockAlerts();sessionStorage.setItem('alertShown','1')}updateNotifBadge();calcVentas60d()}
@@ -1494,6 +1493,11 @@ async function editEmoji(){if(!cur)return;const emojis=['📦','📺','🎮','�
 async function calcVentas60d(){const monitoreados=ALL.filter(p=>p.monitorear);if(!monitoreados.length)return;const since=new Date(Date.now()-60*86400000).toISOString();try{const{data:ventas}=await db.from('movimientos').select('articulo,sku,cantidad').eq('tipo','venta').gte('created_at',since);if(!ventas)return;for(const prod of monitoreados){const mlas=[prod.ml_id_1,prod.ml_id_2,prod.ml_id_3,prod.ml_id_4].filter(Boolean);let total=0;ventas.forEach(v=>{const art=v.articulo||'';const sku=v.sku||'';if(sku===prod.sku)total+=v.cantidad||0;else{for(const mla of mlas){if(art.includes(mla)||sku===mla){total+=v.cantidad||0;break}}}});if(total!==prod.ventas_60d){await db.from('stock').update({ventas_60d:total}).eq('id',prod.id);prod.ventas_60d=total;const idx=ALL.findIndex(x=>x.id===prod.id);if(idx>-1)ALL[idx].ventas_60d=total}}}catch(e){console.warn('calcVentas60d:',e)}}
 /* ASISTENTE IA */
 let asisHistory=[];
+function toggleAsisChat(){
+  const m=$('mo-asis');
+  m.classList.toggle('show');
+  if(m.classList.contains('show')){renderAsisChat();setTimeout(()=>$('asis-input')?.focus(),100)}
+}
 function renderAsisChat(){
   const el=$('asis-chat');if(!el)return;
   el.innerHTML=asisHistory.map(function(m){
@@ -2905,7 +2909,7 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');set
 /* MORE MENU (mobile bottom nav overflow) */
 function toggleMore(){$('more-sheet').classList.toggle('show')}
 function goMore(s){$('more-sheet').classList.remove('show');go(s)}
-const SIDE_MORE_SCREENS=['dash','fac','mov','lista','preguntas','asistente','tasks','pizarra','rep','presu','importados','usr','imp'];
+const SIDE_MORE_SCREENS=['dash','fac','mov','lista','preguntas','tasks','pizarra','rep','presu','importados','usr','imp'];
 function toggleSideMore(){$('side-more').classList.toggle('open');$('side-more-btn').classList.toggle('open')}
 
 /* NOTIFICATION PANEL */
