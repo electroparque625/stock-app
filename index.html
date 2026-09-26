@@ -274,7 +274,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 
 <div class="ct">
-<!-- HOME --><div class="sc a" id="s-home"><div class="dg"><div class="dc"><div class="dl">Artículos</div><div class="dv" id="m-t">—</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv" id="m-u">—</div></div><div class="dc"><div class="dl">Stock bajo</div><div class="dv w" id="m-l">—</div></div><div class="dc"><div class="dl">Sin stock</div><div class="dv e" id="m-z">—</div></div><div class="dc" style="cursor:pointer" onclick="go('lista')"><div class="dl">📦 Armar pedidos</div><div class="dv" id="m-pp">—</div></div><div class="dc" style="cursor:pointer" onclick="go('preguntas')"><div class="dl">❓ Preguntas</div><div class="dv" id="m-pq">—</div></div></div>
+<!-- HOME --><div class="sc a" id="s-home"><div class="dg"><div class="dc"><div class="dl">Artículos</div><div class="dv" id="m-t">—</div></div><div class="dc"><div class="dl">Unidades</div><div class="dv" id="m-u">—</div></div><div class="dc"><div class="dl">Stock bajo</div><div class="dv w" id="m-l">—</div></div><div class="dc"><div class="dl">Sin stock</div><div class="dv e" id="m-z">—</div></div><div class="dc" style="cursor:pointer" onclick="go('lista')"><div class="dl">📦 Armar pedidos</div><div class="dv" id="m-pp">—</div></div><div class="dc" style="cursor:pointer" onclick="go('preguntas')"><div class="dl">❓ Preguntas</div><div class="dv" id="m-pq">—</div></div><div class="dc" style="cursor:pointer" onclick="irAPostventa('mensaje')"><div class="dl">💬 Mensajes Postventa</div><div class="dv" id="m-pvm">—</div></div><div class="dc" style="cursor:pointer" onclick="irAPostventa('reclamo')"><div class="dl">⚖️ Reclamos Postventa</div><div class="dv" id="m-pvr">—</div></div><div class="dc" style="cursor:pointer" onclick="irAPostventa('devolucion')"><div class="dl">↩️ Devoluciones Postventa</div><div class="dv" id="m-pvd">—</div></div></div>
 <div id="inv-tabs" style="display:flex;gap:4px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px">
 <button class="fb a" onclick="setTab('stock',this)" style="white-space:nowrap;flex-shrink:0">🟢 En Stock</button>
 <button class="fb" onclick="setTab('sinstock',this)" style="white-space:nowrap;flex-shrink:0">🔴 Sin Stock</button>
@@ -596,9 +596,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="stit" style="margin:0">📩 Postventa Mercado Libre</div>
 <button class="b bs" style="width:auto;padding:8px 12px;font-size:12px" onclick="loadPostventa()">🔄 Actualizar</button>
 </div>
-<div id="postventa-tabs" style="display:flex;gap:4px;margin-bottom:10px">
-<button class="fb a" onclick="setPostventaTab('reclamo',this)">⚖️ Reclamos y mediaciones</button>
-<button class="fb" onclick="setPostventaTab('devolucion',this)">↩️ Devoluciones</button>
+<div id="postventa-tabs" style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap">
+<button class="fb a" data-tab="mensaje" onclick="setPostventaTab('mensaje')">💬 Mensajes</button>
+<button class="fb" data-tab="reclamo" onclick="setPostventaTab('reclamo')">⚖️ Reclamos y mediaciones</button>
+<button class="fb" data-tab="devolucion" onclick="setPostventaTab('devolucion')">↩️ Devoluciones</button>
 </div>
 <div class="tg-row" style="margin-bottom:10px"><span class="tg-lbl">Ver también los resueltos</span><label class="tg"><input type="checkbox" id="pv-ver-resueltos" onchange="renderPostventa()"/><span class="tg-tr"></span><span class="tg-th"></span></label></div>
 <div id="postventa-list"><div class="emp">Cargando...</div></div>
@@ -853,7 +854,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-26-9';
+const APP_VERSION='2026-09-26-10';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -903,7 +904,7 @@ function clearSes(){ses=null;try{localStorage.removeItem('ep4')}catch(e){}}
 
 async function doLogin(){const u=$('l-u').value.trim(),p=$('l-p').value,b=$('l-b'),e=$('l-e');if(!u||!p){e.textContent='Completá ambos campos';e.classList.add('show');return}b.disabled=true;b.textContent='Verificando...';e.classList.remove('show');try{if(u===SA.usuario){if(H(p)!==SA_H)throw 1;b.disabled=false;b.textContent='Ingresar';startApp({...SA});return}const{data,error}=await db.from('usuarios').select('*').eq('usuario',u).eq('activo',true).single();if(error||!data||data.pass_hash!==H(p))throw 1;b.disabled=false;b.textContent='Ingresar';if(data.primer_login){ses=data;$('scr-login').style.display='none';$('scr-cp').style.display='flex'}else startApp({usuario:data.usuario,nombre:data.nombre,rol:data.rol})}catch(x){e.textContent='Credenciales incorrectas';e.classList.add('show');b.disabled=false;b.textContent='Ingresar'}}
 async function doCP(){const a=$('np1').value,b=$('np2').value,e=$('cp-e');if(a.length<4){e.textContent='Mínimo 4';e.classList.add('show');return}if(a!==b){e.textContent='No coinciden';e.classList.add('show');return}await db.from('usuarios').update({pass_hash:H(a),primer_login:false}).eq('usuario',ses.usuario);$('scr-cp').style.display='none';startApp({usuario:ses.usuario,nombre:ses.nombre,rol:ses.rol||'usuario'})}
-function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.admin-or-super').forEach(el=>el.style.display=(u.rol==='superadmin'||u.rol==='admin')?'':'none');document.querySelectorAll('.tecnico-hide').forEach(el=>el.style.display=u.rol==='tecnico'?'none':'');document.querySelectorAll('.owner-only').forEach(el=>el.style.display=String(u.usuario||'').toLowerCase()==='electroparque'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');$('asis-fab').style.display='flex';loadData();loadMlCuentas();updateTaskBadge();updPedidosPendientes();setInterval(()=>updPedidosPendientes(),120000);updPreguntasPendientes();setInterval(()=>updPreguntasPendientes(),120000);const scanParam=new URLSearchParams(location.search).get('scan');if(scanParam){setTimeout(()=>{go('scan');$('scq').value=scanParam;doScan();history.replaceState(null,'',location.pathname+location.hash)},600)}else if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)};setTimeout(()=>syncSheetToSupabase(),8000);setInterval(()=>syncSheetToSupabase(),120000);setTimeout(()=>checkForUpdate(),15000);setInterval(()=>checkForUpdate(),180000)}
+function startApp(u){sessionStorage.removeItem('alertShown');saveSes(u);$('scr-login').style.display='none';$('scr-cp').style.display='none';$('app').style.display='flex';$('t-usr').textContent=(u.nombre||u.usuario)+' · Salir';document.querySelectorAll('.admin-only').forEach(el=>el.style.display=u.rol==='superadmin'?'':'none');document.querySelectorAll('.admin-or-super').forEach(el=>el.style.display=(u.rol==='superadmin'||u.rol==='admin')?'':'none');document.querySelectorAll('.tecnico-hide').forEach(el=>el.style.display=u.rol==='tecnico'?'none':'');document.querySelectorAll('.owner-only').forEach(el=>el.style.display=String(u.usuario||'').toLowerCase()==='electroparque'?'':'none');document.querySelectorAll('.price-restricted').forEach(el=>el.style.display=canSeePrices()?'grid':'none');$('asis-fab').style.display='flex';loadData();loadMlCuentas();updateTaskBadge();updPedidosPendientes();setInterval(()=>updPedidosPendientes(),120000);updPreguntasPendientes();setInterval(()=>updPreguntasPendientes(),120000);updPostventaPendientes();setInterval(()=>updPostventaPendientes(),120000);const scanParam=new URLSearchParams(location.search).get('scan');if(scanParam){setTimeout(()=>{go('scan');$('scq').value=scanParam;doScan();history.replaceState(null,'',location.pathname+location.hash)},600)}else if(location.hash){const h=location.hash.replace('#','');if($('s-'+h))setTimeout(()=>go(h),500)};setInterval(()=>updateTaskBadge(),30000);setInterval(()=>loadData(),120000);if(u.rol==='superadmin'){setTimeout(()=>syncLogsSilent(),3000);setInterval(()=>syncLogsSilent(),300000)};setTimeout(()=>syncSheetToSupabase(),8000);setInterval(()=>syncSheetToSupabase(),120000);setTimeout(()=>checkForUpdate(),15000);setInterval(()=>checkForUpdate(),180000)}
 function doLogout(){if(!confirm('¿Cerrar sesión?'))return;asisHistory=[];$('mo-asis').classList.remove('show');$('asis-fab').style.display='none';clearSes();$('app').style.display='none';$('scr-login').style.display='flex';$('l-u').value='';$('l-p').value='';$('l-e').classList.remove('show')}
 
 async function loadData(){const t0=performance.now();try{let a=[],p=0;while(true){const{data,error}=await db.from('stock').select('*').order('id',{ascending:true}).range(p*1000,p*1000+999);if(error)throw error;if(!data||!data.length)break;a=a.concat(data);if(data.length<1000)break;p++}ALL=a;updM();filtrar();fillL();$('t-sub').textContent=ALL.length+' productos · '+Math.round(performance.now()-t0)+'ms'}catch(e){$('pl').innerHTML='<div class="emp">Error: '+e.message+'</div>'}}
@@ -950,6 +951,21 @@ async function updPreguntasPendientes(){
     const{count}=await db.from('preguntas_pendientes').select('id',{count:'exact',head:true}).eq('resuelta',false);
     const n=count||0,el=$('m-pq');if(!el)return;
     el.textContent=n;el.className='dv'+(n>0?' e':'')
+  }catch(e){}
+}
+async function updPostventaPendientes(){
+  try{
+    const[{count:cR},{count:cD},{data:msjRows}]=await Promise.all([
+      db.from('ml_postventa').select('id',{count:'exact',head:true}).eq('tipo','reclamo').eq('resuelto',false),
+      db.from('ml_postventa').select('id',{count:'exact',head:true}).eq('tipo','devolucion').eq('resuelto',false),
+      db.from('ml_mensajes_postventa').select('id')
+    ]);
+    const cM=(msjRows||[]).length;
+    if($('m-pvr'))$('m-pvr').textContent=cR||0;
+    if($('m-pvd'))$('m-pvd').textContent=cD||0;
+    if($('m-pvm'))$('m-pvm').textContent=cM;
+    const total=(cR||0)+(cD||0)+cM;
+    const el=$('postventa-badge-s');if(el){el.textContent=total;el.classList.toggle('show',total>0)}
   }catch(e){}
 }
 function syncS(a,p){
@@ -2369,23 +2385,36 @@ async function generarMensajeIndividualTV(id){
   }catch(e){abrirModalTvMsg('Error','Error de conexión: '+e.message)}
 }
 
-/* POSTVENTA ML (Reclamos y mediaciones / Devoluciones) */
-let POSTVENTA_ALL=[],postventaTab='reclamo';
+/* POSTVENTA ML (Mensajes / Reclamos y mediaciones / Devoluciones) */
+let POSTVENTA_ALL=[],POSTVENTA_MSJ=[],postventaTab='mensaje';
 async function loadPostventa(){
   $('postventa-list').innerHTML='<div class="emp">Cargando...</div>';
-  const{data}=await db.from('ml_postventa').select('*').order('fecha_creacion',{ascending:false});
-  POSTVENTA_ALL=data||[];
-  const abiertos=POSTVENTA_ALL.filter(p=>!p.resuelto).length;
-  const el=$('postventa-badge-s');if(el){el.textContent=abiertos;el.classList.toggle('show',abiertos>0)}
+  const[{data:pv},{data:msj}]=await Promise.all([
+    db.from('ml_postventa').select('*').order('fecha_creacion',{ascending:false}),
+    db.from('ml_mensajes_postventa').select('*').order('fecha_ultimo_mensaje',{ascending:false})
+  ]);
+  POSTVENTA_ALL=pv||[];POSTVENTA_MSJ=msj||[];
+  actualizarKpisPostventa();
   renderPostventa();
 }
-function setPostventaTab(tipo,btn){
+function actualizarKpisPostventa(){
+  const cReclamos=POSTVENTA_ALL.filter(p=>p.tipo==='reclamo'&&!p.resuelto).length;
+  const cDevoluciones=POSTVENTA_ALL.filter(p=>p.tipo==='devolucion'&&!p.resuelto).length;
+  const cMensajes=POSTVENTA_MSJ.length;
+  if($('m-pvr'))$('m-pvr').textContent=cReclamos;
+  if($('m-pvd'))$('m-pvd').textContent=cDevoluciones;
+  if($('m-pvm'))$('m-pvm').textContent=cMensajes;
+  const total=cReclamos+cDevoluciones+cMensajes;
+  const el=$('postventa-badge-s');if(el){el.textContent=total;el.classList.toggle('show',total>0)}
+}
+function irAPostventa(tipo){go('postventa');setPostventaTab(tipo)}
+function setPostventaTab(tipo){
   postventaTab=tipo;
-  document.querySelectorAll('#postventa-tabs .fb').forEach(b=>b.classList.remove('a'));
-  if(btn)btn.classList.add('a');
+  document.querySelectorAll('#postventa-tabs .fb').forEach(b=>b.classList.toggle('a',b.dataset.tab===tipo));
   renderPostventa();
 }
 function renderPostventa(){
+  if(postventaTab==='mensaje'){renderPostventaMensajes();return}
   const verResueltos=$('pv-ver-resueltos').checked;
   const list=POSTVENTA_ALL.filter(p=>p.tipo===postventaTab&&(verResueltos||!p.resuelto));
   const accLabels={send_message_to_complainant:'Responder mensaje',refund:'Reintegrar',open_dispute:'Abrir disputa'};
@@ -2404,11 +2433,22 @@ function renderPostventa(){
       '</div>';
   }).join(''):'<div class="emp">Sin '+(postventaTab==='devolucion'?'devoluciones':'reclamos')+' '+(verResueltos?'':'pendientes')+'</div>';
 }
+function renderPostventaMensajes(){
+  $('postventa-list').innerHTML=POSTVENTA_MSJ.length?POSTVENTA_MSJ.map(m=>
+    '<div class="ar" style="align-items:flex-start;flex-wrap:wrap">'+
+    '<div class="ae">💬</div>'+
+    '<div class="ai" style="min-width:200px">'+
+    '<div class="an">'+(m.cuenta_nombre||'')+' · Pack '+m.pack_id+'</div>'+
+    '<div class="am">'+(m.ultimo_remitente==='comprador'?'🗣️ Comprador':'Vendedor')+' · '+new Date(m.fecha_ultimo_mensaje).toLocaleString('es-AR')+' · '+m.cantidad_no_leidos+' sin leer</div>'+
+    '<div class="am" style="font-style:italic">"'+(m.ultimo_mensaje||'').substring(0,180)+'"</div>'+
+    (m.claim_id?'<div class="am">Vinculado a reclamo '+m.claim_id+'</div>':'')+
+    '</div></div>'
+  ).join(''):'<div class="emp">Sin mensajes de postventa sin leer 🎉</div>';
+}
 async function toggleResueltoPostventa(id,valor){
   await db.from('ml_postventa').update({resuelto:valor}).eq('id',id);
   const it=POSTVENTA_ALL.find(p=>p.id===id);if(it)it.resuelto=valor;
-  const abiertos=POSTVENTA_ALL.filter(p=>!p.resuelto).length;
-  const el=$('postventa-badge-s');if(el){el.textContent=abiertos;el.classList.toggle('show',abiertos>0)}
+  actualizarKpisPostventa();
   renderPostventa();
 }
 async function guardarNotaPostventa(id,valor){
