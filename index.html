@@ -563,6 +563,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- CUENTAS CORRIENTES --><div class="sc" id="s-cuentas">
 <button class="bk" onclick="go('presu')">‹ Volver a Presupuestos</button>
+<div class="f" style="margin-bottom:8px"><input type="text" id="cuentas-q" placeholder="🔍 Buscar cliente..." oninput="renderCuentasList()"/></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+<button class="b bs" style="width:auto;padding:6px 10px;font-size:11px" onclick="setPeriodoCuentas('semana')">Esta semana</button>
+<button class="b bs" style="width:auto;padding:6px 10px;font-size:11px" onclick="setPeriodoCuentas('mes')">Este mes</button>
+<button class="b bs" style="width:auto;padding:6px 10px;font-size:11px" onclick="setPeriodoCuentas('mespasado')">Mes pasado</button>
+<button class="b bs" style="width:auto;padding:6px 10px;font-size:11px" onclick="setPeriodoCuentas('todos')">Todos</button>
+</div>
+<div class="fr" style="margin-bottom:10px"><div class="f"><label>Desde</label><input type="date" id="cuentas-desde" onchange="renderCuentasList()"/></div><div class="f"><label>Hasta</label><input type="date" id="cuentas-hasta" onchange="renderCuentasList()"/></div></div>
 <div class="dg" id="cuentas-kpi"></div>
 <div id="cuentas-list"><div class="emp">Sin clientes con presupuestos facturados</div></div>
 </div>
@@ -801,7 +809,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-26-4';
+const APP_VERSION='2026-09-26-5';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -2179,34 +2187,55 @@ async function savePresu(){
 }
 
 /* CUENTAS CORRIENTES */
-let cuentaActual=null;
+let cuentaActual=null,CUENTAS_PRESUS=[],CUENTAS_PAGOS=[];
 async function loadCuentasCorrientes(){
   const el=$('cuentas-list');el.innerHTML='<div class="ld"><div class="sp"></div></div>';
   try{
     const{data:presus}=await db.from('presupuestos').select('*').eq('facturado',true);
     const{data:pagos}=await db.from('pagos').select('*');
-    const clientes={};
-    (presus||[]).forEach(p=>{
-      const key=(p.cliente_nombre||'—')+'|'+(p.cliente_telefono||'');
-      if(!clientes[key])clientes[key]={nombre:p.cliente_nombre,telefono:p.cliente_telefono,debe:0,pagado:0,presus:[],pagos:[]};
-      clientes[key].debe+=p.total||0;
-      clientes[key].presus.push(p);
-    });
-    (pagos||[]).forEach(pg=>{
-      const key=(pg.cliente_nombre||'—')+'|'+(pg.cliente_telefono||'');
-      if(!clientes[key])clientes[key]={nombre:pg.cliente_nombre,telefono:pg.cliente_telefono,debe:0,pagado:0,presus:[],pagos:[]};
-      clientes[key].pagado+=pg.monto||0;
-      clientes[key].pagos.push(pg);
-    });
-    const list=Object.values(clientes).map(c=>({...c,saldo:c.debe-c.pagado})).sort((a,b)=>b.saldo-a.saldo);
-    window._cuentasData=list;
-    const totalDebe=list.reduce((s,c)=>s+c.debe,0),totalPagado=list.reduce((s,c)=>s+c.pagado,0),totalSaldo=list.reduce((s,c)=>s+c.saldo,0);
-    $('cuentas-kpi').innerHTML='<div class="dc"><div class="dl">Total facturado</div><div class="dv">$'+Math.round(totalDebe).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Total cobrado</div><div class="dv ok">$'+Math.round(totalPagado).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Te deben</div><div class="dv e">$'+Math.round(totalSaldo).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Clientes</div><div class="dv">'+list.length+'</div></div>';
-    el.innerHTML=list.length?list.map((c,i)=>{
-      const badge=c.saldo>0?'<span class="ab b-sin">Debe $'+Math.round(c.saldo).toLocaleString('es-AR')+'</span>':'<span class="ab b-ok">Al día</span>';
-      return'<div class="ar" onclick="showCuentaDetalle('+i+')"><div class="ae">👤</div><div class="ai"><div class="an">'+(c.nombre||'—')+'</div><div class="am">'+(c.telefono||'')+' · Llevó $'+Math.round(c.debe).toLocaleString('es-AR')+' · Pagó $'+Math.round(c.pagado).toLocaleString('es-AR')+'</div></div>'+badge+'</div>';
-    }).join(''):'<div class="emp">Sin clientes con presupuestos facturados</div>';
+    CUENTAS_PRESUS=presus||[];CUENTAS_PAGOS=pagos||[];
+    if(!$('cuentas-desde').value&&!$('cuentas-hasta').value)setPeriodoCuentas('mes');
+    else renderCuentasList();
   }catch(e){el.innerHTML='<div class="emp">Error: '+e.message+'</div>'}
+}
+function setPeriodoCuentas(preset){
+  const hoy=new Date();const f=d=>d.toISOString().slice(0,10);
+  if(preset==='todos'){$('cuentas-desde').value='';$('cuentas-hasta').value=''}
+  else if(preset==='semana'){const d=new Date(hoy);const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow);$('cuentas-desde').value=f(d);$('cuentas-hasta').value=f(hoy)}
+  else if(preset==='mespasado'){const d1=new Date(hoy.getFullYear(),hoy.getMonth()-1,1);const d2=new Date(hoy.getFullYear(),hoy.getMonth(),0);$('cuentas-desde').value=f(d1);$('cuentas-hasta').value=f(d2)}
+  else{const d1=new Date(hoy.getFullYear(),hoy.getMonth(),1);$('cuentas-desde').value=f(d1);$('cuentas-hasta').value=f(hoy)}
+  renderCuentasList();
+}
+function renderCuentasList(){
+  const el=$('cuentas-list');
+  const q=($('cuentas-q').value||'').toLowerCase().trim();
+  const desde=$('cuentas-desde').value?new Date($('cuentas-desde').value+'T00:00:00'):null;
+  const hasta=$('cuentas-hasta').value?new Date($('cuentas-hasta').value+'T23:59:59'):null;
+  const enRango=f=>{const d=new Date(f);if(desde&&d<desde)return false;if(hasta&&d>hasta)return false;return true};
+  const presus=CUENTAS_PRESUS.filter(p=>enRango(p.created_at));
+  const pagos=CUENTAS_PAGOS.filter(pg=>enRango(pg.fecha));
+  const clientes={};
+  presus.forEach(p=>{
+    const key=(p.cliente_nombre||'—')+'|'+(p.cliente_telefono||'');
+    if(!clientes[key])clientes[key]={nombre:p.cliente_nombre,telefono:p.cliente_telefono,debe:0,pagado:0,presus:[],pagos:[]};
+    clientes[key].debe+=p.total||0;
+    clientes[key].presus.push(p);
+  });
+  pagos.forEach(pg=>{
+    const key=(pg.cliente_nombre||'—')+'|'+(pg.cliente_telefono||'');
+    if(!clientes[key])clientes[key]={nombre:pg.cliente_nombre,telefono:pg.cliente_telefono,debe:0,pagado:0,presus:[],pagos:[]};
+    clientes[key].pagado+=pg.monto||0;
+    clientes[key].pagos.push(pg);
+  });
+  let list=Object.values(clientes).map(c=>({...c,saldo:c.debe-c.pagado})).sort((a,b)=>b.saldo-a.saldo);
+  if(q)list=list.filter(c=>(c.nombre||'').toLowerCase().includes(q));
+  window._cuentasData=list;
+  const totalDebe=list.reduce((s,c)=>s+c.debe,0),totalPagado=list.reduce((s,c)=>s+c.pagado,0),totalSaldo=list.reduce((s,c)=>s+c.saldo,0);
+  $('cuentas-kpi').innerHTML='<div class="dc"><div class="dl">Total facturado</div><div class="dv">$'+Math.round(totalDebe).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Total cobrado</div><div class="dv ok">$'+Math.round(totalPagado).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Te deben</div><div class="dv e">$'+Math.round(totalSaldo).toLocaleString('es-AR')+'</div></div><div class="dc"><div class="dl">Clientes</div><div class="dv">'+list.length+'</div></div>';
+  el.innerHTML=list.length?list.map((c,i)=>{
+    const badge=c.saldo>0?'<span class="ab b-sin">Debe $'+Math.round(c.saldo).toLocaleString('es-AR')+'</span>':'<span class="ab b-ok">Al día</span>';
+    return'<div class="ar" onclick="showCuentaDetalle('+i+')"><div class="ae">👤</div><div class="ai"><div class="an">'+(c.nombre||'—')+'</div><div class="am">'+(c.telefono||'')+' · Llevó $'+Math.round(c.debe).toLocaleString('es-AR')+' · Pagó $'+Math.round(c.pagado).toLocaleString('es-AR')+'</div></div>'+badge+'</div>';
+  }).join(''):'<div class="emp">Sin clientes en el período/búsqueda seleccionado</div>';
 }
 function showCuentaDetalle(i){
   const c=window._cuentasData[i];if(!c)return;
