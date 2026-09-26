@@ -64,7 +64,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .nb{flex:1;padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;border:none;background:none;font-family:inherit}
 .nb svg{width:20px;height:20px;stroke:var(--tx3);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .nb span{font-size:9px;color:var(--tx3)}.nb.a svg{stroke:var(--pri)}.nb.a span{color:var(--pri);font-weight:600}
-.nb{position:relative}.notif-badge{position:absolute;top:2px;right:calc(50% - 18px);background:var(--err);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1;display:none}.notif-badge.show{display:flex}
+.nb{position:relative}.notif-badge{position:absolute;top:2px;right:calc(50% - 18px);background:var(--err);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1;display:none}.notif-badge.show{display:flex}.side .nb .notif-badge{position:static;margin-left:auto;flex-shrink:0}
 .sr{display:flex;gap:6px;align-items:center}.sw{position:relative;flex:1;min-width:0;overflow:hidden}
 .sw input{width:100%;background:var(--bg);border:1px solid var(--brd);border-radius:var(--rs);padding:7px 10px 7px 28px;font-size:12px;color:var(--tx);outline:none;box-sizing:border-box}.sw input::placeholder{color:var(--tx3)}
 .si{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--tx3);fill:none;stroke-width:1.8;stroke-linecap:round}
@@ -854,7 +854,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-26-12';
+const APP_VERSION='2026-09-26-13';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
