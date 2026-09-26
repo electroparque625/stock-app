@@ -242,6 +242,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <button class="nb" data-s="rep" onclick="go('rep')"><svg viewBox="0 0 22 22"><path d="M14.7 6.3a1 1 0 000 1.4l0 0a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg><span>Reparaciones</span></button>
 <button class="nb tecnico-hide" data-s="presu" onclick="go('presu')"><svg viewBox="0 0 22 22"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg><span>Presupuestos</span></button>
 <button class="nb tecnico-hide" data-s="televisores" onclick="go('televisores')"><svg viewBox="0 0 22 22"><rect x="2" y="4" width="18" height="13" rx="2"/><line x1="8" y1="20" x2="14" y2="20"/><line x1="11" y1="17" x2="11" y2="20"/></svg><span>Televisores</span></button>
+<button class="nb tecnico-hide" data-s="postventa" onclick="go('postventa')"><svg viewBox="0 0 22 22"><path d="M3 8l8 6 8-6"/><rect x="2" y="4" width="18" height="14" rx="2"/></svg><span>Postventa ML</span><div class="notif-badge" id="postventa-badge-s"></div></button>
 <button class="nb tecnico-hide" data-s="importados" onclick="go('importados')"><svg viewBox="0 0 22 22"><path d="M2 12h5l2-8h6l2 8h3"/><path d="M4 16h14a2 2 0 002-2v-2H2v2a2 2 0 002 2z"/><circle cx="7" cy="19" r="1.6"/><circle cx="16" cy="19" r="1.6"/></svg><span>Importados</span></button>
 <button class="nb owner-only" data-s="imp" onclick="go('imp')" style="display:none"><svg viewBox="0 0 22 22"><path d="M4 14v4a1 1 0 001 1h12a1 1 0 001-1v-4"/><polyline points="7 9 11 13 15 9"/><line x1="11" y1="2" x2="11" y2="13"/></svg><span>Importaciones</span></button>
 <button class="nb owner-only" data-s="precios" onclick="go('precios')" style="display:none"><svg viewBox="0 0 22 22"><rect x="2" y="4" width="18" height="14" rx="2"/><line x1="2" y1="9" x2="20" y2="9"/><circle cx="7" cy="14" r="1"/><circle cx="12" cy="14" r="1"/></svg><span>Calculadora</span></button>
@@ -590,6 +591,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div id="tv-list-detalle"><div class="emp">Sin televisores con detalle</div></div>
 </div>
 
+<!-- POSTVENTA ML --><div class="sc" id="s-postventa">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div class="stit" style="margin:0">📩 Postventa Mercado Libre</div>
+<button class="b bs" style="width:auto;padding:8px 12px;font-size:12px" onclick="loadPostventa()">🔄 Actualizar</button>
+</div>
+<div id="postventa-tabs" style="display:flex;gap:4px;margin-bottom:10px">
+<button class="fb a" onclick="setPostventaTab('reclamo',this)">⚖️ Reclamos y mediaciones</button>
+<button class="fb" onclick="setPostventaTab('devolucion',this)">↩️ Devoluciones</button>
+</div>
+<div class="tg-row" style="margin-bottom:10px"><span class="tg-lbl">Ver también los resueltos</span><label class="tg"><input type="checkbox" id="pv-ver-resueltos" onchange="renderPostventa()"/><span class="tg-tr"></span><span class="tg-th"></span></label></div>
+<div id="postventa-list"><div class="emp">Cargando...</div></div>
+</div>
+
 <!-- MODAL MENSAJE TV --><div class="mo" id="mo-tvmsg"><div class="ml">
 <div class="mb"></div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -839,7 +853,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-26-8';
+const APP_VERSION='2026-09-26-9';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -946,7 +960,7 @@ function ico(a){a=(a||'').toLowerCase();if(/joystick|gamepad|dualsense|dualshock
 function aB(p){const a=p.estado_alerta||'OK';if(a==='SIN STOCK')return['🔴 SIN STOCK','b-sin'];if(a.includes('CRITICO AVION'))return['🔴 CRÍTICO ✈️','b-crit'];if(a.includes('CRITICO BARCO'))return['🔴 CRÍTICO 🚢','b-crit'];if(a.includes('PRE ALERTA AVION'))return['🟡 PRE-ALERTA ✈️','b-pre'];if(a.includes('PRE ALERTA BARCO'))return['🟡 PRE-ALERTA 🚢','b-pre'];return['🟢 OK','b-ok']}
 function sC(p){if(!p.cantidades)return'e';if(p.stock_minimo&&p.cantidades<p.stock_minimo)return'w';return'o'}
 
-function go(s){if((s==='imp'||s==='precios')&&String(ses&&ses.usuario||'').toLowerCase()!=='electroparque'){toast('No tenés acceso a este módulo');return}if(s==='fac'){const pin=prompt('🔒 Ingresá el código para ver Facturación:');if(pin!=='4698'){toast('Código incorrecto');return}}document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='lista')loadLista();if(s==='preguntas')loadPreguntas();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='rep')loadRep();if(s==='clientes')loadClientes();if(s==='presu')loadPresus();if(s==='televisores')loadTelevisores();if(s==='usr')loadUsr();if(s==='importados')loadImportados();if(s==='cuentas')loadCuentasCorrientes();if(s==='imp'){const f=$('imp-frame');if(!f.src)f.src='https://electroparque-bot.onrender.com'}if(s==='precios')calcPrecios();if(SIDE_MORE_SCREENS.includes(s)){$('side-more')?.classList.add('open');$('side-more-btn')?.classList.add('open')}_navegandoPorGo=true;window.location.hash=s;setTimeout(()=>{_navegandoPorGo=false},0)}
+function go(s){if((s==='imp'||s==='precios')&&String(ses&&ses.usuario||'').toLowerCase()!=='electroparque'){toast('No tenés acceso a este módulo');return}if(s==='fac'){const pin=prompt('🔒 Ingresá el código para ver Facturación:');if(pin!=='4698'){toast('Código incorrecto');return}}document.querySelectorAll('.sc').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('s-'+s).classList.add('a');document.querySelectorAll('[data-s="'+s+'"]').forEach(x=>x.classList.add('a'));$('sbar').classList.toggle('v',s==='home');if(s==='dash')rDash();if(s==='fac')rFac();if(s==='add')loadNID();if(s==='mov')loadMov();if(s==='lista')loadLista();if(s==='preguntas')loadPreguntas();if(s==='tasks')loadTasks();if(s==='pizarra')loadPizarra();if(s==='rep')loadRep();if(s==='clientes')loadClientes();if(s==='presu')loadPresus();if(s==='televisores')loadTelevisores();if(s==='postventa')loadPostventa();if(s==='usr')loadUsr();if(s==='importados')loadImportados();if(s==='cuentas')loadCuentasCorrientes();if(s==='imp'){const f=$('imp-frame');if(!f.src)f.src='https://electroparque-bot.onrender.com'}if(s==='precios')calcPrecios();if(SIDE_MORE_SCREENS.includes(s)){$('side-more')?.classList.add('open');$('side-more-btn')?.classList.add('open')}_navegandoPorGo=true;window.location.hash=s;setTimeout(()=>{_navegandoPorGo=false},0)}
 let _navegandoPorGo=false;
 // go() ya cambia el hash él mismo al final — sin este freno, ESE cambio disparaba
 // este mismo listener y volvía a correr go() por segunda vez (por eso Facturación
@@ -2355,6 +2369,54 @@ async function generarMensajeIndividualTV(id){
   }catch(e){abrirModalTvMsg('Error','Error de conexión: '+e.message)}
 }
 
+/* POSTVENTA ML (Reclamos y mediaciones / Devoluciones) */
+let POSTVENTA_ALL=[],postventaTab='reclamo';
+async function loadPostventa(){
+  $('postventa-list').innerHTML='<div class="emp">Cargando...</div>';
+  const{data}=await db.from('ml_postventa').select('*').order('fecha_creacion',{ascending:false});
+  POSTVENTA_ALL=data||[];
+  const abiertos=POSTVENTA_ALL.filter(p=>!p.resuelto).length;
+  const el=$('postventa-badge-s');if(el){el.textContent=abiertos;el.classList.toggle('show',abiertos>0)}
+  renderPostventa();
+}
+function setPostventaTab(tipo,btn){
+  postventaTab=tipo;
+  document.querySelectorAll('#postventa-tabs .fb').forEach(b=>b.classList.remove('a'));
+  if(btn)btn.classList.add('a');
+  renderPostventa();
+}
+function renderPostventa(){
+  const verResueltos=$('pv-ver-resueltos').checked;
+  const list=POSTVENTA_ALL.filter(p=>p.tipo===postventaTab&&(verResueltos||!p.resuelto));
+  const accLabels={send_message_to_complainant:'Responder mensaje',refund:'Reintegrar',open_dispute:'Abrir disputa'};
+  $('postventa-list').innerHTML=list.length?list.map(p=>{
+    const acciones=(p.acciones_disponibles||'').split(',').map(a=>a.trim()).filter(Boolean).map(a=>accLabels[a]||a).join(' · ');
+    return'<div class="ar" style="align-items:flex-start;flex-wrap:wrap">'+
+      '<div class="ae">'+(p.tipo==='devolucion'?'↩️':'⚖️')+'</div>'+
+      '<div class="ai" style="min-width:200px">'+
+      '<div class="an">'+(p.articulo||'Sin artículo identificado')+'</div>'+
+      '<div class="am">'+(p.cuenta_nombre||'')+' · Orden '+(p.orden||'')+' · '+new Date(p.fecha_creacion).toLocaleDateString('es-AR')+'</div>'+
+      '<div class="am">Estado ML: '+(p.status||'—')+(p.stage&&p.stage!=='none'?' ('+p.stage+')':'')+(p.return_status?' · Envío: '+p.return_status:'')+(p.tracking_number?' · Seguimiento: '+p.tracking_number:'')+'</div>'+
+      (acciones?'<div class="am">Acción pendiente: '+acciones+'</div>':'')+
+      '<textarea placeholder="Notas internas..." style="width:100%;margin-top:6px;font-family:inherit;font-size:12px;padding:6px;border-radius:var(--rs);border:1px solid var(--brd);background:var(--card);color:var(--tx);resize:vertical" rows="2" onchange="guardarNotaPostventa('+p.id+',this.value)">'+(p.notas||'')+'</textarea>'+
+      '</div>'+
+      '<button class="b '+(p.resuelto?'bs':'bp')+'" style="width:auto;padding:6px 10px;font-size:11px" onclick="toggleResueltoPostventa('+p.id+','+(!p.resuelto)+')">'+(p.resuelto?'↺ Reabrir':'✅ Resuelto')+'</button>'+
+      '</div>';
+  }).join(''):'<div class="emp">Sin '+(postventaTab==='devolucion'?'devoluciones':'reclamos')+' '+(verResueltos?'':'pendientes')+'</div>';
+}
+async function toggleResueltoPostventa(id,valor){
+  await db.from('ml_postventa').update({resuelto:valor}).eq('id',id);
+  const it=POSTVENTA_ALL.find(p=>p.id===id);if(it)it.resuelto=valor;
+  const abiertos=POSTVENTA_ALL.filter(p=>!p.resuelto).length;
+  const el=$('postventa-badge-s');if(el){el.textContent=abiertos;el.classList.toggle('show',abiertos>0)}
+  renderPostventa();
+}
+async function guardarNotaPostventa(id,valor){
+  await db.from('ml_postventa').update({notas:valor||null}).eq('id',id);
+  const it=POSTVENTA_ALL.find(p=>p.id===id);if(it)it.notas=valor;
+  toast('Nota guardada');
+}
+
 function printPresu(){
   const nombre=$('pf-nombre').value.trim();if(!nombre||!presuItems.length){toast('Guardá primero');return}
   const sub=presuItems.reduce((s,it)=>s+(it.subtotal||0),0);
@@ -3211,7 +3273,7 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');set
 /* MORE MENU (mobile bottom nav overflow) */
 function toggleMore(){$('more-sheet').classList.toggle('show')}
 function goMore(s){$('more-sheet').classList.remove('show');go(s)}
-const SIDE_MORE_SCREENS=['dash','fac','mov','lista','preguntas','tasks','pizarra','rep','presu','televisores','importados','usr','imp'];
+const SIDE_MORE_SCREENS=['dash','fac','mov','lista','preguntas','tasks','pizarra','rep','presu','televisores','postventa','importados','usr','imp'];
 function toggleSideMore(){$('side-more').classList.toggle('open');$('side-more-btn').classList.toggle('open')}
 
 /* NOTIFICATION PANEL */
