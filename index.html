@@ -793,7 +793,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-26-2';
+const APP_VERSION='2026-09-26-3';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1530,7 +1530,7 @@ function enviarWpp(tipo){
   const precio=tipo==='mayorista'?cur.precio_mayorista:cur.precio_venta;
   let msg=(cur.speech_venta||cur.articulo||'').trim();
   if(precio)msg+=(msg?'\n\n':'')+'💰 Precio'+(tipo==='mayorista'?' mayorista':'')+': $'+Number(precio).toLocaleString('es-AR');
-  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(msg),'_blank');
 }
 
 async function uploadPhoto(input){
