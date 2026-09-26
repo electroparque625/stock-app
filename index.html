@@ -854,7 +854,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-26-11';
+const APP_VERSION='2026-09-26-12';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -2422,37 +2422,69 @@ function setPostventaTab(tipo){
   document.querySelectorAll('#postventa-tabs .fb').forEach(b=>b.classList.toggle('a',b.dataset.tab===tipo));
   renderPostventa();
 }
+function agruparPorCuenta(list){
+  const grupos={};
+  list.forEach(it=>{const c=it.cuenta_nombre||'Sin cuenta';(grupos[c]=grupos[c]||[]).push(it)});
+  return Object.keys(grupos).sort().map(c=>({cuenta:c,items:grupos[c]}));
+}
 function renderPostventa(){
   if(postventaTab==='mensaje'){renderPostventaMensajes();return}
   const verResueltos=$('pv-ver-resueltos').checked;
   const list=POSTVENTA_ALL.filter(p=>p.tipo===postventaTab&&(verResueltos||!p.resuelto));
   const accLabels={send_message_to_complainant:'Responder mensaje',refund:'Reintegrar',open_dispute:'Abrir disputa'};
-  $('postventa-list').innerHTML=list.length?list.map(p=>{
-    const acciones=(p.acciones_disponibles||'').split(',').map(a=>a.trim()).filter(Boolean).map(a=>accLabels[a]||a).join(' · ');
-    return'<div class="ar" style="align-items:flex-start;flex-wrap:wrap">'+
-      '<div class="ae">'+(p.tipo==='devolucion'?'↩️':'⚖️')+'</div>'+
-      '<div class="ai" style="min-width:200px">'+
-      '<div class="an">'+(p.articulo||'Sin artículo identificado')+'</div>'+
-      '<div class="am">'+(p.cuenta_nombre||'')+' · Orden '+(p.orden||'')+' · '+new Date(p.fecha_creacion).toLocaleDateString('es-AR')+'</div>'+
-      '<div class="am">Estado ML: '+(p.status||'—')+(p.stage&&p.stage!=='none'?' ('+p.stage+')':'')+(p.return_status?' · Envío: '+p.return_status:'')+(p.tracking_number?' · Seguimiento: '+p.tracking_number:'')+'</div>'+
-      (acciones?'<div class="am">Acción pendiente: '+acciones+'</div>':'')+
-      '<textarea placeholder="Notas internas..." style="width:100%;margin-top:6px;font-family:inherit;font-size:12px;padding:6px;border-radius:var(--rs);border:1px solid var(--brd);background:var(--card);color:var(--tx);resize:vertical" rows="2" onchange="guardarNotaPostventa('+p.id+',this.value)">'+(p.notas||'')+'</textarea>'+
-      '</div>'+
-      '<button class="b '+(p.resuelto?'bs':'bp')+'" style="width:auto;padding:6px 10px;font-size:11px" onclick="toggleResueltoPostventa('+p.id+','+(!p.resuelto)+')">'+(p.resuelto?'↺ Reabrir':'✅ Resuelto')+'</button>'+
-      '</div>';
-  }).join(''):'<div class="emp">Sin '+(postventaTab==='devolucion'?'devoluciones':'reclamos')+' '+(verResueltos?'':'pendientes')+'</div>';
+  if(!list.length){$('postventa-list').innerHTML='<div class="emp">Sin '+(postventaTab==='devolucion'?'devoluciones':'reclamos')+' '+(verResueltos?'':'pendientes')+'</div>';return}
+  $('postventa-list').innerHTML=agruparPorCuenta(list).map(g=>
+    '<div class="stit" style="margin:14px 0 6px">'+g.cuenta+' ('+g.items.length+')</div>'+
+    g.items.map(p=>{
+      const acciones=(p.acciones_disponibles||'').split(',').map(a=>a.trim()).filter(Boolean).map(a=>accLabels[a]||a).join(' · ');
+      return'<div class="ar" style="align-items:flex-start;flex-wrap:wrap">'+
+        '<div class="ae">'+(p.tipo==='devolucion'?'↩️':'⚖️')+'</div>'+
+        '<div class="ai" style="min-width:200px">'+
+        '<div class="an">'+(p.articulo||'Sin artículo identificado')+'</div>'+
+        '<div class="am">Orden '+(p.orden||'')+' · '+new Date(p.fecha_creacion).toLocaleDateString('es-AR')+'</div>'+
+        '<div class="am">Estado ML: '+(p.status||'—')+(p.stage&&p.stage!=='none'?' ('+p.stage+')':'')+(p.return_status?' · Envío: '+p.return_status:'')+(p.tracking_number?' · Seguimiento: '+p.tracking_number:'')+'</div>'+
+        (acciones?'<div class="am">Acción pendiente: '+acciones+'</div>':'')+
+        '<textarea placeholder="Notas internas..." style="width:100%;margin-top:6px;font-family:inherit;font-size:12px;padding:6px;border-radius:var(--rs);border:1px solid var(--brd);background:var(--card);color:var(--tx);resize:vertical" rows="2" onchange="guardarNotaPostventa('+p.id+',this.value)">'+(p.notas||'')+'</textarea>'+
+        '</div>'+
+        '<div style="display:flex;flex-direction:column;gap:4px">'+
+        '<button class="b '+(p.resuelto?'bs':'bp')+'" style="width:auto;padding:6px 10px;font-size:11px" onclick="toggleResueltoPostventa('+p.id+','+(!p.resuelto)+')">'+(p.resuelto?'↺ Reabrir':'✅ Resuelto')+'</button>'+
+        '<button class="b be" style="width:auto;padding:6px 10px;font-size:11px" onclick="borrarPostventa('+p.id+')">🗑️ Borrar</button>'+
+        '</div>'+
+        '</div>';
+    }).join('')
+  ).join('');
 }
 function renderPostventaMensajes(){
-  $('postventa-list').innerHTML=POSTVENTA_MSJ.length?POSTVENTA_MSJ.map(m=>
-    '<div class="ar" style="align-items:flex-start;flex-wrap:wrap">'+
-    '<div class="ae">💬</div>'+
-    '<div class="ai" style="min-width:200px">'+
-    '<div class="an">'+(m.cuenta_nombre||'')+' · Pack '+m.pack_id+'</div>'+
-    '<div class="am">'+(m.ultimo_remitente==='comprador'?'🗣️ Comprador':'Vendedor')+' · '+new Date(m.fecha_ultimo_mensaje).toLocaleString('es-AR')+' · '+m.cantidad_no_leidos+' sin leer</div>'+
-    '<div class="am" style="font-style:italic">"'+(m.ultimo_mensaje||'').substring(0,180)+'"</div>'+
-    (m.claim_id?'<div class="am">Vinculado a reclamo '+m.claim_id+'</div>':'')+
-    '</div></div>'
-  ).join(''):'<div class="emp">Sin mensajes de postventa sin leer 🎉</div>';
+  if(!POSTVENTA_MSJ.length){$('postventa-list').innerHTML='<div class="emp">Sin mensajes de postventa sin leer 🎉</div>';return}
+  $('postventa-list').innerHTML=agruparPorCuenta(POSTVENTA_MSJ).map(g=>
+    '<div class="stit" style="margin:14px 0 6px">'+g.cuenta+' ('+g.items.length+')</div>'+
+    g.items.map(m=>
+      '<div class="ar" style="align-items:flex-start;flex-wrap:wrap">'+
+      '<div class="ae">💬</div>'+
+      '<div class="ai" style="min-width:200px">'+
+      '<div class="an">Pack '+m.pack_id+'</div>'+
+      '<div class="am">'+(m.ultimo_remitente==='comprador'?'🗣️ Comprador':'Vendedor')+' · '+new Date(m.fecha_ultimo_mensaje).toLocaleString('es-AR')+' · '+m.cantidad_no_leidos+' sin leer</div>'+
+      '<div class="am" style="font-style:italic">"'+(m.ultimo_mensaje||'').substring(0,180)+'"</div>'+
+      (m.claim_id?'<div class="am">Vinculado a reclamo '+m.claim_id+'</div>':'')+
+      '</div>'+
+      '<button class="b be" style="width:auto;padding:6px 10px;font-size:11px" onclick="borrarMensajePostventa(\''+m.id+'\')">🗑️ Borrar</button>'+
+      '</div>'
+    ).join('')
+  ).join('');
+}
+async function borrarPostventa(id){
+  if(!confirm('¿Borrar este ítem de Postventa? Esto no hace nada en Mercado Libre, solo lo saca de esta lista.'))return;
+  await db.from('ml_postventa').delete().eq('id',id);
+  POSTVENTA_ALL=POSTVENTA_ALL.filter(p=>p.id!==id);
+  actualizarKpisPostventa();
+  renderPostventa();
+}
+async function borrarMensajePostventa(id){
+  if(!confirm('¿Borrar esta conversación de la lista? Esto no la marca como leída en Mercado Libre, solo la saca de acá (puede volver a aparecer si sigue sin leerse allá).'))return;
+  await db.from('ml_mensajes_postventa').delete().eq('id',id);
+  POSTVENTA_MSJ=POSTVENTA_MSJ.filter(m=>m.id!==id);
+  actualizarKpisPostventa();
+  renderPostventa();
 }
 async function toggleResueltoPostventa(id,valor){
   await db.from('ml_postventa').update({resuelto:valor}).eq('id',id);
