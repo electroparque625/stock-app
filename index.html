@@ -550,6 +550,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 <div class="stit" style="margin:0">Presupuestos</div>
 <div style="display:flex;gap:6px"><button class="b bs" onclick="go('cuentas')" style="width:auto;padding:8px 12px;font-size:12px">📒 Cuentas Corrientes</button><button class="b bp" onclick="newPresu()" style="width:auto;padding:8px 16px">+ Nuevo</button></div>
 </div>
+<div class="f" style="margin-bottom:8px"><input type="text" id="presu-q" placeholder="🔍 Buscar por cliente o producto..." oninput="renderPresuList()"/></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+<button class="b bs" style="width:auto;padding:6px 10px;font-size:11px" onclick="setPeriodoPresu('semana')">Esta semana</button>
+<button class="b bs" style="width:auto;padding:6px 10px;font-size:11px" onclick="setPeriodoPresu('mes')">Este mes</button>
+<button class="b bs" style="width:auto;padding:6px 10px;font-size:11px" onclick="setPeriodoPresu('mespasado')">Mes pasado</button>
+<button class="b bs" style="width:auto;padding:6px 10px;font-size:11px" onclick="setPeriodoPresu('todos')">Todos</button>
+</div>
+<div class="fr" style="margin-bottom:10px"><div class="f"><label>Desde</label><input type="date" id="presu-desde" onchange="renderPresuList()"/></div><div class="f"><label>Hasta</label><input type="date" id="presu-hasta" onchange="renderPresuList()"/></div></div>
 <div id="presu-list"><div class="emp">Sin presupuestos</div></div>
 </div>
 
@@ -793,7 +801,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-26-3';
+const APP_VERSION='2026-09-26-4';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -939,7 +947,8 @@ function rList(l){
   el.innerHTML=l.map((p,i)=>{
     const sc=sC(p),ab=aB(p),ep=(p.estado||'').toUpperCase()==='PAUSADA';
     const tgs=(p.monitorear?'<span class="tg2 t-mon">⭐</span>':'')+(ep?'<span class="tg2 t-pau">PAUSADA</span>':ab[1]!=='b-ok'?'<span class="tg2 '+ab[1].replace('b-','t-')+'">'+ab[0]+'</span>':'');
-    return'<div class="pr" onclick="vP('+i+')"><div class="pi">'+(p.emoji||ico(p.articulo))+'</div><div class="pd d-'+sc+'"></div><div style="flex:1;min-width:0"><div class="pn">'+(p.articulo||'?').replace(/</g,'&lt;')+tgs+'</div><div class="pm">'+(p.sku||'')+(p.marca?' · '+p.marca:'')+' · #'+p.id+'</div></div><div class="pq '+sc+'">'+(p.cantidades||0)+'</div><div style="color:var(--tx3)">›</div></div>'
+    const mm=[p.marca,p.modelo].filter(Boolean).join(' ');
+    return'<div class="pr" onclick="vP('+i+')"><div class="pi">'+(p.emoji||ico(p.articulo))+'</div><div class="pd d-'+sc+'"></div><div style="flex:1;min-width:0"><div class="pn">'+(p.articulo||'?').replace(/</g,'&lt;')+tgs+'</div><div class="pm">'+(mm?mm+' · ':'')+'#'+p.id+'</div></div><div class="pq '+sc+'">'+(p.cantidades||0)+'</div><div style="color:var(--tx3)">›</div></div>'
   }).join('');
 }
 function vP(i){if(rend[i])showDet(rend[i])}
@@ -1783,6 +1792,8 @@ async function loadLista(){
     const rows=data||[];
     if(!rows.length){el.innerHTML='<div class="emp">Sin pedidos anotados</div>';return}
     const renderItem=r=>{
+      const prodRef=r.stock_id?ALL.find(x=>x.id===r.stock_id):null;
+      const marcaModelo=prodRef?[prodRef.marca,prodRef.modelo].filter(Boolean).join(' '):'';
       const esFlex=r.usuario==='Auto (Flex)';
       const esCorreo=r.usuario==='Auto (Correo)';
       const esWeb=r.usuario==='Auto (Web)';
@@ -1793,7 +1804,7 @@ async function loadLista(){
       return'<div class="fac-row" style="'+(r.retirado?'opacity:.45':'')+'">'
         +'<div class="fac-ch" style="cursor:pointer;flex:1;min-width:0" onclick="toggleRetirado('+r.id+','+(!r.retirado)+')"><span class="fac-ico">'+(r.retirado?'✅':'⬜')+'</span><div style="flex:1;min-width:0">'
         +'<div class="fac-name" style="'+(r.retirado?'text-decoration:line-through':'')+'">'+(r.articulo||'MLA '+r.mla)+flexTag+'</div>'
-        +'<div style="font-size:11px;color:var(--tx3)">'+(r.sku?r.sku+' · ':'')+r.mla+' · x'+r.cantidad+'</div>'
+        +'<div style="font-size:11px;color:var(--tx3)">'+(marcaModelo?marcaModelo+' · ':'')+r.mla+' · x'+r.cantidad+'</div>'
         +(r.ubicacion?'<div style="font-size:11px;color:var(--pri);font-weight:600">📍 '+r.ubicacion+'</div>':'')
         +(r.observaciones?'<div style="font-size:11px;color:var(--tx3);font-style:italic">'+r.observaciones+'</div>':'')
         +'</div></div>'
@@ -2049,20 +2060,46 @@ function printDoc(tipo){
 }
 
 /* PRESUPUESTOS */
-let presuItems=[],curPresuId=null,curPresuFacturado=false,PRESU_CLIENTES=[];
+let presuItems=[],curPresuId=null,curPresuFacturado=false,PRESU_CLIENTES=[],PRESU_ALL=[];
 async function loadPresus(){
   const{data}=await db.from('presupuestos').select('*').order('created_at',{ascending:false});
-  const list=data||[];
+  PRESU_ALL=data||[];
+  // Clientes frecuentes: dedup por nombre, se queda con los datos del presupuesto
+  // mas reciente de cada uno (la lista ya viene ordenada por created_at desc).
+  const vistos=new Set();PRESU_CLIENTES=[];
+  PRESU_ALL.forEach(p=>{const n=(p.cliente_nombre||'').trim();if(!n||vistos.has(n.toLowerCase()))return;vistos.add(n.toLowerCase());PRESU_CLIENTES.push({nombre:n,telefono:p.cliente_telefono||'',email:p.cliente_email||''})});
+  $('dl-pcli').innerHTML=PRESU_CLIENTES.map(c=>'<option value="'+c.nombre.replace(/"/g,'&quot;')+'">').join('');
+  if(!$('presu-desde').value&&!$('presu-hasta').value)setPeriodoPresu('mes');
+  else renderPresuList();
+}
+function setPeriodoPresu(preset){
+  const hoy=new Date();const f=d=>d.toISOString().slice(0,10);
+  if(preset==='todos'){$('presu-desde').value='';$('presu-hasta').value=''}
+  else if(preset==='semana'){const d=new Date(hoy);const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow);$('presu-desde').value=f(d);$('presu-hasta').value=f(hoy)}
+  else if(preset==='mespasado'){const d1=new Date(hoy.getFullYear(),hoy.getMonth()-1,1);const d2=new Date(hoy.getFullYear(),hoy.getMonth(),0);$('presu-desde').value=f(d1);$('presu-hasta').value=f(d2)}
+  else{const d1=new Date(hoy.getFullYear(),hoy.getMonth(),1);$('presu-desde').value=f(d1);$('presu-hasta').value=f(hoy)}
+  renderPresuList();
+}
+function renderPresuList(){
+  const q=($('presu-q').value||'').toLowerCase().trim();
+  const desde=$('presu-desde').value?new Date($('presu-desde').value+'T00:00:00'):null;
+  const hasta=$('presu-hasta').value?new Date($('presu-hasta').value+'T23:59:59'):null;
+  const list=PRESU_ALL.filter(p=>{
+    const fc=new Date(p.created_at);
+    if(desde&&fc<desde)return false;
+    if(hasta&&fc>hasta)return false;
+    if(q){
+      const items=typeof p.items==='string'?JSON.parse(p.items):p.items||[];
+      const h=((p.cliente_nombre||'')+' '+items.map(it=>it.descripcion||'').join(' ')).toLowerCase();
+      if(!h.includes(q))return false;
+    }
+    return true;
+  });
   const stColors={pendiente:'var(--warn)',aceptado:'var(--ok)',rechazado:'var(--err)'};
   $('presu-list').innerHTML=list.length?list.map(p=>{
     const items=typeof p.items==='string'?JSON.parse(p.items):p.items||[];
     return'<div class="ar" onclick="editPresu('+p.id+')"><div class="ae">'+(p.facturado?'🧾':'📄')+'</div><div class="ai"><div class="an">P-'+String(p.id).padStart(4,'0')+' · '+p.cliente_nombre+'</div><div class="am">'+items.length+' items · $'+Math.round(p.total||0).toLocaleString('es-AR')+' · '+new Date(p.created_at).toLocaleDateString('es-AR')+(p.facturado?' · Facturado':'')+'</div></div><span class="ab" style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:'+(stColors[p.estado]||'var(--tx3)')+'">'+p.estado+'</span></div>'
-  }).join(''):'<div class="emp">Sin presupuestos</div>';
-  // Clientes frecuentes: dedup por nombre, se queda con los datos del presupuesto
-  // mas reciente de cada uno (la lista ya viene ordenada por created_at desc).
-  const vistos=new Set();PRESU_CLIENTES=[];
-  list.forEach(p=>{const n=(p.cliente_nombre||'').trim();if(!n||vistos.has(n.toLowerCase()))return;vistos.add(n.toLowerCase());PRESU_CLIENTES.push({nombre:n,telefono:p.cliente_telefono||'',email:p.cliente_email||''})});
-  $('dl-pcli').innerHTML=PRESU_CLIENTES.map(c=>'<option value="'+c.nombre.replace(/"/g,'&quot;')+'">').join('');
+  }).join(''):'<div class="emp">Sin presupuestos en el período/búsqueda seleccionado</div>';
 }
 function onPresuNombreInput(){
   const n=$('pf-nombre').value.trim().toLowerCase();
