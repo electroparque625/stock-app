@@ -295,7 +295,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- DASHBOARD (admin) --><div class="sc" id="s-dash"><div class="dg" id="dk"></div><div class="stit">⭐ Nivel de stock — Productos monitoreados</div><div id="d-bars" style="display:flex;align-items:flex-end;gap:6px;min-height:220px;padding:16px 10px 0;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);margin-bottom:14px;overflow-x:auto;position:relative"><div class="emp">Marcá productos con ⭐</div></div><div class="stit">Detalle por producto</div><div id="d-mo"><div class="emp">Marcá productos con ⭐ para verlos acá</div></div></div>
 
-<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div style="display:flex;justify-content:flex-end;align-items:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:8px"><div class="f" style="margin:0"><label>Mes del reporte</label><input type="month" id="fac-export-mes" style="width:auto"/></div><button class="b bp" onclick="abrirReporteVentas()" style="width:auto;padding:8px 12px;font-size:12px">📊 Reporte de ventas</button><button class="b bs" onclick="loadHistorico()" style="width:auto;padding:8px 12px;font-size:12px">📊 Histórico mensual</button></div><div class="dg" id="fac-total-recaudado" style="margin-bottom:10px"><div class="dc"><div class="dl">Total recaudado (bruto)</div><div class="dv">—</div></div><div class="dc"><div class="dl">Total recaudado (neto — en mano)</div><div class="dv ok">—</div></div></div><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div><div id="fac-pie-rep" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Reparaciones (30d)</div><div id="fac-pie-rep-svg"></div><div id="fac-rep-total" style="font-size:11px;color:var(--tx3);margin-top:6px"></div></div><div id="fac-pie-presu" style="cursor:pointer;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center" onclick="go('cuentas')"><div class="dl">Presupuestos (30d)</div><div style="font-size:22px;font-weight:800;color:var(--ok);margin-top:30px" id="fac-presu-total">$0</div><div style="font-size:11px;color:var(--tx3);margin-top:6px">cobrado en Cuenta Corriente</div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
+<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div style="display:flex;justify-content:flex-end;align-items:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:8px"><div class="f" style="margin:0;min-width:260px"><label>Período del reporte de ventas</label><button type="button" class="mp-btn" id="fac-export-rango" onclick="rpAbrir(event,this)"></button></div><button class="b bp" onclick="abrirReporteVentas()" style="width:auto;padding:8px 12px;font-size:12px">📊 Reporte de ventas</button><button class="b bs" onclick="loadHistorico()" style="width:auto;padding:8px 12px;font-size:12px">📊 Histórico mensual</button></div><div class="dg" id="fac-total-recaudado" style="margin-bottom:10px"><div class="dc"><div class="dl">Total recaudado (bruto)</div><div class="dv">—</div></div><div class="dc"><div class="dl">Total recaudado (neto — en mano)</div><div class="dv ok">—</div></div></div><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div><div id="fac-pie-rep" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Reparaciones (30d)</div><div id="fac-pie-rep-svg"></div><div id="fac-rep-total" style="font-size:11px;color:var(--tx3);margin-top:6px"></div></div><div id="fac-pie-presu" style="cursor:pointer;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center" onclick="go('cuentas')"><div class="dl">Presupuestos (30d)</div><div style="font-size:22px;font-weight:800;color:var(--ok);margin-top:30px" id="fac-presu-total">$0</div><div style="font-size:11px;color:var(--tx3);margin-top:6px">cobrado en Cuenta Corriente</div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
 <div class="stit" style="margin-top:14px">🏆 Ranking por período</div>
 <div class="fac-card" style="margin-bottom:14px">
 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
@@ -918,7 +918,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-10-03-2';
+const APP_VERSION='2026-10-03-3';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1282,8 +1282,47 @@ document.addEventListener('click',e=>{
   // En los campos de fecha, que el calendario se abra tocando en cualquier parte, no solo en el iconito.
   if(e.target.matches&&e.target.matches('input[type=date]')){try{e.target.showPicker()}catch(_){}}
 });
-['fac-export-mes','fac-upload-periodo','fac-ml-periodo'].forEach(mpInit);
-$('fac-export-mes').value=mesDeFecha(new Date());
+['fac-upload-periodo','fac-ml-periodo'].forEach(mpInit);
+/* CALENDARIO DE RANGO (reporte de ventas): se toca el día de inicio y después el de fin. */
+const REP_RANGO={desde:new Date(new Date().getFullYear(),new Date().getMonth(),1),hasta:new Date()};
+const MESES_LARGOS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function rpFmt(d){return d.getDate()+' '+MESES_CORTOS[d.getMonth()].toLowerCase()+' '+d.getFullYear()}
+function rpTexto(a,b){const mismo=a.toDateString()===b.toDateString();return mismo?'del '+rpFmt(a):'del '+rpFmt(a)+' al '+rpFmt(b)}
+function rpPintar(){const b=$('fac-export-rango');if(b)b.innerHTML='📅 <span style="flex:1">'+rpFmt(REP_RANGO.desde)+(REP_RANGO.desde.toDateString()===REP_RANGO.hasta.toDateString()?'':' → '+rpFmt(REP_RANGO.hasta))+'</span><span style="color:var(--tx3)">▾</span>'}
+function rpAbrir(ev,btn){
+  ev.stopPropagation();mpCerrar();
+  let vy=REP_RANGO.hasta.getFullYear(),vm=REP_RANGO.hasta.getMonth();
+  let ini=new Date(REP_RANGO.desde),fin=new Date(REP_RANGO.hasta),eligiendoFin=false;
+  const hoy=new Date();const sd=d=>d.getFullYear()*10000+d.getMonth()*100+d.getDate();
+  const pop=document.createElement('div');pop.className='mp-pop';pop.id='mp-pop';pop.style.width='300px';
+  pop.onclick=e=>e.stopPropagation();
+  const aplicar=(a,b)=>{REP_RANGO.desde=a;REP_RANGO.hasta=b;rpPintar();mpCerrar()};
+  const render=()=>{
+    const primero=new Date(vy,vm,1);const offset=(primero.getDay()+6)%7;const dias=new Date(vy,vm+1,0).getDate();
+    let celdas='';for(let i=0;i<offset;i++)celdas+='<span></span>';
+    for(let d=1;d<=dias;d++){const f=new Date(vy,vm,d);const v=sd(f);const enRango=!eligiendoFin&&v>=sd(ini)&&v<=sd(fin);const extremo=v===sd(ini)||(!eligiendoFin&&v===sd(fin));
+      celdas+='<button type="button" data-d="'+d+'" style="padding:8px 0;border-radius:8px;border:1px solid '+(v===sd(hoy)?'var(--pri)':'transparent')+';background:'+(extremo?'var(--pri)':enRango?'var(--pri-l,rgba(37,99,235,.15))':'none')+';color:'+(extremo?'#fff':'var(--tx)')+';font-family:inherit;font-size:13px;cursor:pointer;font-weight:'+(extremo?'700':'400')+'">'+d+'</button>'}
+    pop.innerHTML='<div class="mp-head"><button type="button" data-n="-1">‹</button><span>'+MESES_LARGOS[vm]+' '+vy+'</span><button type="button" data-n="1">›</button></div>'
+      +'<div style="font-size:12px;color:var(--tx3);margin-bottom:8px;text-align:center">'+(eligiendoFin?'Ahora tocá el día de <b>fin</b>':'Tocá el día de <b>inicio</b>')+'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:11px;color:var(--tx3);margin-bottom:4px">'+['L','M','M','J','V','S','D'].map(x=>'<span>'+x+'</span>').join('')+'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">'+celdas+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">'+[['hoy','Hoy'],['semana','Esta semana'],['mes','Este mes'],['mespasado','Mes pasado']].map(([k,t])=>'<button type="button" class="b bs" data-p="'+k+'" style="padding:7px;font-size:12px">'+t+'</button>').join('')+'</div>';
+    pop.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{vm+=+b.dataset.n;if(vm<0){vm=11;vy--}if(vm>11){vm=0;vy++}render()});
+    pop.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const f=new Date(vy,vm,+b.dataset.d);
+      if(!eligiendoFin){ini=f;fin=f;eligiendoFin=true;render()}
+      else{if(sd(f)<sd(ini))aplicar(f,ini);else aplicar(ini,f)}});
+    pop.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const p=b.dataset.p,t=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate());
+      if(p==='hoy')aplicar(t,t);
+      else if(p==='semana'){const l=new Date(t);l.setDate(t.getDate()-((t.getDay()+6)%7));aplicar(l,t)}
+      else if(p==='mes')aplicar(new Date(t.getFullYear(),t.getMonth(),1),t);
+      else aplicar(new Date(t.getFullYear(),t.getMonth()-1,1),new Date(t.getFullYear(),t.getMonth(),0))});
+  };
+  render();document.body.appendChild(pop);
+  const r=btn.getBoundingClientRect();const w=300,h=pop.offsetHeight;
+  pop.style.left=Math.max(8,Math.min(r.left,window.innerWidth-w-8))+'px';
+  pop.style.top=(r.bottom+h+8<window.innerHeight?r.bottom+4:Math.max(8,r.top-h-4))+'px';
+}
+rpPintar();
 async function cargarMetricasPeriodo(){
   const desdeStr=$('fac-rango-desde').value,hastaStr=$('fac-rango-hasta').value;
   if(!desdeStr||!hastaStr){toast('Elegí un rango de fechas');return}
@@ -1476,37 +1515,37 @@ async function uploadMLReport(){
 // descarga el Excel, con fórmulas para que se pueda seguir editando allá.
 let REP=null;
 async function abrirReporteVentas(){
-  const inp=$('fac-export-mes');if(!inp.value)inp.value=mesDeFecha(new Date());
-  const mes=inp.value;const[y,m]=mes.split('-').map(Number);
-  const desde=new Date(y,m-1,1),hasta=new Date(y,m,0,23,59,59);
-  toast('Armando el reporte de '+nombreMes(mes)+'...');
+  const desde=new Date(REP_RANGO.desde.getFullYear(),REP_RANGO.desde.getMonth(),REP_RANGO.desde.getDate());
+  const hasta=new Date(REP_RANGO.hasta.getFullYear(),REP_RANGO.hasta.getMonth(),REP_RANGO.hasta.getDate(),23,59,59);
+  const etiqueta=rpTexto(desde,hasta);
+  toast('Armando el reporte '+etiqueta+'...');
   try{
-    const[{data:ml},{data:movs},{data:presus}]=await Promise.all([
-      db.from('facturacion_ml').select('*').eq('periodo',mes),
+    // Mercado Libre queda afuera a propósito: tiene su propia sección y su propio reporte.
+    const[{data:movs},{data:presus}]=await Promise.all([
       db.from('movimientos').select('created_at,usuario,articulo,sku,cantidad,monto,canal').eq('tipo','venta').gte('created_at',desde.toISOString()).lte('created_at',hasta.toISOString()),
       db.from('presupuestos').select('*').eq('facturado',true).gte('fecha_facturacion',desde.toISOString()).lte('fecha_facturacion',hasta.toISOString())
     ]);
-    const porSku={},porMla={},porId={};
-    ALL.forEach(p=>{if(p.sku)porSku[p.sku]=p;porId[p.id]=p;[p.ml_id_1,p.ml_id_2,p.ml_id_3,p.ml_id_4].forEach(x=>{if(x)porMla[x]=p})});
-    const chName={web:'Tienda Online',mostrador:'Mostrador',tiendanube:'Tienda Nube',reparacion:'Reparaciones',mercadolibre:'MercadoLibre (cargada a mano)'};
+    const porSku={},porId={};
+    ALL.forEach(p=>{if(p.sku)porSku[p.sku]=p;porId[p.id]=p});
+    const chName={web:'Tienda Online',mostrador:'Mostrador',tiendanube:'Tienda Nube',reparacion:'Reparaciones'};
     const filas=[];
     const add=(f,canal,cuenta,orden,articulo,ref,unidades,bruto,ded,neto,prod,sinCosto)=>{
       const key=prod?'p'+prod.id:sinCosto?null:'a'+(ref||articulo).toLowerCase();
       filas.push({fecha:f,canal,cuenta,orden,articulo,ref,unidades,bruto,ded,neto,key,prod});
     };
-    (ml||[]).forEach(v=>add(parseFechaML(v.fecha),'MercadoLibre',ctaLabel(v.cuenta),v.orden,v.titulo,v.mla,v.unidades||1,v.bruto||0,v.deducciones||0,v.neto||0,porMla[v.mla]));
-    (movs||[]).filter(v=>!(v.canal||'').startsWith('ml_')).forEach(v=>add(new Date(v.created_at),chName[v.canal]||v.canal||'Mostrador',v.usuario||'',v.sku||'',v.articulo||'',v.sku||'',v.cantidad||1,v.monto||0,0,v.monto||0,porSku[v.sku]));
+    (movs||[]).filter(v=>{const c=v.canal||'';return!c.startsWith('ml_')&&c!=='mercadolibre'}).forEach(v=>add(new Date(v.created_at),chName[v.canal]||v.canal||'Mostrador',v.usuario||'',v.sku||'',v.articulo||'',v.sku||'',v.cantidad||1,v.monto||0,0,v.monto||0,porSku[v.sku]));
     (presus||[]).forEach(pr=>{
       const items=typeof pr.items==='string'?JSON.parse(pr.items):pr.items||[];const num='P-'+String(pr.id).padStart(4,'0');const f=new Date(pr.fecha_facturacion);
       items.forEach(it=>{const p=it.producto_id?porId[it.producto_id]:null;add(f,'Presupuesto',pr.cliente_nombre||'',num,it.descripcion||'',p?p.sku:'',it.cantidad||1,it.subtotal||0,0,it.subtotal||0,p)});
       if(+pr.descuento>0)add(f,'Presupuesto',pr.cliente_nombre||'',num,'Descuento del presupuesto','',0,0,+pr.descuento,-pr.descuento,null,true);
     });
-    if(!filas.length){toast('No hay ventas registradas en '+nombreMes(mes));return}
+    if(!filas.length){toast('No hay ventas registradas '+etiqueta);return}
     filas.sort((a,b)=>(a.fecha?a.fecha.getTime():0)-(b.fecha?b.fecha.getTime():0));
     const grupos={};
     filas.forEach(f=>{if(!f.key)return;const g=grupos[f.key]=grupos[f.key]||{key:f.key,articulo:f.prod?[f.prod.articulo,f.prod.marca,f.prod.modelo].filter(Boolean).join(' '):f.articulo,ref:f.prod?f.prod.sku:f.ref,prod:f.prod,canales:new Set(),unidades:0,neto:0,costo:f.prod&&+f.prod.precio_al_costo>0?+f.prod.precio_al_costo:null};g.canales.add(f.canal);g.unidades+=f.unidades;g.neto+=f.neto});
-    REP={mes,filas,grupos};
-    $('rep-titulo').textContent='📊 Reporte de ventas — '+nombreMes(mes);
+    const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    REP={etiqueta,archivo:iso(desde)===iso(hasta)?iso(desde):iso(desde)+'_a_'+iso(hasta),filas,grupos};
+    $('rep-titulo').textContent='📊 Reporte de ventas '+etiqueta+' (sin Mercado Libre)';
     $('rep-q').value='';$('rep-solo-sin').checked=false;
     renderReporteTotales();renderReporteProductos();
     $('mo-reporte').classList.add('show');
@@ -1548,7 +1587,7 @@ async function guardarCostosReporte(){
 }
 function descargarReporteVentas(){
   if(!REP)return;
-  const{mes,filas}=REP;
+  const{etiqueta,archivo,filas}=REP;
   const hdr=['Fecha','Canal','Cuenta / Cliente','Orden / Comprobante','Artículo','SKU / Publicación','Unidades','Precio de venta','Comisiones y descuentos','Neto cobrado','Costo unitario','Costo total','Ganancia','Margen %'];
   const data=filas.map(f=>{const cu=costoFila(f);return[f.fecha?f.fecha.toLocaleDateString('es-AR'):'',f.canal,f.cuenta,f.orden,f.articulo,f.ref,f.unidades,f.bruto,f.ded,f.neto,cu!=null?cu:'']});
   const ws=XLSX.utils.aoa_to_sheet([hdr,...data]);
@@ -1565,7 +1604,7 @@ function descargarReporteVentas(){
   ws['!cols']=[10,16,18,20,46,20,9,14,14,14,13,13,13,9].map(w=>({wch:w}));
   const canales=[...new Set(filas.map(f=>f.canal))];
   const R=n=>"Ventas!"+n+"2:"+n+last;
-  const wsR=XLSX.utils.aoa_to_sheet([['Reporte de ventas — '+nombreMes(mes)],['Si corregís un "Costo unitario" en la hoja Ventas, la ganancia y este resumen se recalculan solos. Las ventas sin costo no suman en Costo ni Ganancia.'],[],['Canal','Ventas','Unidades','Precio de venta','Comisiones y descuentos','Neto cobrado','Costo total','Ganancia','Margen %','Ventas sin costo']]);
+  const wsR=XLSX.utils.aoa_to_sheet([['Reporte de ventas '+etiqueta+' (sin Mercado Libre)'],['Si corregís un "Costo unitario" en la hoja Ventas, la ganancia y este resumen se recalculan solos. Las ventas sin costo no suman en Costo ni Ganancia.'],[],['Canal','Ventas','Unidades','Precio de venta','Comisiones y descuentos','Neto cobrado','Costo total','Ganancia','Margen %','Ventas sin costo']]);
   canales.forEach((c,i)=>{const r=5+i;const q='"'+c.replace(/"/g,'""')+'"';
     wsR['A'+r]={t:'s',v:c};
     wsR['B'+r]={t:'n',f:'COUNTIF('+R('B')+','+q+')'};
@@ -1582,7 +1621,7 @@ function descargarReporteVentas(){
   wsR['!cols']=[30,9,10,16,16,16,16,16,10,14].map(w=>({wch:w}));
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,wsR,'Resumen');XLSX.utils.book_append_sheet(wb,ws,'Ventas');
-  XLSX.writeFile(wb,'Ventas_ElectroParque_'+mes+'.xlsx');
+  XLSX.writeFile(wb,'Ventas_ElectroParque_'+archivo+'.xlsx');
   toast('📥 Excel descargado');
 }
 // Recalcula solo la parte de MercadoLibre del histórico de ese mes, con lo que
