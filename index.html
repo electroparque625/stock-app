@@ -291,7 +291,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 
 <!-- DASHBOARD (admin) --><div class="sc" id="s-dash"><div class="dg" id="dk"></div><div class="stit">⭐ Nivel de stock — Productos monitoreados</div><div id="d-bars" style="display:flex;align-items:flex-end;gap:6px;min-height:220px;padding:16px 10px 0;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);margin-bottom:14px;overflow-x:auto;position:relative"><div class="emp">Marcá productos con ⭐</div></div><div class="stit">Detalle por producto</div><div id="d-mo"><div class="emp">Marcá productos con ⭐ para verlos acá</div></div></div>
 
-<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div style="text-align:right;margin-bottom:8px"><button class="b bs" onclick="loadHistorico()" style="width:auto;padding:8px 12px;font-size:12px">📊 Histórico mensual</button></div><div class="dg" id="fac-total-recaudado" style="margin-bottom:10px"><div class="dc"><div class="dl">Total recaudado (bruto)</div><div class="dv">—</div></div><div class="dc"><div class="dl">Total recaudado (neto — en mano)</div><div class="dv ok">—</div></div></div><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div><div id="fac-pie-rep" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Reparaciones (30d)</div><div id="fac-pie-rep-svg"></div><div id="fac-rep-total" style="font-size:11px;color:var(--tx3);margin-top:6px"></div></div><div id="fac-pie-presu" style="cursor:pointer;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center" onclick="go('cuentas')"><div class="dl">Presupuestos (30d)</div><div style="font-size:22px;font-weight:800;color:var(--ok);margin-top:30px" id="fac-presu-total">$0</div><div style="font-size:11px;color:var(--tx3);margin-top:6px">cobrado en Cuenta Corriente</div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
+<!-- FACTURACIÓN (admin) --><div class="sc" id="s-fac"><div style="display:flex;justify-content:flex-end;align-items:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:8px"><div class="f" style="margin:0"><label>Mes del reporte</label><input type="month" id="fac-export-mes" style="width:auto"/></div><button class="b bp" onclick="abrirReporteVentas()" style="width:auto;padding:8px 12px;font-size:12px">📊 Reporte de ventas</button><button class="b bs" onclick="loadHistorico()" style="width:auto;padding:8px 12px;font-size:12px">📊 Histórico mensual</button></div><div class="dg" id="fac-total-recaudado" style="margin-bottom:10px"><div class="dc"><div class="dl">Total recaudado (bruto)</div><div class="dv">—</div></div><div class="dc"><div class="dl">Total recaudado (neto — en mano)</div><div class="dv ok">—</div></div></div><div class="dg" id="fac-kpi"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"><div id="fac-pie" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Ventas generales</div><div id="fac-pie-svg"></div></div><div id="fac-pie-ml" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">MercadoLibre por cuenta</div><div id="fac-pie-ml-svg"></div></div><div id="fac-pie-rep" style="background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center"><div class="dl">Reparaciones (30d)</div><div id="fac-pie-rep-svg"></div><div id="fac-rep-total" style="font-size:11px;color:var(--tx3);margin-top:6px"></div></div><div id="fac-pie-presu" style="cursor:pointer;background:var(--card);border-radius:var(--rad);border:1px solid var(--brd);padding:16px;text-align:center" onclick="go('cuentas')"><div class="dl">Presupuestos (30d)</div><div style="font-size:22px;font-weight:800;color:var(--ok);margin-top:30px" id="fac-presu-total">$0</div><div style="font-size:11px;color:var(--tx3);margin-top:6px">cobrado en Cuenta Corriente</div></div></div><div class="stit">Detalle por canal</div><div id="fac-detail"><div class="ld"><div class="sp"></div></div></div>
 <div class="stit" style="margin-top:14px">🏆 Ranking por período</div>
 <div class="fac-card" style="margin-bottom:14px">
 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
@@ -651,6 +651,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 </div>
 </div></div>
 
+<!-- REPORTE DE VENTAS --><div class="mo" id="mo-reporte"><div class="ml" style="max-width:1100px;max-height:94vh">
+<div class="mb"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+<div class="mti" style="margin:0" id="rep-titulo">📊 Reporte de ventas</div>
+<button onclick="$('mo-reporte').classList.remove('show')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx3)">✕</button>
+</div>
+<div class="dg" id="rep-kpi"></div>
+<div class="stit" style="margin:12px 0 6px">Por canal</div>
+<div id="rep-canales"></div>
+<div class="stit" style="margin:14px 0 6px">Productos vendidos — cargá el costo unitario</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+<input type="text" id="rep-q" placeholder="🔍 Buscar producto..." oninput="renderReporteProductos()" style="flex:1;min-width:180px"/>
+<label style="font-size:12px;display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" id="rep-solo-sin" onchange="renderReporteProductos()"/> Solo los que no tienen costo</label>
+</div>
+<div id="rep-productos" style="max-height:46vh;overflow:auto;border:1px solid var(--brd);border-radius:var(--rs)"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+<button class="b bs" style="flex:1;min-width:200px" onclick="guardarCostosReporte()">💾 Guardar costos en el inventario</button>
+<button class="b bp" style="flex:1;min-width:200px" onclick="descargarReporteVentas()">📥 Descargar Excel</button>
+</div>
+<div style="font-size:11px;color:var(--tx3);margin-top:6px">Los costos que cargues acá se usan en el Excel. "Guardar costos en el inventario" los deja grabados en cada producto, así el mes que viene ya aparecen cargados (solo para productos que existen en el inventario).</div>
+</div></div>
+
 <!-- HISTORICO FACTURACION --><div class="mo" id="historico-modal"><div class="ml">
 <div class="mb"></div><div class="mti">📊 Histórico mensual</div>
 <div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Se va guardando solo, mes a mes, a medida que cargás facturación (ML, mostrador/Tienda Nube y reparaciones). No es el crudo de MercadoLibre, son los totales ya calculados — tocá un mes para ver el desglose.</div>
@@ -892,7 +914,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 const SB_URL='https://db.electroparque.com',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4NTUwODcyLCJleHAiOjE5NDYyMzA4NzJ9.Rd38ULXu6ySgy-ol7VekMRAg68nbubwoJg7DtfQ_To8',SYNC='https://script.google.com/macros/s/AKfycbxrz4MOxub5tdfiQ09gbLi0b-GXwimlfRfVyOCsRS9Ap9G3GbCkTUoYpvMrRrGs6w4/exec';
 // Se sube a mano en cada commit que toque este archivo — permite que las pestañas
 // viejas se den cuenta solas de que hay una versión nueva (ver checkForUpdate).
-const APP_VERSION='2026-09-30-1';
+const APP_VERSION='2026-10-03-1';
 const WEB_API_URL='https://electroparque-web.vercel.app/api/stock-app/publish',WEB_API_SECRET='8ed0441b8faae83730daefb9119b93fa31eac58b67028f00';
 const db=window.supabase.createClient(SB_URL,SB_KEY),$=id=>document.getElementById(id);
 function isSA(){return ses?.rol==='superadmin'}
@@ -1403,6 +1425,120 @@ async function uploadMLReport(){
     $('fac-ml-periodo').value=periodo;
     await loadMLBilling();renderTotalRecaudado();
   }catch(e){st.textContent='Error: '+e.message}
+}
+// Reporte de ventas del mes: se arma en pantalla, se cargan los costos por
+// producto (un solo costo aunque se haya vendido varias veces) y recién ahí se
+// descarga el Excel, con fórmulas para que se pueda seguir editando allá.
+let REP=null;
+async function abrirReporteVentas(){
+  const inp=$('fac-export-mes');if(!inp.value)inp.value=mesDeFecha(new Date());
+  const mes=inp.value;const[y,m]=mes.split('-').map(Number);
+  const desde=new Date(y,m-1,1),hasta=new Date(y,m,0,23,59,59);
+  toast('Armando el reporte de '+nombreMes(mes)+'...');
+  try{
+    const[{data:ml},{data:movs},{data:presus}]=await Promise.all([
+      db.from('facturacion_ml').select('*').eq('periodo',mes),
+      db.from('movimientos').select('created_at,usuario,articulo,sku,cantidad,monto,canal').eq('tipo','venta').gte('created_at',desde.toISOString()).lte('created_at',hasta.toISOString()),
+      db.from('presupuestos').select('*').eq('facturado',true).gte('fecha_facturacion',desde.toISOString()).lte('fecha_facturacion',hasta.toISOString())
+    ]);
+    const porSku={},porMla={},porId={};
+    ALL.forEach(p=>{if(p.sku)porSku[p.sku]=p;porId[p.id]=p;[p.ml_id_1,p.ml_id_2,p.ml_id_3,p.ml_id_4].forEach(x=>{if(x)porMla[x]=p})});
+    const chName={web:'Tienda Online',mostrador:'Mostrador',tiendanube:'Tienda Nube',reparacion:'Reparaciones',mercadolibre:'MercadoLibre (cargada a mano)'};
+    const filas=[];
+    const add=(f,canal,cuenta,orden,articulo,ref,unidades,bruto,ded,neto,prod,sinCosto)=>{
+      const key=prod?'p'+prod.id:sinCosto?null:'a'+(ref||articulo).toLowerCase();
+      filas.push({fecha:f,canal,cuenta,orden,articulo,ref,unidades,bruto,ded,neto,key,prod});
+    };
+    (ml||[]).forEach(v=>add(parseFechaML(v.fecha),'MercadoLibre',ctaLabel(v.cuenta),v.orden,v.titulo,v.mla,v.unidades||1,v.bruto||0,v.deducciones||0,v.neto||0,porMla[v.mla]));
+    (movs||[]).filter(v=>!(v.canal||'').startsWith('ml_')).forEach(v=>add(new Date(v.created_at),chName[v.canal]||v.canal||'Mostrador',v.usuario||'',v.sku||'',v.articulo||'',v.sku||'',v.cantidad||1,v.monto||0,0,v.monto||0,porSku[v.sku]));
+    (presus||[]).forEach(pr=>{
+      const items=typeof pr.items==='string'?JSON.parse(pr.items):pr.items||[];const num='P-'+String(pr.id).padStart(4,'0');const f=new Date(pr.fecha_facturacion);
+      items.forEach(it=>{const p=it.producto_id?porId[it.producto_id]:null;add(f,'Presupuesto',pr.cliente_nombre||'',num,it.descripcion||'',p?p.sku:'',it.cantidad||1,it.subtotal||0,0,it.subtotal||0,p)});
+      if(+pr.descuento>0)add(f,'Presupuesto',pr.cliente_nombre||'',num,'Descuento del presupuesto','',0,0,+pr.descuento,-pr.descuento,null,true);
+    });
+    if(!filas.length){toast('No hay ventas registradas en '+nombreMes(mes));return}
+    filas.sort((a,b)=>(a.fecha?a.fecha.getTime():0)-(b.fecha?b.fecha.getTime():0));
+    const grupos={};
+    filas.forEach(f=>{if(!f.key)return;const g=grupos[f.key]=grupos[f.key]||{key:f.key,articulo:f.prod?[f.prod.articulo,f.prod.marca,f.prod.modelo].filter(Boolean).join(' '):f.articulo,ref:f.prod?f.prod.sku:f.ref,prod:f.prod,canales:new Set(),unidades:0,neto:0,costo:f.prod&&+f.prod.precio_al_costo>0?+f.prod.precio_al_costo:null};g.canales.add(f.canal);g.unidades+=f.unidades;g.neto+=f.neto});
+    REP={mes,filas,grupos};
+    $('rep-titulo').textContent='📊 Reporte de ventas — '+nombreMes(mes);
+    $('rep-q').value='';$('rep-solo-sin').checked=false;
+    renderReporteTotales();renderReporteProductos();
+    $('mo-reporte').classList.add('show');
+  }catch(e){toast('Error armando el reporte: '+e.message)}
+}
+function costoFila(f){const g=f.key&&REP.grupos[f.key];return g&&g.costo!=null?g.costo:null}
+const $m=n=>'$'+Math.round(n).toLocaleString('es-AR');
+function renderReporteTotales(){
+  const can={};let neto=0,costo=0,netoConCosto=0,sin=0;
+  REP.filas.forEach(f=>{const c=can[f.canal]=can[f.canal]||{ventas:0,unidades:0,neto:0,costo:0,netoConCosto:0,sin:0};c.ventas++;c.unidades+=f.unidades;c.neto+=f.neto;neto+=f.neto;
+    const cu=costoFila(f);if(cu!=null){c.costo+=cu*f.unidades;c.netoConCosto+=f.neto;costo+=cu*f.unidades;netoConCosto+=f.neto}else if(f.key){c.sin++;sin++}});
+  const gan=netoConCosto-costo;
+  $('rep-kpi').innerHTML='<div class="dc"><div class="dl">Neto cobrado</div><div class="dv">'+$m(neto)+'</div></div><div class="dc"><div class="dl">Costo cargado</div><div class="dv e">'+$m(costo)+'</div></div><div class="dc"><div class="dl">Ganancia (de lo que tiene costo)</div><div class="dv ok">'+$m(gan)+'</div></div><div class="dc"><div class="dl">Ventas sin costo</div><div class="dv '+(sin?'w':'ok')+'">'+sin+'</div></div>';
+  $('rep-canales').innerHTML='<div class="fac-card">'+Object.entries(can).sort((a,b)=>b[1].neto-a[1].neto).map(([k,c])=>{const g=c.netoConCosto-c.costo;const mg=c.netoConCosto?Math.round(g/c.netoConCosto*100):null;
+    return'<div class="fac-row"><div class="fac-ch"><div><div class="fac-name">'+k+'</div><div style="font-size:11px;color:var(--tx3)">'+c.ventas+' ventas · '+c.unidades+' u. · Costo '+$m(c.costo)+(c.sin?' · '+c.sin+' sin costo':'')+'</div></div></div><div style="text-align:right"><div class="fac-val">'+$m(c.neto)+'</div><div style="font-size:11px;color:var(--ok)">'+(mg!=null?'Ganancia '+$m(g)+' ('+mg+'%)':'—')+'</div></div></div>'}).join('')+'</div>';
+}
+function renderReporteProductos(){
+  const q=($('rep-q').value||'').toLowerCase().trim(),solo=$('rep-solo-sin').checked;
+  const lista=Object.values(REP.grupos).filter(g=>(!solo||g.costo==null)&&(!q||(g.articulo+' '+g.ref).toLowerCase().includes(q))).sort((a,b)=>b.neto-a.neto);
+  $('rep-productos').innerHTML=lista.length?'<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="position:sticky;top:0;background:var(--bg);text-align:left"><th style="padding:6px">Producto</th><th style="padding:6px;text-align:right">Uds</th><th style="padding:6px;text-align:right">Neto</th><th style="padding:6px">Costo unit.</th><th style="padding:6px;text-align:right">Ganancia</th></tr>'+lista.map(g=>{
+    const id=g.key.replace(/[^a-z0-9]/gi,'_');
+    return'<tr style="border-top:1px solid var(--brd)'+(g.costo==null?';background:var(--warn-l,rgba(255,170,0,.08))':'')+'"><td style="padding:6px"><div style="font-weight:600">'+escHtml(g.articulo||'(sin nombre)')+'</div><div style="font-size:10px;color:var(--tx3)">'+escHtml(g.ref||'')+' · '+[...g.canales].join(', ')+(g.prod?'':' · no está en el inventario')+'</div></td><td style="padding:6px;text-align:right">'+g.unidades+'</td><td style="padding:6px;text-align:right">'+$m(g.neto)+'</td><td style="padding:6px"><input type="number" min="0" value="'+(g.costo!=null?g.costo:'')+'" placeholder="Cargar" style="width:110px;padding:6px" oninput="onCostoReporte(\''+g.key.replace(/'/g,"\\'")+'\',this.value,\''+id+'\')"/></td><td style="padding:6px;text-align:right" id="rep-g-'+id+'">'+gananciaGrupoTxt(g)+'</td></tr>'}).join('')+'</table>':'<div class="emp">'+(solo?'Todos los productos tienen costo cargado 🎉':'Sin resultados')+'</div>';
+}
+function escHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function gananciaGrupoTxt(g){if(g.costo==null)return'<span style="color:var(--tx3)">—</span>';const gan=g.neto-g.costo*g.unidades;const mg=g.neto?Math.round(gan/g.neto*100):0;return'<span style="color:'+(gan>=0?'var(--ok)':'var(--err)')+'">'+$m(gan)+' ('+mg+'%)</span>'}
+function onCostoReporte(key,val,id){
+  const g=REP.grupos[key];if(!g)return;
+  g.costo=val===''?null:Math.max(0,+val);
+  const el=$('rep-g-'+id);if(el)el.innerHTML=gananciaGrupoTxt(g);
+  renderReporteTotales();
+}
+async function guardarCostosReporte(){
+  const cambios=Object.values(REP.grupos).filter(g=>g.prod&&g.costo!=null&&g.costo>0&&+g.costo!==+(g.prod.precio_al_costo||0));
+  if(!cambios.length){toast('No hay costos nuevos para guardar en el inventario');return}
+  if(!confirm('Se va a guardar el costo de '+cambios.length+' producto(s) en el inventario (no cambia el precio de venta). ¿Continuar?'))return;
+  let ok=0;
+  for(const g of cambios){const{error}=await db.from('stock').update({precio_al_costo:g.costo}).eq('id',g.prod.id);if(!error){ok++;g.prod.precio_al_costo=g.costo;const a=ALL.find(x=>x.id===g.prod.id);if(a)a.precio_al_costo=g.costo}}
+  toast('💾 Costo guardado en '+ok+' producto(s)');
+}
+function descargarReporteVentas(){
+  if(!REP)return;
+  const{mes,filas}=REP;
+  const hdr=['Fecha','Canal','Cuenta / Cliente','Orden / Comprobante','Artículo','SKU / Publicación','Unidades','Precio de venta','Comisiones y descuentos','Neto cobrado','Costo unitario','Costo total','Ganancia','Margen %'];
+  const data=filas.map(f=>{const cu=costoFila(f);return[f.fecha?f.fecha.toLocaleDateString('es-AR'):'',f.canal,f.cuenta,f.orden,f.articulo,f.ref,f.unidades,f.bruto,f.ded,f.neto,cu!=null?cu:'']});
+  const ws=XLSX.utils.aoa_to_sheet([hdr,...data]);
+  const money='"$"#,##0';const last=data.length+1;
+  for(let i=0;i<data.length;i++){
+    const r=i+2;
+    ws['L'+r]={t:'n',f:'IF(K'+r+'="","",G'+r+'*K'+r+')',z:money};
+    ws['M'+r]={t:'n',f:'IF(K'+r+'="","",J'+r+'-L'+r+')',z:money};
+    ws['N'+r]={t:'n',f:'IF(OR(K'+r+'="",J'+r+'=0),"",M'+r+'/J'+r+')',z:'0%'};
+    ['H','I','J','K'].forEach(c=>{if(ws[c+r]&&ws[c+r].t==='n')ws[c+r].z=money});
+  }
+  for(let r=2;r<=last;r++){if(ws['K'+r]&&ws['K'+r].v==='')delete ws['K'+r]}
+  ws['!ref']='A1:N'+last;ws['!autofilter']={ref:'A1:N'+last};
+  ws['!cols']=[10,16,18,20,46,20,9,14,14,14,13,13,13,9].map(w=>({wch:w}));
+  const canales=[...new Set(filas.map(f=>f.canal))];
+  const R=n=>"Ventas!"+n+"2:"+n+last;
+  const wsR=XLSX.utils.aoa_to_sheet([['Reporte de ventas — '+nombreMes(mes)],['Si corregís un "Costo unitario" en la hoja Ventas, la ganancia y este resumen se recalculan solos. Las ventas sin costo no suman en Costo ni Ganancia.'],[],['Canal','Ventas','Unidades','Precio de venta','Comisiones y descuentos','Neto cobrado','Costo total','Ganancia','Margen %','Ventas sin costo']]);
+  canales.forEach((c,i)=>{const r=5+i;const q='"'+c.replace(/"/g,'""')+'"';
+    wsR['A'+r]={t:'s',v:c};
+    wsR['B'+r]={t:'n',f:'COUNTIF('+R('B')+','+q+')'};
+    wsR['C'+r]={t:'n',f:'SUMIF('+R('B')+','+q+','+R('G')+')'};
+    [['D','H'],['E','I'],['F','J'],['G','L'],['H','M']].forEach(([dst,src])=>{wsR[dst+r]={t:'n',f:'SUMIF('+R('B')+','+q+','+R(src)+')',z:money}});
+    wsR['I'+r]={t:'n',f:'IF(SUMIFS('+R('J')+','+R('B')+','+q+','+R('K')+',"<>")=0,"",H'+r+'/SUMIFS('+R('J')+','+R('B')+','+q+','+R('K')+',"<>"))',z:'0%'};
+    wsR['J'+r]={t:'n',f:'COUNTIFS('+R('B')+','+q+','+R('K')+',"")'};
+  });
+  const tr=5+canales.length;
+  wsR['A'+tr]={t:'s',v:'TOTAL'};
+  ['B','C','D','E','F','G','H','J'].forEach(c=>{const cell={t:'n',f:'SUM('+c+'5:'+c+(tr-1)+')'};if('DEFGH'.includes(c))cell.z=money;wsR[c+tr]=cell});
+  wsR['I'+tr]={t:'n',f:'IF(SUMIFS('+R('J')+','+R('K')+',"<>")=0,"",H'+tr+'/SUMIFS('+R('J')+','+R('K')+',"<>"))',z:'0%'};
+  wsR['!ref']='A1:J'+tr;
+  wsR['!cols']=[30,9,10,16,16,16,16,16,10,14].map(w=>({wch:w}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,wsR,'Resumen');XLSX.utils.book_append_sheet(wb,ws,'Ventas');
+  XLSX.writeFile(wb,'Ventas_ElectroParque_'+mes+'.xlsx');
+  toast('📥 Excel descargado');
 }
 // Recalcula solo la parte de MercadoLibre del histórico de ese mes, con lo que
 // hay cargado para ese período (lo demás del mes no se toca).
